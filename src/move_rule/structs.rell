@@ -1,0 +1,49 @@
+
+// ----------------------------------------------------------------------------
+// Move rules
+// ----------------------------------------------------------------------------
+// In this module we use a lot of structs that help us verify the moves.
+// Verifying a move in this game is pretty hard, since the magic that 
+// might effect the piece. 
+// ----------------------------------------------------------------------------
+
+// I've chosen to use the X/Y instead of the Chess terms, perhaps a mistake?
+// 
+// X = "file" (Chess term) i.e. a,b,c ..,h 
+// Y = "rank" (Chess term) i.e. 1,2,3 ..,8
+struct square_pos {
+    x: integer; // 0-7 file (in chess notation: a-h)
+    y: integer; // 0-7 rank (in chess notation: 1-8)
+}
+
+
+
+
+
+enum path_type {
+    GROUND_MOVE,
+    GROUND_ATTACK,
+    GROUND_CASTLE_MOVE,
+    JUMP_MOVE,
+    JUMP_ATTACK
+}
+
+struct path_base {
+    path: list<integer> = [];
+    path_type: path_type;
+}
+
+
+
+
+// Before we can build the real MOVE_TREE we need a temporary structure 
+// to collect the moves.
+struct pre_tree {
+    movable_sqs: set<integer> = set<integer>();
+    moves_harmless: set<integer> = set<integer>();
+    attackable_sqs: set<integer> = set<integer>();
+    protected_sqs: set<integer> = set<integer>();
+    paths: list<path_base> = [];
+}
+
+

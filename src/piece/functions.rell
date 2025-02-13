@@ -1,0 +1,212 @@
+
+
+// ------------------------------------------------------------
+// Inspectors
+// ------------------------------------------------------------
+
+// Get the piece occupying a given position, or null if none.
+function piece_get_via_game_and_position(game: game, pos: integer): piece? {
+    return (v: vulnerable, p: piece)@? {
+        v.game == game,
+        p.vulnerable == v,
+        v.position == pos,
+        v.alive == true // Only alive pieces are on the board.
+    } (p);
+}
+
+// Get the piece occupying a given position, or null if none.
+function piece_get_via_owner_and_position(owner: player_game, pos: integer): piece? {
+    return (p: piece, op: owned_piece, v: vulnerable) @? {
+        op.owned_by == owner, 
+        op.piece == p, 
+        p.vulnerable == v,
+        v.position == pos 
+        } (p);
+}
+
+// Here we get the entire board in one go, all pieces and obstacles.
+// We separate black from white via the alignment.
+function piece_get_all_vulnerables(game: game): list<with_pos_and_alignment> {
+    val vulns = (v: vulnerable)@* {
+        v.game == game,
+        v.alive == true // Critial, since we keep dead objects around forever.
+    } (v.position, v.color, v.is_obstacle); // Color should really be neutral, since it's not a piece.
+
+    // Transform into structs
+    val res: list<with_pos_and_alignment> = [];
+    for (v in vulns) { 
+        if (v.is_obstacle) {
+            if (v.color != alignment.NEUTRAL) {
+                log("Error: Obstacle has color " + v.color);
+            }
+            res.add(with_pos_and_alignment(v.position, alignment.NEUTRAL));
+        } else {
+            // It's a piece
+            res.add(with_pos_and_alignment(v.position, v.color));
+        }
+    }
+    return res;
+}
+
+// We do this for performance reasons, 
+// since every single field access could else generate a new SELECT.
+// Returns:
+// 1. is_knighted
+// 2. active_type
+// 3. original_type
+function piece_get_data(given_piece: piece): (is_knighted: boolean, active_type: piece_type, original_type: piece_type) {
+    return (p: piece, op: owned_piece) @ {
+        p == given_piece,
+        op.piece == p
+    } (p.is_knighted, p.active_type, p.original_type );
+}
+
+// ------------------------------------------------------------
+// Constructors
+// ------------------------------------------------------------
+
+function obstacle_create(game: game, pos: integer): vulnerable {
+    return create vulnerable (
+        .game = game,
+        .position = pos,
+        .is_obstacle = true,
+        .color = alignment.NEUTRAL,
+        .alive = true, // Not exactly "alive" but at the board.
+        .start_hit_points = 10,
+        .remaining_hit_points = 10,
+        .strength = 0, // Doesn't matter since cannot attack
+        .defence = 3 // Default 
+    );
+}
+
+function piece_create(g: game, owner: player_game, pos: integer, align: alignment, p_type: piece_type): owned_piece {
+
+    var hp = 2;
+    if (p_type == piece_type.KING) { 
+        hp = 10; // Only the king has more hit points.
+    }
+
+    val v = create vulnerable (
+        .game = g,
+        .position = pos,
+        .is_obstacle = false,
+        .color = align,
+        .alive = true, 
+        .start_hit_points = hp,
+        .remaining_hit_points = hp,
+        .strength = 7,  // This exact mode, in chaos mode it's 2D6.
+        .defence = 3 
+    );
+
+    val p = create piece (
+        .vulnerable = v,
+        .original_type = p_type,
+        .active_type = p_type, // Can change during the game.
+        .is_knighted = false
+    );
+
+    val op = create owned_piece (
+        .owned_by = owner,
+        .piece = p
+    );
+
+    return op;
+}
+
+// In the beginning of the game, we create all pieces.
+function piece_create_all(g: game, owner_white: player_game, owner_black: player_game) {
+
+    piece_create(g, owner_white, 0, alignment.WHITE, piece_type.ROOK);
+    piece_create(g, owner_white, 1, alignment.WHITE, piece_type.KNIGHT);
+    piece_create(g, owner_white, 2, alignment.WHITE, piece_type.BISHOP);
+    piece_create(g, owner_white, 3, alignment.WHITE, piece_type.QUEEN);
+    piece_create(g, owner_white, 4, alignment.WHITE, piece_type.KING);
+    piece_create(g, owner_white, 5, alignment.WHITE, piece_type.BISHOP);
+    piece_create(g, owner_white, 6, alignment.WHITE, piece_type.KNIGHT);
+    piece_create(g, owner_white, 7, alignment.WHITE, piece_type.ROOK);
+
+    // Create 8 white pawns
+    for (i in range(8, 16)) {
+        piece_create(g, owner_white, i, alignment.WHITE, piece_type.PAWN);
+    }
+
+    // Create 8 black pieces
+    for (i in range(48, 56)) {
+        piece_create(g, owner_black, i, alignment.BLACK, piece_type.PAWN);
+    }
+
+    piece_create(g, owner_black, 56, alignment.BLACK, piece_type.ROOK);
+    piece_create(g, owner_black, 57, alignment.BLACK, piece_type.KNIGHT);
+    piece_create(g, owner_black, 58, alignment.BLACK, piece_type.BISHOP);
+    piece_create(g, owner_black, 59, alignment.BLACK, piece_type.QUEEN);
+    piece_create(g, owner_black, 60, alignment.BLACK, piece_type.KING);
+    piece_create(g, owner_black, 61, alignment.BLACK, piece_type.BISHOP);
+    piece_create(g, owner_black, 62, alignment.BLACK, piece_type.KNIGHT);
+    piece_create(g, owner_black, 63, alignment.BLACK, piece_type.ROOK);
+}
+
+// ------------------------------------------------------------
+// Card Functions
+// ------------------------------------------------------------
+// Many cards influence the pieces, so we put the logic in here.
+
+// ----------------
+// Enchantments
+// ----------------
+
+
+// 1. FROG
+function piece_set_frog(piece: piece) {
+    update piece (.active_type = piece_type.FROG);
+}
+
+// 2. STONE
+function piece_set_stone(piece: piece) {
+    update piece (.active_type = piece_type.IMMOBILE);
+}
+
+// 3. POTION
+function piece_set_potion(piece: piece) {
+    update piece.vulnerable (.remaining_hit_points += 5);
+}
+
+// 4. KNIGHTED
+function piece_set_knighted(piece: piece) {
+    update piece (.is_knighted = true);
+}
+
+// ----------------
+// Other Spells 
+// ----------------
+
+// 5. JUMP -- Handled by the move module.
+
+// 6. SWITCH_PLACE
+function piece_switch_place(owned_by: player_game, piece1: piece, piece2: piece) {
+    // Validation
+    require(piece1.vulnerable.position != piece2.vulnerable.position, "Cannot switch place with itself");
+
+    val pos1 = piece1.vulnerable.position;
+    val pos2 = piece2.vulnerable.position;
+
+    val owned1 = owned_piece@? {piece1, owned_by};
+    require(owned1 != null, "Piece1 at " + pos1 + " is not owned by the player");
+    val owned2 = owned_piece@? {piece2, owned_by};
+    require(owned2 != null, "Piece2 at " + pos2 + " is not owned by the player");
+
+
+    update piece1.vulnerable (.position = 1000); // Ugly, but must do this to avoid unique constraint.
+    update piece2.vulnerable (.position = pos1);
+    update piece1.vulnerable (.position = pos2);
+}
+
+// 7. WALL
+function piece_setup_wall(game:game, pos1: integer, pos2: integer, pos3: integer) {
+    obstacle_create(game, pos1);
+    obstacle_create(game, pos2);
+    obstacle_create(game, pos3);
+}
+
+// 8. PORTAL -- Handled by the move module.
+// 9. (potential) RESURRECT -- Can be handled by the card module.
+// 10. DOUBLE_MOVE -- Can be handled by the card module.

@@ -1,0 +1,23 @@
+
+function move_tree_get_pos_status(move_tree, pos: integer): integer {
+    // Check if position is in attacks list
+    if (move_tree.attackable_sqs.contains(pos)) {
+        log("  move_tree_get_pos_status() - Found " + pos + " in attacks");
+        return 2;
+    }
+    
+    // Check if position is in normal moves list
+    if (move_tree.moves_normal.contains(pos)) {
+        log("  move_tree_get_pos_status() - Found " + pos + " in normal");
+        return 1;
+    }
+    
+    // Check if position is in harmless moves list
+    if (move_tree.moves_harmless.contains(pos)) {
+        log("  move_tree_get_pos_status() - Found " + pos + " in harmless");
+        return 1;
+    }
+    
+    log("  move_tree_get_pos_status() - Didn't find " + pos + " anywhere in the tree");
+    return 0; // Not found
+}

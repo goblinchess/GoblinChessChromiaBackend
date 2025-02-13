@@ -1,0 +1,108 @@
+
+// -------------------------------------
+// Cards
+// -------------------------------------
+// Represents a card type
+enum card_type {
+    FROG,
+    TURN_TO_STONE,
+    POTION,
+    KNIGHTED,
+    JUMP,
+    SWITCH_PLACE,
+    WALL,
+    PORTAL,
+    RESURRECT,
+    DOUBLE_MOVE
+}
+
+// -------------------------------------
+// When a user plays a card, this entity is created.
+// Meaning BEFORE the cards are played the node doesn't know cards the player has.
+//
+// In the end of the game player will reveal his seed, and the node will verify
+// that the cards are indeed the one that should have been randomly generated.
+// The seed used by the client to randomly draw cards is:
+// "seed = player_signature(game timestamp)"
+//
+// Since only the player can sign things using his private key, 
+// we can be sure the seed doesn't leak to the other player.
+// -------------------------------------
+entity card {
+    index played_by: player_game;
+    turn: turn; // The turn the card was played
+    card_type: card_type;
+    order_number: integer; // The order number when the card was drawn.
+}
+
+// -------------------------------------
+// Card picks
+// -------------------------------------
+// Any square that was picked by the player when playing the card.
+// Some cards need many square picks, some need none.
+entity card_pick {
+    picked_square: integer; // Could be a piece or an empty square (file + 8 * rank). Example: 9 => b2  
+    index card: card;
+    order_number: integer; // The order number of the pick
+    is_piece: boolean;  // Most picks are pieces, but some picks are empty squares.
+    key card, order_number; // Cannot pick the same square twice
+}
+
+// Can be tricky to figure out what piece was standing on a square at the time when the card was played.
+entity card_pick_piece {
+    key card_pick: card_pick;
+    picked_piece: piece; // The piece that was picked
+}
+
+enum card_pick_type {
+    ANY_SQUARE, // Picked any square
+    FREE_SQUARE, // Picked empty square
+    PIECE_SQUARE // Picked a piece
+}
+
+
+// -------------------------------------
+// Active Data
+// -------------------------------------
+// To simplify validation, we store the active data in special entities.
+// THis data is often removed later in the game.
+
+// A Double Move card has been played, but not yet used.
+entity active_double_move {
+    key card: card; // The card that generated this active double move
+    index owned_by: player_game; // <- The way to find this entity
+}
+
+// Reprsents the state after the Resurrect card was played. 
+// We are now waiting for the player to kill an opponent piece,
+// so that the opponent can be resurrected.
+entity potential_resurrect {
+    key card: card; // The card that generated this (potential) resurrect
+    index owned_by: player_game; // <- The way to find this entity
+}
+
+// Some enchantments (like Knighted) stay for the entire game.
+// Other enchantments (like Frog) only last for a few turns.
+entity active_enchantment {
+    key card: card; // The card that generated this active enchantment
+    played_by: player_game;
+    index enchanted_piece: piece; // <- The way to find this entity
+}
+
+// -------------------------------------
+// Events
+// -------------------------------------
+
+// When the actual resurrection happens
+entity resurrect_event {
+    key event: event; // Event is the "base type" for all events
+    card: card;
+    piece: piece; // Piece that was resurrected
+}
+
+entity remove_enchantment_event {
+    key event: event; // Event is the "base type" for all events
+    card: card;
+    piece: piece; // The piece that is no longer enchanted
+}
+

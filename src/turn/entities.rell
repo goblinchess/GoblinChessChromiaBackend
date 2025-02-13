@@ -1,0 +1,86 @@
+
+
+
+// -------------------------------------
+// Turns
+// -------------------------------------
+
+// -------------------------------------
+// Represents different types of turns in the game
+//
+// What are the SKIPPED turns?
+// The idea here is that we must create a turn EVEN if nothing happens.
+//
+// When can "nothing" happen (turns are skipped)? 
+// 1. When a player doesn't play a card.
+// 2. When a player plays Double Move card, 
+//    a) The MOVE turn will not happen, 
+//    b) Next turn the player will make two moves, where the second will be a NEUTRAL_MOVE.
+//       (Meaning that neutral color can never make a move after a Double Move card, the turn will be consumed by the player)
+// 3. When neutral color doesn't make a move (usual case).
+//
+// The client must anticipate that a turn will be skipped and send an extra operation 
+// to the node to create the skipped turn.
+// -------------------------------------
+enum turn_type {
+    FRESH_GAME, // Before any moves have been made
+    WHITE_CARD,
+    WHITE_CARD_SKIPPED, // No card played
+    WHITE_MOVE,
+    WHITE_MOVE_SKIPPED, // Due to Double Move card played
+    NEUTRAL_MOVE_1,  // TODO
+    NEUTRAL_MOVE_1_SKIPPED, 
+    NEUTRAL_MOVE_1_HIJACKED, // Stolen by white player, Double Move
+    BLACK_CARD,
+    BLACK_CARD_SKIPPED, // No card played
+    BLACK_MOVE,
+    BLACK_MOVE_SKIPPED, // Due to Double Move card played
+    NEUTRAL_MOVE_2,  // TODO
+    NEUTRAL_MOVE_2_SKIPPED, 
+    NEUTRAL_MOVE_2_HIJACKED // Stolen by black player, Double Move
+} 
+
+// Represents a single turn in the game
+entity turn {
+    index created_by: player_game;
+    index game: game;
+    number: integer; // Turn number within the game
+    key game, number;
+    turn_type: turn_type;
+}
+
+// Points to the most recent turn for a game
+entity current_turn {
+    key game: game;
+    mutable current_turn: turn;
+}
+
+// -------------------------------------
+// Event
+// -------------------------------------
+
+// Something that happens on the board
+// that's NOT an immediate effect of a move or card played.
+// 
+// Events are here to make it easier to re-play old games.
+enum event_type {
+    // Vulnerable events
+    REMOVE_EVENT, // When some obstracle/piece disappears from the board (dead usually)
+    // Piece events
+    PORTAL_EVENT, // When a piece is (magically) teleported on the board (Portal, Switch Place)
+    RESURRECT_TAKES_EFFECT, // Not when the card is played
+    // Spell events
+    DOUBLE_MOVE_TAKES_EFFECT, // Not when the card is played
+    // Enchantment events
+    ENCHANTMENT_REMOVED // When an enchantment is removed from a piece
+}
+
+// Something that happens on the board
+entity event {
+    index game: game;
+    index turn: turn;
+    event_type: event_type;
+}
+
+
+

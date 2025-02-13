@@ -1,0 +1,60 @@
+
+
+// ----------------
+// Portals
+// ----------------
+
+// Return a list of all portals owned by the player.
+//
+// Discussion: 
+// We don't need ALL the portals, 
+// since the player can only use his own.
+// (It's as if the opponent's portals are invisible, 
+// and the movements are inscrutable to the this player)
+// TODO: This might change when we add check/mate calculations.
+function move_get_all_portals(player_game: player_game, player_align: alignment): list<owned_portal> {
+
+    val ps = portal@* {.owned_by == player_game} (.entry_position, .exit_position);
+
+    val res = list<owned_portal>();
+    for (p in ps) {
+        res.add(owned_portal(
+            entry_pos = p.entry_position,
+            exit_pos = p.exit_position, 
+            player_align)
+        );
+    }
+    return res;
+}
+
+// When a portal card is played, we need to set up the portal on the board.
+function move_setup_portal(owned_by: player_game, card: card, entry_pos: integer, exit_pos: integer) {
+
+    // Half-assed check (assumping client did proper validation)
+    val res = portal@? {.owned_by == owned_by, .entry_position == entry_pos};
+    require(res == null, "Cannot create another portal at with entry pos " + entry_pos);
+
+    create portal (
+        .card = card,
+        .owned_by = owned_by,
+        .entry_position = entry_pos,
+        .exit_position = exit_pos
+    );
+}
+
+// ----------------
+// Jumps
+// ----------------
+
+// When a jump card is played, we need to set up the jump on the board.
+function move_set_jump(owned_by: player_game, card: card, piece: piece) {
+    create active_jump (
+        .played_by = owned_by,
+        .card = card,
+        .piece = piece
+    );
+}
+
+function move_remove_jump(owned_by: player_game) {
+    delete active_jump@? {.played_by == owned_by};
+}

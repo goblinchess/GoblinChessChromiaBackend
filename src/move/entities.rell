@@ -1,0 +1,106 @@
+
+// This module: 
+// Holds logic around moves on the board.
+//
+// Note:
+// To be able to verify a move, we often need to know a bit about what 
+// cards have been played, like the portal card and the jump card.
+// So everything we need will be put in here, so that there is no 
+// dependency on the card module.
+
+// -------------------------------------
+// Moves
+// -------------------------------------
+
+// Describes the move that happened during a turn
+entity move {
+    index turn: turn; // The turn that this move belongs to
+    piece_moved: piece; 
+    from_position: integer; // 0-63
+    to_position: integer; // 0-63
+
+    // Some extra info
+    is_check: boolean;
+    is_checkmate: boolean;
+    is_stalemate: boolean;
+}
+
+// A move that is an attack (perhaps a capture)
+// In Chaos mode attacks can fail, where the attacker ends up at a new position.
+entity attack_move {
+    key move: move;
+    attacked_position: integer; // 0-63 DOESN'T HAVE TO BE THE SAME AS THE "TO_POSITION"
+
+    // For chaos mode we need use the die roll.
+    die_roll: integer; 
+    attack_points: integer;
+    defense_points: integer;
+    damage_points: integer;
+    is_kill: boolean;
+}
+
+// In Chaos mode, when an attack doesn't kill the defender, 
+// the defender MIGHT retaliate.
+entity retaliation {
+    key attack_move: attack_move; // Can only happen after an attack move
+
+    // For chaos mode we need use the die roll.
+    die_roll: integer; 
+    attack_points: integer;
+    defense_points: integer;
+    damage_points: integer;
+    is_kill: boolean;
+}
+
+// -------------------------------------
+// Magic Jump 
+// -------------------------------------
+
+// A JUMP card has been played this turn.
+//
+// Comment:
+// The interesting thing is that the player DOESN'T have to 
+// to move the jumping piece, can pick another piece to move.
+// If the player do indeed pick the jumping piece, 
+// then we'll create a jump_event to signal that normal rules won't apply.
+entity active_jump {
+    key played_by: player_game; // Only one at a time
+    card: card; // The jump card 
+    piece: piece; // The piece that jumps
+}
+
+// -------------------------------------
+// Portal
+// -------------------------------------
+
+// Represents a portal, with an entry and exit square.
+// A portal is always created by a card.
+// So it COULD potentially belong to the card module, 
+// but after it has been created the portal is like a part of the board.
+entity portal {
+    key card: card; // The card that generated this portal
+    index owned_by: player_game; // <- The way to find this entity
+    entry_position: integer; // 0-63, location of the portal on the board
+    exit_position: integer; // 0-63, location of the portal exit on the board
+}
+
+
+// -------------------------------------
+// Events
+// -------------------------------------
+
+// When a piece travels through a portal
+// This happens AFTER the regular move. 
+entity portal_event {
+    key event: event; // Event is the "base type" for all events
+    portal: portal;
+    piece: piece; // Piece that traveled through the portal
+}
+
+// Only relevant for magic jumps, where the player 
+// wanted to go through with the magic jump.
+entity jump_event {
+    key event: event; // Event is the "base type" for all events
+    piece: piece; // Piece that jumped
+    move: move; // The move that was enhanced by the jump
+}

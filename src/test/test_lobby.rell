@@ -1,0 +1,148 @@
+@test module;
+
+import ^^.*; // Import all the things from parent folder 
+
+
+function test_elo_draw_1() {
+
+   val player1_rating: integer = 1200;
+   val player2_rating: integer = 1200;
+
+    val (p1: integer, p2: integer) = elo.update_chess_ratings_on_draw(
+        player1_rating,
+        player2_rating
+    );
+
+    assert_equals(p1, 1200);
+    assert_equals(p2, 1200);
+}
+
+function test_elo_draw_2() {
+
+   val player1_rating: integer = 1300;
+   val player2_rating: integer = 1200;
+
+    val (p1: integer, p2: integer) = elo.update_chess_ratings_on_draw(
+        player1_rating,
+        player2_rating
+    );
+
+    assert_equals(p1, 1296);
+    assert_equals(p2, 1204);
+}
+
+
+function test_elo_win_1() {
+
+   val player1_rating: integer = 1200;
+   val player2_rating: integer = 1200;
+
+    val (p1: integer, p2: integer) = elo.update_chess_ratings_on_win(
+        player1_rating,
+        player2_rating,
+	    true
+    );
+
+    assert_equals(p1, 1216);
+    assert_equals(p2, 1184);
+}
+
+function test_elo_win_2() {
+   val player1_rating: integer = 1300;
+   val player2_rating: integer = 1200;
+
+    val (p1: integer, p2: integer) = elo.update_chess_ratings_on_win(
+        player1_rating,
+        player2_rating,
+        false
+    );
+
+    assert_equals(p1, 1280);
+    assert_equals(p2, 1220);
+}
+
+
+// Basic math thes
+function test_ten_to_the_power_of() {
+    val x = 1.0;
+    val result = ten_to_the_power_of(x);
+    log("10 ^ 1=" + result.to_text());
+    assert_true(result < 10.001);
+    assert_true(result > 9.999);
+    
+    val x2 = 2.0;
+    val result2 = ten_to_the_power_of(x2);
+    log("10 ^ 2=" + result2.to_text());
+    assert_true(result2 < 100.001);
+    assert_true(result2 > 99.999);
+}
+
+
+function test_lobby() {
+
+    // ------------
+    // Check if DB is empty
+    // ------------
+    val players: list<rowid> = player@* {} (.rowid);
+    assert_equals(players.size(), 0);
+
+
+    // ------------
+    // Create the players
+    // ------------
+     
+    // All in one
+    rell.test.tx(create_player("Alice")).sign(rell.test.keypairs.alice).run();
+    rell.test.tx(create_player("Bob")).sign(rell.test.keypairs.bob).run();
+    rell.test.tx(create_player("Charlie")).sign(rell.test.keypairs.charlie).run();
+    rell.test.tx(create_player("Dave")).sign(rell.test.keypairs.dave).run();
+
+    // ------------
+    // Check if players are created
+    // ------------
+    val players_after: list<rowid> = player@* {} (.rowid);
+    assert_equals(players_after.size(), 4);
+
+
+    rell.test.tx(enter_lobby("SPEED_5_CLASSIC")).sign(rell.test.keypairs.bob).run();
+    rell.test.tx(enter_lobby("SPEED_10_CLASSIC")).sign(rell.test.keypairs.charlie).run();
+    rell.test.tx(enter_lobby("SPEED_5_CLASSIC")).sign(rell.test.keypairs.dave).run();
+
+    val match_10_mins = consume_lobby_entry(rell.test.keypairs.alice.pub, 0, "SPEED_10_CLASSIC");
+    assert_equals(match_10_mins, rell.test.keypairs.charlie.pub);
+
+}
+
+/*
+// Not testing anything, just printing the numbers
+// to see if any are missing
+function test_random() {
+
+    val random_numbers = generate_random_numbers(1238567, 1000, 11);
+
+    var str = "rnd: ";
+    val sorted_map = map<integer, integer>();  
+    for (n in random_numbers) {
+        str += n.to_text() + ", ";
+        if (sorted_map.contains(n)) {
+            val cnt = sorted_map[n];
+            sorted_map[n] = cnt + 1;
+        } else {
+            sorted_map[n] = 1;
+        }
+    }
+
+    log(str);
+
+    for (i in range(12)) { // <- 0-11
+        if (sorted_map.contains(i)) {
+            log(i.to_text() + " = " + sorted_map[i].to_text());
+        } else {
+            log(i.to_text() + " = NOTHING!? ");
+        }
+    }
+}
+*/
+
+
+

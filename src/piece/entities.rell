@@ -1,0 +1,83 @@
+
+
+// This module: 
+// Holds logic around pieces and the "base type" vulnerable.
+
+// -------------------------------------
+// Vulnereable 
+// -------------------------------------
+
+// Note:
+// The primary key of this entity is the game and the position.
+// This means only one vulnerable can occupy a square on the board at a time.
+// This is somewhat problematic for the SWITCH PLACE spell, where 
+// we need to first move a piece to an empty square to later do the real switch, 
+// as to not break the unique constraint.
+entity vulnerable {
+    index game: game;
+    mutable position: integer; // 0-63
+    key game, position; // No two objects can be in the same position
+
+    is_obstacle: boolean; // If true, this vulnerable is an obstacle
+
+    mutable color: alignment; // This can change via recruitment or resurrect 
+    mutable alive: boolean; // We keep dead/removed objects in the DB, to preserve the events. 
+
+    // For chaos mode we need hit points
+    mutable start_hit_points: integer;
+    mutable remaining_hit_points: integer;
+    mutable strength: integer;
+    mutable defence: integer;
+}
+
+// -------------------------------------
+// Pieces
+// -------------------------------------
+
+enum piece_type {
+    PAWN,
+    KNIGHT,
+    BISHOP,
+    ROOK,
+    QUEEN,
+    KING,
+    FROG, // Only when enchanted
+    IMMOBILE // Only when enchanted
+}
+
+// A piece is a vulnerable object that "lives" and can move around and (usually) attack.
+// 
+// Discussion:
+// Why two types?
+// During promation, we want to keep this entity since it might have active enchantments.
+// Also, looking at an old game, it's interesting to see the original type.
+entity piece {
+    key vulnerable: vulnerable; // This is kind of vulnerable
+    original_type: piece_type; // A pawn remains a pawn, even after being promoted.
+    mutable active_type: piece_type; // Mutable, so a promoted pawn will get the ACTIVE TYPE of queen.
+    mutable is_knighted: boolean; // If true, this piece can also move as a knight (or a bishop).
+}
+
+// A piece that is owned by a player
+// TODO: Not sure if this is needed, since we have the "piece.color"?
+//
+// Note:
+// Remember to change this after resurrectino.
+entity owned_piece {
+    index owned_by: player_game;
+    index piece: piece;
+}
+
+// -------------------------------------
+// Events
+// -------------------------------------
+
+// When an object is removed from the board.
+// Using this entity will help when analyzing old games, 
+// since the attack calculation can be avoided.
+entity death_event {
+    key event: event;  // Event is the "base type" for all events
+    vulnerable: vulnerable;
+}
+
+

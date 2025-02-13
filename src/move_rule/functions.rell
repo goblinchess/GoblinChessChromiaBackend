@@ -1,0 +1,49 @@
+
+
+
+// Will find the MOVE_TREE for this piece.
+// Handles all piece types and all cases
+// of enchantment. 
+function rules_get_all_valid_moves(
+    board_positions: board_positions_all, 
+    piece_type: piece_type,
+    is_knighted: boolean,
+    pos: integer, 
+    align: alignment
+): move_tree? {
+
+    when (piece_type) {
+        IMMOBILE -> {
+            return null;
+        }
+        BISHOP -> {
+
+            val moves = bishop_all_valid_moves(board_positions, pos, align);
+            if (is_knighted) {
+                // val moves_jump = knight_all_valid_moves(board_positions, pos, align);
+            }
+            return moves;
+        }
+        else -> {
+            return null;
+        }
+    }
+}
+
+function move_tree_build(pos: integer, ptree: pre_tree): move_tree {
+
+    // Combined "Normal" and "Harmless" (just a cache)
+    val all = set<integer>();
+    all.add_all(ptree.movable_sqs);
+    all.add_all(ptree.moves_harmless);
+    
+    return move_tree(
+        start_pos = pos,
+        moves_normal = ptree.movable_sqs, 
+        moves_harmless = ptree.moves_harmless, 
+        moves_all = all, 
+        attackable_sqs = ptree.attackable_sqs, 
+        protected_sqs = ptree.protected_sqs, 
+        paths = ptree.paths
+    );
+}

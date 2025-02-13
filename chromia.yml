@@ -1,0 +1,10 @@
+blockchains:
+  my_rell_dapp:
+    module: main
+compile:
+  rellVersion: 0.14.2
+database:
+  schema: schema_goblin_chess
+test:
+  modules:
+    - test

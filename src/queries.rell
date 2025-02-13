@@ -1,0 +1,148 @@
+
+
+// -------------------------------------
+// Debug queries
+// -------------------------------------
+query get_players() {
+    return player@* {};
+}
+
+query get_player_names() {
+    return player@* {} (.name);
+}
+
+query get_player_by_name(searchName: text) {
+    return player@? {.name == searchName};
+}
+
+// -------------------------------------
+// Lobby 
+// -------------------------------------
+
+query consume_lobby_entry(
+    player_signer: pubkey, 
+    curr_ms: timestamp,
+    game_type_str: text) :pubkey? {
+
+    // Get the requesting player
+    val requesting_player = player@{.signer == player_signer};
+    
+    return get_lobby_entry_inner(requesting_player, game_type_str, curr_ms);
+}
+
+query consume_lobby_entry_by_name(
+    player_name: text,
+    curr_ms: timestamp,
+    game_type_str: text) :pubkey? {
+
+    val requesting_player = player@{.name == player_name};
+
+    return get_lobby_entry_inner(requesting_player, game_type_str, curr_ms);
+}
+
+function get_lobby_entry_inner(requesting_player: player,
+    game_type_str: text,
+    curr_ms: timestamp) :pubkey? {
+
+    val g_type: game_type = game_type.value(game_type_str);
+
+    val old_ms = 10 * 1000; // 10 seconds
+
+    // Find closest ELO match in lobby for the same game type
+    // Exclude the requesting player and filter by ELO range
+    val match = (l: lobby, p: player) @? {
+        p == l.player,
+        l.game_type == g_type,
+        p != requesting_player, // So we don't match with ourselves
+        abs(p.elo_rating - requesting_player.elo_rating) <= 200,
+        curr_ms - l.last_heartbeat < old_ms
+    }
+    ( @sort abs(p.elo_rating - requesting_player.elo_rating), p.signer )
+    limit 1;
+
+    if (match == null) {
+        return null;
+    }
+    else {
+        return match.signer;
+    }
+
+}
+
+
+// -------------------------------------
+// In Game query
+// -------------------------------------
+struct in_game_result {
+    game_rowid: integer;
+    game_type: game_type;
+    is_white: boolean;
+    opponent_pubkey: pubkey;
+    opponent_name: text;
+    opponent_elo: integer;
+    current_turn: integer; // If the game just started, this will be -1
+    created_at: timestamp; // When the game was created
+}
+
+query in_game (caller_pubkey: pubkey) :in_game_result? {
+
+    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+
+    if (minimal_game == null) {
+        return null;
+    } else {
+        val found_game = minimal_game.game;
+        val plays_white = minimal_game.is_white;
+        var opp: player? = null;
+ 
+        if (plays_white) {
+            opp = found_game.black_player;
+        } else {
+            opp = found_game.white_player;
+        }
+
+        return in_game_result(
+            game_rowid = found_game.rowid.to_integer(),
+            game_type = found_game.game_type,
+            is_white = plays_white,
+            opponent_pubkey = opp.signer,
+            opponent_name = opp.name,
+            opponent_elo = opp.elo_rating,
+            current_turn = found_game.current_turn,
+            created_at = found_game.created_at
+        );
+    }
+}
+    
+// Return mostly a bunch of primary keys     
+struct minimal_game_result {
+    player: player;
+    player_game: player_game;
+    game: game;
+    is_white: boolean;
+}
+
+
+// Will find the player, the game and the color 
+// from the player's pubkey
+function get_minimal_game_data(caller_pubkey: pubkey) :minimal_game_result? {
+    // Return data
+    val res = (p: player, pg: player_game)@?  {
+        p.signer == caller_pubkey, 
+        pg.player == p, 
+        pg.is_finished == false }
+        (player = pg.player, player_game = pg, game = pg.game, is_white = pg.is_white);
+
+    if (res != null) {
+        return minimal_game_result(
+            player = res.player,
+            player_game = res.player_game,
+            game = res.game,
+            is_white =res.is_white 
+        );
+    } else {
+        return null;
+    }
+}
+
+

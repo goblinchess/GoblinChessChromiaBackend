@@ -1,0 +1,73 @@
+
+
+// We need to know the owner of the portal.
+struct owned_portal {
+    entry_pos: integer;
+    exit_pos: integer;
+    owner_alignment: alignment;
+}
+
+struct board_positions_all {
+
+    // List of all squares on the board that have characters on them.
+    board_characters: map<integer, with_pos_and_alignment> = map<integer, with_pos_and_alignment>();
+
+    // List of all squares on the board that have obstacles on them.
+    board_obstacles: map<integer, with_pos_and_alignment> = map<integer, with_pos_and_alignment>();
+
+    // List of all portals on the board owned by the current player.
+    // TODO: use all portals if we implement check/mate calculations.
+    portals: list<owned_portal> = []; // Keeps track of portals. Portals never go away.
+}
+
+
+// Holds all the moves for single piece on a single turn.
+// 
+// Chess has some special rules, like en passant, castling, etc.
+// And this game add even more rules (like KNIGHTED card).
+// On the server side we do a simplified verification,
+// so we can skip a few structures. 
+struct move_tree {
+    start_pos: integer;
+
+    // Holds all squares the piece can move to, the "normal" way. 
+    // "Normal" means that the piece could potentially attack this square,
+    // so the king isn't allowed to step on one of these squares.
+    moves_normal: set<integer>;
+
+    // Holds all squares the piece can move to in the "harmless" way. 
+    // "Harmless" means that 
+    moves_harmless: set<integer>;
+
+    // Combined "Normal" and "Harmless" (just a cache)
+    moves_all: set<integer>;
+
+    attackable_sqs: set<integer>;
+
+    // All squares the piece attacks but is occupied by a same-team piece.
+    // The piece cannot take his own, but this piece is now "protected"
+    // (this is useful info when we calculate who the opponents king can attack).
+    protected_sqs: set<integer>;
+
+    // The route the character must go to arrive at the destination.
+    // We always store the full lenght of a potential movement, and for the classical
+    // material there will be no overlapping squares in the paths (I think). 
+    paths: list<path_base>;
+
+    // ------
+    // TODO:
+    // ------
+    // These are used in the client, but not implemented server side. 
+
+    // Only the king can make a castle, so this is usually null (even for kings)
+    //castles: list<potential_castle>? = null;
+
+    // A theoretical generalization, but currently only pawns ever use this.
+    // When pawn makes a double move, there will be ONE square that's vulnerable to "en passant" 
+    // during opponent's turn. We must remember this 
+    //vulnerable_paths: list<path_base>? = null;
+
+    // Related to the above, but here we keep track of what of the opponent's vulnerable squares
+    // (from prev turn) we can attack with this move tree.
+    //attackable_vulns: pre_vuln_context? = null;
+}

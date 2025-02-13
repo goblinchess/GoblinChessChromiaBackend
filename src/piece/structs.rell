@@ -1,0 +1,27 @@
+
+
+// The alignment of a piece/vulnerable or a player
+enum alignment {
+    WHITE, // The white player
+    BLACK, // The black player
+    NEUTRAL, // A neutral object, like an obstacle
+    NOTHING // Sometimes used to indicate an empty square
+}
+
+// Often it's not enough to know where a piece is,
+// we must also know its alignment.
+struct with_pos_and_alignment {
+    pos: integer;
+    alignment: alignment;
+    // has_moved: boolean; // After the piece can no longer castle (let client handle this)
+}
+
+// What is on the square?
+enum square_status {
+    FREE,
+    BLACK_PIECE,
+    WHITE_PIECE,
+    NEUTRAL_PIECE, // TODO: Version 2.0
+    OBSTACLE,
+    OUT_OF_BOARD // Can mean many things, but the original meaning is that the square does not exist.
+}

@@ -1,0 +1,64 @@
+// -------------------------------------
+// Generic Functions 
+// -------------------------------------
+
+// Returns the last seen turn type and its number.
+function get_current_turn(game: game): (turn_type: turn_type, number: integer) {
+    return (ct: current_turn, t: turn)@ {
+        ct.game == game,
+        ct.current_turn == t
+    } (t.turn_type, t.number);
+}
+
+// Creates the first turn for a game
+function create_first_turn(game: game, player_game: player_game): turn {
+
+    // Validation 
+    val check = turn@? {game};
+    require(check != null, "Game already has a turn");
+
+    // Creation 
+    val new_turn =create turn(
+        .game = game,
+        .number = 0,
+        .turn_type = turn_type.FRESH_GAME, // This is the turn BEFORE anything has happened.
+        .created_by = player_game
+    );
+
+    // First turn we must create this
+    create current_turn(.current_turn = new_turn, .game = game);
+
+    return new_turn;
+}
+
+// -------------------------------------
+// When we create a (non first) turn, 
+// we must also send the TURN_TYPE, 
+// and the PLAYER_COLOR (that is the color of the player that is playing).
+// These values must be validated, to detect if the client playing 
+// out of turn.
+// -------------------------------------
+function create_turn(game: game, created_by: player_game, new_turn_type: turn_type, is_white: boolean): turn {
+
+    // Validation 
+    val (t_type: turn_type, t_number: integer) = get_current_turn(game);
+
+    val err: text? = verify_old_turn_type_new_turn_type(game, created_by, t_type, new_turn_type, t_number, is_white);
+    if (err != null) {
+        require(false, err);
+    }
+
+    // Creation
+    val new_turn = create turn(
+        .game = game,
+        .number = t_number + 1,
+        .turn_type = new_turn_type,
+        .created_by = created_by
+    );
+
+    update current_turn@ {game} (.current_turn = new_turn);
+
+    return new_turn;
+}
+
+

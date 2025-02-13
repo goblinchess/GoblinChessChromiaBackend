@@ -1,0 +1,3 @@
+//import ^.card.*;
+import ^.*; // All from parent
+import ^.card.*; // Only to get the ActiveDoubleMove 

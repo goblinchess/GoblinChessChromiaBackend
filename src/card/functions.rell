@@ -1,0 +1,60 @@
+// Keeps track of how many picks each card type needs
+// And what type of pick it should be
+function get_picks_for_card(c_type: card_type): list<card_pick_type> {
+    when (c_type) {
+        FROG -> return [card_pick_type.PIECE_SQUARE];
+        TURN_TO_STONE -> return [card_pick_type.PIECE_SQUARE];
+        POTION -> return [card_pick_type.PIECE_SQUARE];
+        KNIGHTED -> return [card_pick_type.PIECE_SQUARE];
+        JUMP -> return [card_pick_type.PIECE_SQUARE, card_pick_type.ANY_SQUARE]; // The second square is the Jump destination (could be empty or occupied)
+        SWITCH_PLACE -> return [card_pick_type.PIECE_SQUARE, card_pick_type.PIECE_SQUARE];
+        WALL -> return [card_pick_type.FREE_SQUARE, card_pick_type.FREE_SQUARE, card_pick_type.FREE_SQUARE];
+        PORTAL -> return [card_pick_type.PIECE_SQUARE, card_pick_type.FREE_SQUARE]; // Actually only 1 pick, but here we need to know where the portal leads, and we PRETEND that the destination is a pick
+        RESURRECT -> return [];
+        DOUBLE_MOVE -> return [];
+    }
+}
+
+// "true" if this card will cause the player to skip their move
+function will_card_skip_move(c_type: card_type): boolean {
+    when (c_type) {
+        PORTAL -> return true; // The portal move replaces the regular move
+        DOUBLE_MOVE -> return true; // Have to skip move before double move
+        SWITCH_PLACE -> return true; // The switch replaces the regular move
+        else -> return false;
+    }
+}
+
+// Given a turn number, return the card type that was played on that turn
+function get_card_type_for_turn_number(t_number: integer): card_type? {
+    return (t: turn, c: card) @? {
+        t.number == t_number,
+        c.turn == t
+    } (c.card_type);
+}
+
+// Takes the PLAYER_GAME as parameter and returns the TURN NUMBER
+// or null if nothing found 
+function look_for_active_double_move(player_game: player_game): integer? {
+
+    return (a: active_double_move, c: card) @? { // Can only be one active double at a time
+        a.owned_by == player_game,
+        a.card == c
+        } (c.turn.number);
+}
+
+/*
+// Keeps track of how many picks each card type needs
+// type: map<card_type, integer>
+val TYPES_TO_PICKS_MAP: map<card_type, integer> = [ 
+        FROG: 1,
+        TURN_TO_STONE: 1,
+        POTION: 1,
+        KNIGHTED: 1,
+        JUMP: 2,
+        SWITCH_PLACE: 2,
+        WALL: 3,
+        PORTAL: 2, // Actually 1, but here we need to know where the portal leads, and we PRETEND that the destination is a pick
+        RESURRECT: 0,
+        DOUBLE_MOVE: 0
+    ]; */

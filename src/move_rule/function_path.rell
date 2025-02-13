@@ -1,0 +1,28 @@
+
+
+
+// ----------------------------------------------------------------------------
+// Constructors 
+// ----------------------------------------------------------------------------
+// Building JUMPS is a bit different.
+
+function path_jump_move(tmp_path: list<integer>): path_base {
+    require(tmp_path.size() == 2, "Jump move path must be 2 squares long, is: " + tmp_path.size());
+    return path_base(tmp_path, path_type.JUMP_MOVE);
+}
+
+function path_jump_attack(tmp_path: list<integer>): path_base {
+    require(tmp_path.size() == 2, "Jump attack path must be 2 squares long, is: " + tmp_path.size());
+    val new_path: list<integer> = [tmp_path[0], tmp_path[1]]; // We only need first and last
+    return path_base(tmp_path, path_type.JUMP_ATTACK);
+}
+
+function path_jump_move_2(start_pos: integer, end_pos: integer): path_base {
+    val new_path: list<integer> = [start_pos, end_pos]; // We only need first and last
+    return path_base(new_path, path_type.JUMP_MOVE);
+}
+
+function path_jump_attack_2(start_pos: integer, end_pos: integer): path_base {
+    val new_path: list<integer> = [start_pos, end_pos]; // We only need first and last
+    return path_base(new_path, path_type.JUMP_ATTACK);
+}

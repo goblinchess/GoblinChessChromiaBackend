@@ -1,0 +1,70 @@
+// Represents a human player
+entity player {
+    key signer: pubkey; // The public key used to sign transactions. 
+    key name: text; // Player's username
+    mutable games_played: integer;
+    mutable games_won: integer;
+    mutable games_lost: integer;
+    mutable games_drawn: integer;
+    mutable elo_rating: integer;
+}
+
+// Represents game configuration
+enum game_type {
+    SPEED_5_CHAOTIC,
+    SPEED_10_CHAOTIC,
+    SPEED_5_CLASSIC,
+    SPEED_10_CLASSIC
+}
+
+// Represents a game state
+entity game {
+    index white_player: player;
+    index black_player: player;
+    index game_type: game_type;
+    mutable current_turn: integer;
+    mutable is_finished: boolean;
+    mutable is_draw: boolean;
+    created_at: timestamp;
+}
+
+// One for each player in a game 
+entity player_game {
+    index player: player;
+    index game: game;
+    key player, game;
+    is_white: boolean;
+    mutable is_finished: boolean;
+    mutable cards_left: integer; // Should never go negative
+}
+
+// Will be create after the game is finished
+entity player_game_stats {
+    key player_game: player_game;
+    index player: player; // Shortcut FK, not strictly necessary
+    player_won: boolean;
+    player_draw: boolean;
+    new_elo_rating: integer;
+    player_seed: byte_array; // The personal seed of the player. Only known at the end of the game.
+}
+
+// Represents a player waiting in the matchmaking lobby
+entity lobby {
+    index player: player;
+    game_type: game_type;
+    key player, game_type; 
+    mutable last_heartbeat: timestamp;
+}
+
+
+// -------------------------------------
+// Structs
+// -------------------------------------
+
+// Board position is a square on the board
+struct board_position {
+    x: integer;
+    y: integer;
+}
+
+

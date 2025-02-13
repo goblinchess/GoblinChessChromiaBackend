@@ -1,0 +1,56 @@
+
+
+function translate_integer_pos_to_square_pos(pos: integer): square_pos {
+    val x: integer = pos % 8;
+    val y: integer = pos / 8;
+    return square_pos(x, y);
+}
+
+function pos_to_int(pos: square_pos): integer {
+    return pos.x + (pos.y * 8);
+}
+
+function pos_is_out_of_board_int(pos: integer): boolean {
+    val square_pos = translate_integer_pos_to_square_pos(pos);
+    return pos_is_out_of_board(square_pos);
+}
+
+function pos_is_out_of_board(pos: square_pos): boolean {
+    return pos.x < 0 or pos.y < 0 or pos.x > 7 or pos.y > 7;
+}
+
+// Returns a new position based on the previous position and a directional shift
+function pos_calc_from_directional_shift(
+    pos: integer, 
+    shift: integer, 
+    dir: integer
+    ): square_pos?  {
+
+    val square_pos = translate_integer_pos_to_square_pos(pos);
+    val x_org: integer = square_pos.x;
+    val y_org: integer = square_pos.y;
+
+    when (dir) {
+        // Forward (Y is forward)
+        0 -> return square_pos(x = x_org, y = y_org + shift);
+        // Diagonal forward + right
+        1 -> return square_pos(x = x_org + shift, y = y_org + shift);
+        // Right (X is right)
+        2 -> return square_pos(x = x_org + shift, y = y_org);
+        // Diagonal backwards + right
+        3 -> return square_pos(x = x_org + shift, y = y_org - shift);
+
+        // Backwards
+        4 -> return square_pos(x = x_org, y = y_org - shift);
+        // Diagonal backwards + left
+        5 -> return square_pos(x = x_org - shift, y = y_org - shift);
+        // Left
+        6 -> return square_pos(x = x_org - shift, y = y_org);
+        // Diagonal forward + left
+        7 -> return square_pos(x = x_org - shift, y = y_org + shift);
+        else -> {
+            print("Don't know direction " + dir);
+            return null;
+        }
+    }
+}

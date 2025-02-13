@@ -1,0 +1,13 @@
+
+
+
+// This is only safe to use for pieces. 
+// Since obstacles should have SQUARE_STATUS.OBSTACLE.
+function align_piece_to_square_status(align: alignment): square_status {
+    when(align) {
+        alignment.WHITE -> return square_status.WHITE_PIECE;
+        alignment.BLACK -> return square_status.BLACK_PIECE;
+        alignment.NEUTRAL -> return square_status.NEUTRAL_PIECE; 
+        alignment.NOTHING -> return square_status.FREE;
+    }
+}

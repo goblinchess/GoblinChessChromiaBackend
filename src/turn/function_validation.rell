@@ -1,0 +1,202 @@
+
+// -------------------------------------
+// Validation 
+// -------------------------------------
+
+// Main function
+// Returns an error message if the old turn type is not valid for the new turn type.
+function verify_old_turn_type_new_turn_type(game: game, player_game: player_game, old_turn_type: turn_type, new_turn_type: turn_type, old_turn_number: integer, is_white: boolean): text? {
+    if (is_white) {
+        return validate_white_turn(game, player_game, old_turn_type, new_turn_type, old_turn_number);
+
+    } else {
+        return validate_black_turn(game, player_game, old_turn_type, new_turn_type, old_turn_number);
+    }
+}
+
+// -------------------------------------
+// White player can either
+// 1. play a card
+// 2. move
+// 3. create a NEUTRAL_MOVE_1_?.
+// 
+// The reason we let the PLAYER create neutral moves is that usually
+// the player will just skip these, but sometimes it will hijack them.
+//
+// (In v2.0 the neutral moves will be randomly generate by the player but validated 
+// in the end of the game)
+// -------------------------------------
+function validate_white_turn(game: game, player_game: player_game, old_turn_type: turn_type, new_turn_type: turn_type, old_turn_number: integer): text? {
+    when (old_turn_type) {
+        turn_type.FRESH_GAME -> { // Only happen once 
+            return validate_white_card(new_turn_type);
+        }
+        turn_type.NEUTRAL_MOVE_2 -> { // Doesn't happen in v1.0
+            return validate_white_card(new_turn_type);
+        }
+        turn_type.NEUTRAL_MOVE_2_SKIPPED -> { // Typical case
+            return validate_white_card(new_turn_type);
+        }
+        turn_type.NEUTRAL_MOVE_2_HIJACKED -> { // Unusual 
+            return validate_white_card(new_turn_type);
+        }
+        turn_type.WHITE_CARD -> { // Typical case
+            return validate_white_move(game, player_game, new_turn_type, old_turn_number);
+        }
+        turn_type.WHITE_CARD_SKIPPED -> { // Typical case
+            return validate_white_move(game, player_game, new_turn_type, old_turn_number);
+        }
+        turn_type.WHITE_MOVE -> {  // Typical case      
+            return validate_white_neutral(game, player_game, new_turn_type, old_turn_number);
+        }
+        turn_type.WHITE_MOVE_SKIPPED -> { // Unusual              
+            return validate_white_neutral(game, player_game, new_turn_type, old_turn_number);
+        }
+
+        else -> return "Invalid turn sequence for White player. Trying to play " + new_turn_type + " after " + old_turn_type;
+    }
+}
+
+// Black player
+// (Mirror image of White player)
+function validate_black_turn(game: game, player_game: player_game, old_turn_type: turn_type, new_turn_type: turn_type, old_turn_number: integer): text? {
+    when (old_turn_type) {
+        turn_type.NEUTRAL_MOVE_1 -> { // Doesn't happen in v1.0
+            return validate_black_card(new_turn_type);
+        }
+        turn_type.NEUTRAL_MOVE_1_SKIPPED -> {  // Typical case
+            return validate_black_card(new_turn_type);
+        }
+        turn_type.NEUTRAL_MOVE_1_HIJACKED -> { // Unusual 
+            return validate_black_card(new_turn_type);
+        }
+        turn_type.BLACK_CARD -> { // Typical case
+            return validate_black_move(game, player_game, new_turn_type, old_turn_number);
+        }
+        turn_type.BLACK_CARD_SKIPPED -> { // Typical case
+            return validate_black_move(game, player_game, new_turn_type, old_turn_number);
+        }
+        turn_type.BLACK_MOVE -> {  // Typical case      
+            return validate_black_neutral(game, player_game, new_turn_type, old_turn_number);
+        }
+        turn_type.BLACK_MOVE_SKIPPED -> { // Unusual       
+            return validate_black_neutral(game, player_game, new_turn_type, old_turn_number);
+        }
+        else -> return "Invalid turn sequence for Black player. Trying to play " + new_turn_type + " after " + old_turn_type;
+    }
+}
+
+// -------------------------------------
+// White
+// -------------------------------------
+
+function validate_white_card(new_turn_type: turn_type) {
+    if (new_turn_type == turn_type.WHITE_CARD or new_turn_type == turn_type.WHITE_CARD_SKIPPED) {
+        return null; // Valid
+    } else {
+        return "White player can only play WHITE_CARD_? after NEUTRAL_MOVE_2_?. Trying to play " + new_turn_type;
+    }
+}
+
+function validate_white_move(game: game, player_game: player_game, new_turn_type: turn_type, old_turn_number: integer) {
+    if (new_turn_type == turn_type.WHITE_MOVE) {
+        // Some cards will prevent the move.
+        return validate_executed_move(player_game, old_turn_number);
+    } else if (new_turn_type == turn_type.WHITE_MOVE_SKIPPED) {
+        // Can only skip if we played a double move card this turn
+        return validate_skipped_move(player_game, old_turn_number);
+    } else {
+        return "White player can only play WHITE_MOVE_? after WHITE_CARD_?. Trying to play " + new_turn_type;
+    }
+}
+
+function validate_white_neutral(game: game, player_game: player_game, new_turn_type: turn_type, old_turn_number: integer) {
+    if (new_turn_type == turn_type.NEUTRAL_MOVE_1 or new_turn_type == turn_type.NEUTRAL_MOVE_1_SKIPPED) {
+        return null; // Valid
+    } else if (new_turn_type == turn_type.NEUTRAL_MOVE_1_HIJACKED) {
+        // Only Double Move
+        return  validate_neutral_move_hijacked(player_game, old_turn_number);
+    } else {
+        return "White player can only create a NEUTRAL_MOVE_1_? turn after WHITE_MOVE_?. Trying to play " + new_turn_type;
+    }
+
+}
+
+// -------------------------------------
+// Black
+// -------------------------------------
+
+function validate_black_card(new_turn_type: turn_type) {
+    if (new_turn_type == turn_type.BLACK_CARD or new_turn_type == turn_type.BLACK_CARD_SKIPPED) {
+        return null; // Valid
+    } else {
+        return "Black player can only play BLACK_CARD_? after NEUTRAL_MOVE_1_?. Trying to play " + new_turn_type;
+    }
+}
+
+function validate_black_move(game: game, player_game: player_game, new_turn_type: turn_type, old_turn_number: integer) {
+    if (new_turn_type == turn_type.BLACK_MOVE) {
+        // Some cards will prevent the move.
+        return validate_executed_move(player_game, old_turn_number);
+    } else if (new_turn_type == turn_type.BLACK_MOVE_SKIPPED) {
+        // Can only skip if we played a double move card this turn
+        return validate_skipped_move(player_game, old_turn_number);
+    } else {
+        return "Black player can only play BLACK_MOVE_? after BLACK_CARD_?. Trying to play " + new_turn_type;
+    }
+}
+
+function validate_black_neutral(game: game, player_game: player_game, new_turn_type: turn_type, old_turn_number: integer) {
+    if (new_turn_type == turn_type.NEUTRAL_MOVE_2 or new_turn_type == turn_type.NEUTRAL_MOVE_2_SKIPPED) {
+        return null; // Valid
+    } else if (new_turn_type == turn_type.NEUTRAL_MOVE_2_HIJACKED) {
+        // Only Double Move
+        return  validate_neutral_move_hijacked(player_game, old_turn_number);
+    } else {
+        return "Black player can only create a NEUTRAL_MOVE_2_? turn after BLACK_MOVE_?. Trying to play " + new_turn_type;
+    }
+}
+
+// -------------------------------------
+// Double Move Validation
+// -------------------------------------
+
+function validate_executed_move(player_game: player_game, old_turn_number: integer): text? {
+    val card_type = get_card_type_for_turn_number(old_turn_number);
+    if (card_type == null) {
+        return null; // Most common case, no card was played
+    } else if (will_card_skip_move(card_type)) {
+        return "The card " + card_type + " does not allow the player to make a move.";
+    } else {
+        return null; // Valid
+    }
+
+}
+
+// We can ONLY skip move if we played a double move card this turn.
+function validate_skipped_move(player_game: player_game, old_turn_number: integer): text? {
+    val card_type = get_card_type_for_turn_number(old_turn_number);
+    if (card_type == null) {
+        return "Player can only issue ?_MOVE_SKIPPED if she played a card this turn.";
+    } else if (will_card_skip_move(card_type)) {
+        return null; // Valid
+    } else {
+        return "The card " + card_type + " does not allow ?_MOVE_SKIPPED.";
+    }
+}
+
+// We can ONLY hijack a neutral move if we played a double move card last turn.
+function validate_neutral_move_hijacked(player_game: player_game, old_turn_number: integer): text? {
+    val double_move_turn_number = look_for_active_double_move(player_game);
+    if (double_move_turn_number == null) { 
+        return "Player can only create a NEUTRAL_MOVE_?_HIJACKED if Double Move card was played last turn (Null).";
+    } else {
+        if (double_move_turn_number < old_turn_number ) { // Played at some prevous turn, doesn't matter how long ago.
+            return null; // Valid
+        } else {
+            return "Player can only create a NEUTRAL_MOVE_?_HIJACKED if Double Move card was played last turn." +
+                " old_turn_number: " + old_turn_number +
+                ", double_move_turn_number: " + double_move_turn_number;
+        }
+    }
+}
