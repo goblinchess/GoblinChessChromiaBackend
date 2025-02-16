@@ -1,4 +1,3 @@
-
 function move_tree_get_pos_status(move_tree, pos: integer): integer {
     // Check if position is in attacks list
     if (move_tree.attackable_sqs.contains(pos)) {
@@ -21,3 +20,87 @@ function move_tree_get_pos_status(move_tree, pos: integer): integer {
     log("  move_tree_get_pos_status() - Didn't find " + pos + " anywhere in the tree");
     return 0; // Not found
 }
+
+// ---------------------------
+// Builders
+// ---------------------------
+
+// Returns a new [move_tree] which is a merge of the two trees.
+// Can handle nulls.
+function move_tree_merge(mt1: move_tree?, mt2: move_tree?): move_tree? {
+    // If both are null, return null
+    if (mt1 == null and mt2 == null) return null;
+    
+    // If mt1 is null, return mt2
+    if (mt1 == null) return mt2;
+    
+    // If mt2 is null, return mt1
+    if (mt2 == null) return mt1;
+    
+    // Both are non-null, merge them
+    return move_tree_merge_internal(mt1, mt2);
+}
+
+
+// Returns a new [move_tree] which is a merge of the two trees.
+// Warn: Don't call this if either [move_tree] is null.
+function move_tree_merge_internal(mt1: move_tree, mt2: move_tree): move_tree {
+    // -----------------------------
+    // 1. Start pos 
+    // -----------------------------
+    require(mt1.start_pos == mt2.start_pos, "Start positions do not match: " + mt1.start_pos + " != " + mt2.start_pos);
+    val start_pos = mt1.start_pos;
+    
+    // -----------------------------
+    // 2. Merge moves
+    // -----------------------------
+    // Combine normal moves from both trees
+    val moves_normal = set<integer>();
+    moves_normal.add_all(mt1.moves_normal);
+    moves_normal.add_all(mt2.moves_normal);
+    
+    // Combine harmless moves from both trees
+    val moves_harmless = set<integer>();
+    moves_harmless.add_all(mt1.moves_harmless);
+    moves_harmless.add_all(mt2.moves_harmless);
+
+    // Combined "Normal" and "Harmless" (just a cache)
+    val all = set<integer>();
+    all.add_all(moves_normal);
+    all.add_all(moves_harmless);
+    
+    // -----------------------------
+    // 3. Merge attacks
+    // -----------------------------
+    val attackable_sqs = set<integer>();
+    attackable_sqs.add_all(mt1.attackable_sqs);
+    attackable_sqs.add_all(mt2.attackable_sqs);
+    
+    // -----------------------------
+    // 4. Merge protections
+    // -----------------------------
+    val protectable_sqs = set<integer>();
+    protectable_sqs.add_all(mt1.protected_sqs);
+    protectable_sqs.add_all(mt2.protected_sqs);
+    
+    // -----------------------------
+    // 5. Merge paths
+    // -----------------------------
+    val paths = list<path_base>();
+    paths.add_all(mt1.paths);
+    paths.add_all(mt2.paths);
+    
+    return move_tree(
+        start_pos = start_pos,
+        moves_normal = moves_normal,
+        moves_harmless = moves_harmless,
+        moves_all = all,
+        attackable_sqs = attackable_sqs,
+        protected_sqs = protectable_sqs,
+        paths = paths
+    );
+}
+
+
+
+

@@ -21,7 +21,7 @@ entity vulnerable {
     is_obstacle: boolean; // If true, this vulnerable is an obstacle
 
     mutable color: alignment; // This can change via recruitment or resurrect 
-    mutable alive: boolean; // We keep dead/removed objects in the DB, to preserve the events. 
+    mutable is_alive: boolean; // We keep dead/removed objects in the DB, to preserve the events. 
 
     // For chaos mode we need hit points
     mutable start_hit_points: integer;

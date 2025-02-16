@@ -1,0 +1,47 @@
+// ----------------------------------------------------------------------------
+// Knight moves 
+// ----------------------------------------------------------------------------
+
+function knight_all_valid_moves(
+    board_positions: board_positions_all, 
+    pos: integer, 
+    align: alignment
+): move_tree {
+    val ptree = pre_tree();
+    
+    // Get all potential knight moves
+    val potential_moves = knight_all_potential_moves(pos);
+    
+    for (new_pos in potential_moves) {
+        val tmp_path = [pos]; // Initialize list with starting position
+        val new_pos_int = pos_to_int(new_pos);
+        rule_interpret_single_step_position(board_positions, align, new_pos_int, tmp_path, ptree, true);
+    }
+    
+    return move_tree_build(pos, ptree);
+}
+
+function knight_all_potential_moves(pos: integer): list<square_pos> {
+    val moves = list<square_pos>();
+    log ("Knight all potential moves: " + pos);
+    val curr_pos = translate_integer_pos_to_square_pos(pos);
+    
+    // Forward moves
+    moves.add(pos_x_and_y_shift(curr_pos, 1, 2));
+    moves.add(pos_x_and_y_shift(curr_pos, -1, 2));
+    
+    // Right moves
+    moves.add(pos_x_and_y_shift(curr_pos, 2, 1));
+    moves.add(pos_x_and_y_shift(curr_pos, 2, -1));
+    
+    // Backward moves
+    moves.add(pos_x_and_y_shift(curr_pos, 1, -2));
+    moves.add(pos_x_and_y_shift(curr_pos, -1, -2));
+    
+    // Left moves
+    moves.add(pos_x_and_y_shift(curr_pos, -2, 1));
+    moves.add(pos_x_and_y_shift(curr_pos, -2, -1));
+    log ("/Knight all potential moves: " + pos);
+    
+    return moves;
+}

@@ -1,7 +1,10 @@
 @test module;
 
 import ^^.*; // Import all the things from parent folder 
-
+import ^^.card.*;
+import ^^.piece.*;
+import ^^.move.*;
+import ^^.turn.*;
 
 function test_elo_draw_1() {
 
@@ -88,7 +91,7 @@ function test_lobby() {
 
 
     // ------------
-    // Create the players
+    log("Create the players");
     // ------------
      
     // All in one
@@ -98,7 +101,7 @@ function test_lobby() {
     rell.test.tx(create_player("Dave")).sign(rell.test.keypairs.dave).run();
 
     // ------------
-    // Check if players are created
+    log("Check if players are created");
     // ------------
     val players_after: list<rowid> = player@* {} (.rowid);
     assert_equals(players_after.size(), 4);
@@ -108,10 +111,130 @@ function test_lobby() {
     rell.test.tx(enter_lobby("SPEED_10_CLASSIC")).sign(rell.test.keypairs.charlie).run();
     rell.test.tx(enter_lobby("SPEED_5_CLASSIC")).sign(rell.test.keypairs.dave).run();
 
+    // Alice looks for 10 min match
     val match_10_mins = consume_lobby_entry(rell.test.keypairs.alice.pub, 0, "SPEED_10_CLASSIC");
-    assert_equals(match_10_mins, rell.test.keypairs.charlie.pub);
+    // ALice finds Charlie
+    val opp_player: pubkey = rell.test.keypairs.charlie.pub;
+    assert_equals(match_10_mins, opp_player);
 
+    // ------------
+    log("Alice creates a 10 min game with Charlie");
+    // ------------
+    rell.test.tx(create_game_via_lobby(opp_player, "SPEED_10_CLASSIC")).sign(rell.test.keypairs.alice).run();
+
+    // ------------
+    log("Alice looks for the game");
+    // ------------
+    val found_game: in_game_result? = in_game(rell.test.keypairs.alice.pub);
+    assert_not_null(found_game);
+    val alice_game = found_game;
+    val alice_white = alice_game.is_white;
+    var alice_color = "black";
+    var white_player = rell.test.keypairs.charlie;
+    var black_player = rell.test.keypairs.alice;
+    if (alice_white) {
+        alice_color = "white";
+        white_player = rell.test.keypairs.alice;
+        black_player = rell.test.keypairs.charlie;
+    }
+
+
+    assert_equals(alice_game.game_type, game_type.SPEED_10_CLASSIC);
+    assert_equals(alice_game.opponent_pubkey, opp_player);
+    assert_equals(alice_game.opponent_name, "Charlie");
+    assert_equals(alice_game.opponent_elo, 1200);
+    assert_equals(alice_game.current_turn, 0);
+
+    // ------------
+    log("New Game: Verify pieces");
+    // ------------
+    val pieces = get_my_living_pieces(alice_game.game_rowid, true);
+    assert_equals(pieces.size(), 16);
+    var out_str = alice_color + " pieces: ";
+    for (p in pieces) {
+        assert_true(p.is_alive);
+        assert_equals(p.color_str,"white");
+        assert_true(p.active_type_str == p.original_type_str);
+        out_str += p.active_type_str + "=" + p.position + "("+ p.remaining_hit_points + "), ";
+    }
+
+    log(out_str);
+
+    // ------------
+    log("Turn 1: White playes a card");
+    // ------------
+    val card_picks = [63]; // Turns black rook into frog
+    var last_seen_turn = 0;
+    rell.test.tx(play_card(alice_game.game_rowid, last_seen_turn, "FROG", 1, card_picks)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    // ------------
+    // White moves
+    // ------------
+    // First we try a few invalid moves
+    val bishop_type = "BISHOP";
+    val knight_type = "KNIGHT";
+
+    // ------------
+    log("Fail A. No piece at position");
+    // ------------
+    val wrong_orig_pos = 22; // Nothing on this position
+    val wrong_to_pos = 23; 
+    val failed_due_to_wrong_pos = assert_fails(move_peaceful_inner(white_player.pub, alice_game.game_rowid, last_seen_turn, wrong_orig_pos, wrong_to_pos, bishop_type, false, null, false, false, null, null, 
+        * // Note, this star is what makes it work.
+        ));
+    val expected_wrong_pos: text = "No piece at position " + wrong_orig_pos;
+    assert_true(failed_due_to_wrong_pos.message.starts_with(expected_wrong_pos));
+
+    // ------------
+    log("Fail B. Wrong piece_type at position");
+    // ------------
+    val knight_orig_pos = 1; // b1 (correct)
+    val knight_to_pos = 16;  // a3 (Valid move)
+    val failed_wrong_type = assert_fails(move_peaceful_inner(white_player.pub, alice_game.game_rowid, last_seen_turn, knight_orig_pos, knight_to_pos, bishop_type, false, null, false, false, null, null, 
+        * // Note, this star is what makes it work.
+    ));
+    val expected_wrong_type: text = "Expected piece to have active type KNIGHT but got BISHOP";
+    assert_true(failed_wrong_type.message.starts_with(expected_wrong_type));
+
+    // ------------
+    log("Fail C. Invalid move pattern");
+    // ------------
+    val knight_to_wrong_pos = 17;  // b3 (Invalid move)
+    val failed_wrong_move = assert_fails(move_peaceful_inner(white_player.pub, alice_game.game_rowid, last_seen_turn, knight_orig_pos, knight_to_wrong_pos, knight_type, false, null, false, false, null, null, 
+        * // Note, this star is what makes it work.
+    ));
+    log(failed_wrong_move.message);
+    val expected_wrong_move: text = "Illegal move";
+    assert_true(failed_wrong_move.message.starts_with(expected_wrong_move));
+
+
+    // ------------
+    log("Fail D. Bishop cannot move to own piece!");
+    // ------------
+    val bishop_orig_pos = 2; // c1 (correct)
+    val bishop_to_pos = 9; // Vaild move pattern, but pawn here, cannot move this way
+    val failed_move_on_friend = assert_fails(move_peaceful_inner(white_player.pub, alice_game.game_rowid, last_seen_turn, bishop_orig_pos, bishop_to_pos, bishop_type, false, null, false, false, null, null, 
+        * // Note, this star is what makes it work.
+    ));
+    val expected_move_on_friend: text = "Illegal move";
+    assert_true(failed_move_on_friend.message.starts_with(expected_move_on_friend));
+
+    // ------------
+    log("Turn 2: White makes a valid move Kn b1->a3");
+    // ------------
+    rell.test.tx(move_peaceful(alice_game.game_rowid, last_seen_turn, knight_orig_pos, knight_to_pos, knight_type, false, null, false, false, null, null)).sign(white_player).run();
+
+
+    last_seen_turn += 1;
+
+    // ------------
+    // Black moves
+    // ------------
+    
 }
+
+
 
 /*
 // Not testing anything, just printing the numbers

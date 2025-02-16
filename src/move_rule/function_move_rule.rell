@@ -72,6 +72,7 @@ function rule_interpret_single_step_position(
     pre_tree: pre_tree,
     is_jump: boolean
 ) {
+    //log ("rule_interpret_single_step_position(" + new_pos + ")");
     val ss = board_get_square_status_int(board_positions, new_pos);
     
     when(ss) {
@@ -102,6 +103,9 @@ function rule_interpret_single_step_position(
             pre_tree.attackable_sqs.add(new_pos);
             tmp_path.add(new_pos);
             _add_attack_to_paths(tmp_path, is_jump, pre_tree.paths);
+        }
+        else -> {
+            // Out of board, do nothing
         }
     }
 }

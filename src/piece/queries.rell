@@ -1,0 +1,46 @@
+
+
+
+// Get all living pieces for a player 
+query get_my_living_pieces(game_id: integer, is_white: boolean) :list<piece_info> {
+
+    var my_color = alignment.BLACK;
+    var my_color_str = "black";
+    if (is_white) {
+        my_color = alignment.WHITE;
+        my_color_str = "white";
+    }
+
+    val g_rowid = rowid(game_id);
+    val res_list = (g: game, pi: piece, v: vulnerable)@* {
+        g.rowid == g_rowid,
+        g == v.game,
+        v == pi.vulnerable,
+        v.color == my_color
+    } (v_rowid = v.rowid, v.is_alive, v.position, v.is_obstacle, v.start_hit_points, v.remaining_hit_points, v.strength, v.defence, p_rowid = pi.rowid, pi.original_type, pi.active_type);
+
+    val piece_info_list = list<piece_info>();
+
+    for (res in res_list) {
+
+        val piece_info = piece_info(
+            v_rowid = res.v_rowid.to_integer(),
+            is_alive = res.is_alive,
+            color_str = my_color_str,
+            position = res.position,
+            is_obstacle = res.is_obstacle,
+            start_hit_points = res.start_hit_points,
+            remaining_hit_points = res.remaining_hit_points,
+            strength = res.strength,
+            defence = res.defence,
+            p_rowid = res.p_rowid.to_integer(),
+            original_type_str = res.original_type.name,
+            active_type_str = res.active_type.name
+        );
+
+        piece_info_list.add(piece_info);
+    }
+
+    return piece_info_list;
+}
+

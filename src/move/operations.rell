@@ -1,5 +1,6 @@
+
 // Move a piece to a empty square.
-operation peaceful_move(
+operation move_peaceful(
     game_id: integer,
     last_seen_turn: integer, // What turn the client last saw.
     from_position: integer,
@@ -8,7 +9,7 @@ operation peaceful_move(
     given_is_knighted: boolean, // If the piece is KNIGHTED
 
     // Check and mate status
-    is_check: boolean, // Client thinks this is a check
+    checking_piece: integer?, // Client claims this piece is checking opponent's king (easy to verify)
     is_checkmate: boolean, // Client thinks this is a checkmate
     is_stalemate: boolean, // Client thinks this is a stalemate
 
@@ -22,28 +23,73 @@ operation peaceful_move(
     // -----------    
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
+
+    // We do it this way so we can test failure cases.
+    move_peaceful_inner(
+        caller_pubkey, 
+        game_id, 
+        last_seen_turn, 
+        from_position, 
+        to_position, 
+        piece_type_str, 
+        given_is_knighted, 
+        checking_piece, 
+        is_checkmate, 
+        is_stalemate, 
+        castle_rook_from, 
+        castle_rook_to);
+}
+
+
+function move_peaceful_inner(
+    caller_pubkey: pubkey,
+    game_id: integer,
+    last_seen_turn: integer, // What turn the client last saw.
+    from_position: integer,
+    to_position: integer,
+    piece_type_str: text, // The type of piece we are moving
+    given_is_knighted: boolean, // If the piece is KNIGHTED
+
+    // Check and mate status
+    checking_piece: integer?, // Client claims this piece is checking opponent's king (easy to verify)
+    is_checkmate: boolean, // Client thinks this is a checkmate
+    is_stalemate: boolean, // Client thinks this is a stalemate
+
+    // Treat castle as special case
+    castle_rook_from: integer?, // If this is a castle, the rook's starting position.
+    castle_rook_to: integer? // If this is a castle, the rook's ending position.
+) {
+    // ----------------------------------------------    
+    // A. Verification
+    // ----------------------------------------------    
+    // No need to do any updates before we have verified everything.
+    // (But Chromia will roll back any updates if we get an error, so it's not critical that we do it this way.)
     
     // ----------------
-    // 1. Check player entity
+    // A.1. Check player entity
     // ----------------
+    log("Move A.1");
     val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
     require (minimal_game != null, "Player is not in a game, id:" + game_id);
 
     // ----------------
-    // 2. Is game is out of sync? 
+    // A.2. Is game is out of sync? 
     // ----------------
+    log("Move A.2");
     val curr_turn = minimal_game.game.current_turn;
     require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
 
     // ----------------
-    // 3. Validate positions
+    // A.3. Validate positions
     // ----------------
+    log("Move A.3");
     require(not pos_is_out_of_board_int(from_position) , "Invalid board position " + from_position + ", id:" + game_id);
     require(not pos_is_out_of_board_int(to_position) , "Invalid board position " + to_position + ", id:" + game_id);
 
     // ----------------
-    // 4. Verify piece type
+    // A.4. Verify piece type and position
     // ----------------
+    log("Move A.4: " + piece_type_str + " at " + from_position);
     val p_type: piece_type = piece_type.value(piece_type_str);
     val p: piece? = piece_get_via_owner_and_position(minimal_game.player_game, from_position);
     require(p != null, "No piece at position " + from_position + ", id:" + game_id);
@@ -55,12 +101,15 @@ operation peaceful_move(
     }
 
     val (is_knighted: boolean, active_type: piece_type, org_type: piece_type) = piece_get_data(p);
+    log("Move A.4: " + active_type + " " + p_type);
     require(active_type == p_type, "Expected piece to have active type " + active_type + " but got " + piece_type_str + ", id:" + game_id);
     require(given_is_knighted == is_knighted, "KNIGHTED status mismatch, given: " + given_is_knighted + " but got " + is_knighted + ", id:" + game_id);
 
     // ----------------
-    // 5. Verify if move is legal
+    // A.5. Verify if move is legal
     // ----------------
+    log("Move A.5");
+    // Complex verification (still easier than check mate).
     var is_castle = false;
     if (castle_rook_from != null and castle_rook_to != null) { 
         // 5.a) Only moronic validation for costling, leave the rest to the client.
@@ -72,14 +121,18 @@ operation peaceful_move(
         val board: list<with_pos_and_alignment> = piece_get_all_vulnerables(minimal_game.game); 
         val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, align);
         val board_positions_all = build_board_positions_all(minimal_game.game, board, portals);
-        val m_tree: move_tree? = rules_get_all_valid_moves(
+        log ("Move A.5.1 - calc move trees ");
+        val (ground_m_tree: move_tree?, jump_m_tree: move_tree?) = rules_get_all_valid_moves(
             board_positions_all, 
             p_type,
             is_knighted,
             from_position,
             align
         );
-        require(m_tree != null, "No move tree found, cannot move " + piece_type_str + " from " + from_position + " to " + to_position + ", id:" + game_id);
+        log ("Move A.5.2 - move trees done ");
+        require(ground_m_tree != null or jump_m_tree != null, "No move tree found, cannot move " + piece_type_str + " from " + from_position + " to " + to_position + ", id:" + game_id);
+        val m_tree = move_tree_merge(ground_m_tree, jump_m_tree);
+        require(m_tree != null, "Failed merge?");
 
         val found_move = move_tree_get_pos_status(m_tree, to_position);
         require(found_move > 0, "Illegal move: " + piece_type_str + " from " + from_position + " to " + to_position + ", id:" + game_id);
@@ -87,34 +140,49 @@ operation peaceful_move(
     }
 
     // ----------------
-    // 6. Verify Check and Mate status
+    // A.6. Verify Check and Mate status
     // ----------------
+    log("Move A.6");
+    // Is this a check?
+
+    var is_check = false;
+    if (checking_piece != null) {
+        // Pretty easy to verify, since we just get the move tree for the piece 
+        //and see if it touches the opponent's king.
+
+
+        // TODO: Implement this
+        is_check = true;
+    }
+
+
+
     // TODO: Done in client, but could be expensive to repeat here?
 
     log("Move passed verification, game_id: " + game_id + " type: " + piece_type_str + " from: " + from_position + " to: " + to_position);
 
-    // -----------    
-    // Updates 
-    // -----------    
+    // ----------------------------------------------    
+    // B. Updates 
+    // ----------------------------------------------    
     var new_turn_type = turn_type.BLACK_MOVE;
     if (minimal_game.is_white) { 
         new_turn_type = turn_type.WHITE_MOVE;
     }
 
     // ----------------
-    // 1. Create the turn record
+    // B.1. Create the turn record
     // ----------------
     // Do this FIRST since lots of verification in here.
-    val new_turn = create_turn(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
+    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
 
     // ----------------
-    // 2. Update piece position
+    // B.2. Update piece position
     // ----------------
     // (Really simple for peaceful moves)
     update p.vulnerable (.position = to_position);
 
     // ----------------
-    // 3. Create move entity
+    // B.3. Create move entity
     // ----------------
     create move(
         turn = new_turn, 
@@ -127,7 +195,7 @@ operation peaceful_move(
     );
 
     // ----------------
-    // 4. Move to next turn
+    // B.4. Move to next turn
     // ----------------
     update minimal_game.game (.current_turn = new_turn.number);
 

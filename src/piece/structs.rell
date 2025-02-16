@@ -25,3 +25,23 @@ enum square_status {
     OBSTACLE,
     OUT_OF_BOARD // Can mean many things, but the original meaning is that the square does not exist.
 }
+
+
+// Used to return information about a piece
+struct piece_info {
+    // From Vulnerable
+    v_rowid: integer; // Usually we refer to objects via position (this is for debugging)
+    is_alive: boolean;
+    color_str: text;
+    position: integer;
+    is_obstacle: boolean;
+    start_hit_points: integer;
+    remaining_hit_points: integer;
+    strength: integer;
+    defence: integer;
+
+    // From Piece
+    p_rowid: integer; // Usually we refer pieces via position (this is for debugging)
+    original_type_str: text;
+    active_type_str: text;
+}

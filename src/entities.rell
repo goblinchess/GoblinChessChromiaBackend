@@ -62,9 +62,11 @@ entity lobby {
 // -------------------------------------
 
 // Board position is a square on the board
+/*
 struct board_position {
     x: integer;
     y: integer;
 }
+*/
 
 

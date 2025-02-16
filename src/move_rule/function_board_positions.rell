@@ -93,7 +93,9 @@ function board_get_square_status(board_positions_all, pos: square_pos): square_s
 }
 
 function board_get_square_status_int(board_positions_all, pos: integer): square_status {
-    require(not pos_is_out_of_board_int(pos), "Out of board " + pos);
+    if (pos_is_out_of_board_int(pos)) {
+        return square_status.OUT_OF_BOARD;
+    }
     
     if (board_positions_all.board_characters.contains(pos)) {
         val found = board_positions_all.board_characters[pos];

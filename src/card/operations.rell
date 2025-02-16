@@ -48,20 +48,21 @@ operation play_card(
         if (maybe_piece != null) {
             require(expected_p_type == card_pick_type.PIECE_SQUARE or expected_p_type == card_pick_type.ANY_SQUARE, 
                 "Expected pick at pos " + i + " to be type " + expected_p_type + " but found a piece at position " + given_pos + ".");
-            pick_piece_map[given_pos] = maybe_piece;
+            pick_summary += "piece(" + given_pos + "), ";
+            pick_piece_map[i] = maybe_piece;
         } else {
             require(expected_p_type == card_pick_type.FREE_SQUARE or expected_p_type == card_pick_type.ANY_SQUARE, 
                 "Expected pick at pos " + i + " to be type " + expected_p_type + " but found a free square at position " + given_pos + ".");
+            pick_summary += "free(" + given_pos + "), ";
         }
 
-        pick_summary += expected_p_type + " ";
     }
 
     // 6. Check if player has cards left
     val cards_left = minimal_game.player_game.cards_left;
     require(cards_left > 0, "Player has no cards left");
     
-    log("Card passed verification, game: " + game_id +", type: " + card_type_str + " order number: " + card_order_number + " picks: " + card_picks);
+    log("Card passed verification, game: " + game_id +", type: " + card_type_str + " order number: " + card_order_number + " picks: " + pick_summary);
 
     // -----------    
     // Updates 
@@ -73,7 +74,7 @@ operation play_card(
 
     // 1. Create the turn record
     // Do this FIRST since lots of verification in here.
-    val new_turn = create_turn(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
+    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
 
     // 2. We create the card when it's played
     val new_card =create card(minimal_game.player_game, new_turn, card_type, card_order_number);
@@ -103,7 +104,6 @@ operation play_card(
             create card_pick_piece(card_pick, piece);
         }
     }
-
 
     // -----------    
     // 6. Implement the effect of the card
@@ -150,7 +150,7 @@ operation play_card(
 
     // 7. Move to next turn
     update minimal_game.game (.current_turn = new_turn.number);
-    log("Card played, game: " + game_id + " type: " + card_type_str + " order number: " + card_order_number + " picks: " + card_picks);
+    log("Card played, game: " + game_id + " type: " + card_type_str + " order number: " + card_order_number + " picks: " + pick_summary);
 }
 
 // -------------------------------------

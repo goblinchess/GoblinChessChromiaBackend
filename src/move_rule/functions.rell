@@ -10,22 +10,49 @@ function rules_get_all_valid_moves(
     is_knighted: boolean,
     pos: integer, 
     align: alignment
-): move_tree? {
+): (move_tree?, move_tree?) {
 
     when (piece_type) {
         IMMOBILE -> {
-            return null;
+            return (null, null);
         }
         BISHOP -> {
-
-            val moves = bishop_all_valid_moves(board_positions, pos, align);
+            val mtb = bishop_all_valid_moves(board_positions, pos, align);
             if (is_knighted) {
+                val mtk = knight_all_valid_moves(board_positions, pos, align);
+                return (mtb, mtk);
+            }
+            return (mtb, null);
+        }
+
+        KNIGHT -> {
+            val mtk = knight_all_valid_moves(board_positions, pos, align);
+            if (is_knighted) {
+                // NOTE! We use BISHOP
+                val mtb = bishop_all_valid_moves(board_positions, pos, align);
+                return (mtb, mtk);
                 // val moves_jump = knight_all_valid_moves(board_positions, pos, align);
             }
-            return moves;
+            return (null, mtk);
+        }
+        QUEEN -> {
+            require(1 == 2, "Not implemented");
+            return (null, null);
+        }
+        KING -> {
+            require(1 == 2, "Not implemented");
+            return (null, null);
+        }
+        PAWN -> {
+            require(1 == 2, "Not implemented");
+            return (null, null);
+        }
+        ROOK -> {
+            require(1 == 2, "Not implemented");
+            return (null, null);
         }
         else -> {
-            return null;
+            return (null, null);
         }
     }
 }

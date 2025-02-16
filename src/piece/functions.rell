@@ -10,7 +10,7 @@ function piece_get_via_game_and_position(game: game, pos: integer): piece? {
         v.game == game,
         p.vulnerable == v,
         v.position == pos,
-        v.alive == true // Only alive pieces are on the board.
+        v.is_alive == true // Only alive pieces are on the board.
     } (p);
 }
 
@@ -29,7 +29,7 @@ function piece_get_via_owner_and_position(owner: player_game, pos: integer): pie
 function piece_get_all_vulnerables(game: game): list<with_pos_and_alignment> {
     val vulns = (v: vulnerable)@* {
         v.game == game,
-        v.alive == true // Critial, since we keep dead objects around forever.
+        v.is_alive == true // Critial, since we keep dead objects around forever.
     } (v.position, v.color, v.is_obstacle); // Color should really be neutral, since it's not a piece.
 
     // Transform into structs
@@ -71,7 +71,7 @@ function obstacle_create(game: game, pos: integer): vulnerable {
         .position = pos,
         .is_obstacle = true,
         .color = alignment.NEUTRAL,
-        .alive = true, // Not exactly "alive" but at the board.
+        .is_alive = true, // Not exactly "alive" but at the board.
         .start_hit_points = 10,
         .remaining_hit_points = 10,
         .strength = 0, // Doesn't matter since cannot attack
@@ -91,7 +91,7 @@ function piece_create(g: game, owner: player_game, pos: integer, align: alignmen
         .position = pos,
         .is_obstacle = false,
         .color = align,
-        .alive = true, 
+        .is_alive = true, 
         .start_hit_points = hp,
         .remaining_hit_points = hp,
         .strength = 7,  // This exact mode, in chaos mode it's 2D6.
