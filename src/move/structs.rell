@@ -20,6 +20,17 @@ struct board_positions_all {
     portals: list<owned_portal> = []; // Keeps track of portals. Portals never go away.
 }
 
+// We use this struct while calculating if we can attack a vulnerable path from previous turn.
+// (= en passant).
+struct pre_vuln_context {
+    // A vulnerable path from previous turn (usually "null")
+    prev_turn_vuln_path: path_base?;
+    // Maps every vulnerable square (from previous turn) that can be 
+    // attacked this turn, to the piece that will be attacked. 
+    // Important to understand that the piece is NO LONGER on the square we're attacking.
+    attackable_old_vuln_square_to_piece: map<integer, with_pos_and_alignment> = map<integer, with_pos_and_alignment>();
+}
+
 
 // Holds all the moves for single piece on a single turn.
 // 
@@ -54,6 +65,16 @@ struct move_tree {
     // material there will be no overlapping squares in the paths (I think). 
     paths: list<path_base>;
 
+    // A theoretical generalization, but currently only pawns ever use this.
+    // When pawn makes a double move, there will be ONE square that's vulnerable to "en passant" 
+    // during opponent's turn. We must remember this 
+    mutable vulnerable_paths: list<path_base>? = null;
+
+    // Related to the above, but here we keep track of what of the opponent's vulnerable squares
+    // (from prev turn) we can attack with this move tree.
+    mutable attackable_vulns: pre_vuln_context? = null;
+
+
     // ------
     // TODO:
     // ------
@@ -62,12 +83,5 @@ struct move_tree {
     // Only the king can make a castle, so this is usually null (even for kings)
     //castles: list<potential_castle>? = null;
 
-    // A theoretical generalization, but currently only pawns ever use this.
-    // When pawn makes a double move, there will be ONE square that's vulnerable to "en passant" 
-    // during opponent's turn. We must remember this 
-    //vulnerable_paths: list<path_base>? = null;
 
-    // Related to the above, but here we keep track of what of the opponent's vulnerable squares
-    // (from prev turn) we can attack with this move tree.
-    //attackable_vulns: pre_vuln_context? = null;
 }

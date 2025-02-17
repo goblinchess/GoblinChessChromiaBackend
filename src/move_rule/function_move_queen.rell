@@ -1,25 +1,22 @@
-
 // ----------------------------------------------------------------------------
-// Bishop moves 
+// Queen moves 
 // ----------------------------------------------------------------------------
 
-function bishop_all_valid_moves(
+function queen_all_valid_moves(
     board_positions: board_positions_all, 
     pos: integer, 
     align: alignment
 ): move_tree {
     val ptree = pre_tree();
     
-    val i = 1;
-    for (count in range(0, 4)) { 
-        val dir = i + (count * 2); // Step by 2 to get odd numbers 1,3,5,7 on direction.
-        bishop_follow_path(board_positions, pos, align, dir, ptree);
+    for (dir in range(0, 8)) {
+        queen_follow_path(board_positions, pos, align, dir, ptree);
     }
-
+    
     return move_tree_build(pos, ptree);
 }
 
-function bishop_follow_path(
+function queen_follow_path(
     board_positions: board_positions_all, 
     pos: integer, 
     align: alignment, 
@@ -39,23 +36,21 @@ function bishop_follow_path(
     }
 }
 
-function bishop_all_jump_over_moves(
+function queen_all_jump_over_moves(
     board_positions: board_positions_all, 
     pos: integer, 
     align: alignment
 ): move_tree {
     val pre_tree = pre_tree();
     
-    val i = 1;
-    for (count in range(0, 4)) {
-        val dir = i + (count * 2); // Step by 2 to get odd numbers 1,3,5,7 on direction.
-        bishop_follow_path_jump_over(board_positions, pos, align, dir, pre_tree);
+    for (dir in range(0, 8)) {
+        queen_follow_path_jump_over(board_positions, pos, align, dir, pre_tree);
     }
     
     return move_tree_build(pos, pre_tree);
 }
 
-function bishop_follow_path_jump_over(
+function queen_follow_path_jump_over(
     board_positions: board_positions_all, 
     pos: integer, 
     align: alignment, 

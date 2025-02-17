@@ -26,3 +26,30 @@ function path_jump_attack_2(start_pos: integer, end_pos: integer): path_base {
     val new_path: list<integer> = [start_pos, end_pos]; // We only need first and last
     return path_base(new_path, path_type.JUMP_ATTACK);
 }
+
+
+// Returns the mid positions of a path.
+// If a path is 1,2,3,4 the "mid" is 2,3.
+function path_get_mid_positions(path: path_base): list<integer> {
+    
+    if (path.path_type == path_type.JUMP_MOVE or path.path_type == path_type.JUMP_ATTACK) {
+        return []; // Jumps don't have mid positions
+    } else {
+        // Must be ground move, could have mid positions.
+        val ret: list<integer> = [];
+
+        val len = path.path.size(); 
+        if (len > 2) {
+            val last_index = len - 1;
+            var idx = 1;
+            while (idx < last_index) {
+                ret.add(path.path[idx]);
+                idx++;
+            }
+        }
+
+        return ret;
+    }
+}
+
+

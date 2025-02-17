@@ -131,9 +131,9 @@ function _add_attack_to_paths(tmp_path: list<integer>, is_jump: boolean, paths: 
 // Returns a tuple of (continue, obstacle_found)
 function rule_interpret_path_position_pre_obstacle(
     board_positions: board_positions_all,
-    new_pos: integer
+    new_pos: square_pos 
 ): (boolean, boolean) {
-    val ss = board_get_square_status_int(board_positions, new_pos);
+    val ss = board_get_square_status(board_positions, new_pos);
     
     when(ss) {
         square_status.FREE -> {

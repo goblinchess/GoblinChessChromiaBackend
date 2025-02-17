@@ -1,0 +1,21 @@
+
+// Check if the given "checkPos" is part of the vulnerable path.
+// If so, return the destination of the vulnerable path.
+function pre_vuln_check_if_pos_part_of_vulnerable_path(ctx: pre_vuln_context, check_pos: integer): integer? {
+    // If there's no vulnerable path from previous turn, return null
+    if (ctx.prev_turn_vuln_path == null) return null;
+    
+    // Get the mid positions from the vulnerable path
+    val mid_positions = path_get_mid_positions(ctx.prev_turn_vuln_path);
+    
+    // Check if our position matches any of the mid positions
+    for (mid_pos in mid_positions) {
+        if (check_pos == mid_pos) {
+            // If we find a match, return the destination position
+            val len = ctx.prev_turn_vuln_path.path.size();
+            return ctx.prev_turn_vuln_path.path[len - 1]; // This is the last position in the path = the destination
+        }
+    }
+    
+    return null;
+}

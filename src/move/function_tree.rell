@@ -1,3 +1,34 @@
+
+// --------------------------------------------------------------------
+// Build
+// --------------------------------------------------------------------
+
+function move_tree_build(pos: integer, ptree: pre_tree): move_tree {
+
+    // Combined "Normal" and "Harmless" (just a cache)
+    val all = set<integer>();
+    all.add_all(ptree.movable_sqs);
+    all.add_all(ptree.moves_harmless);
+    
+    return move_tree(
+        start_pos = pos,
+        moves_normal = ptree.movable_sqs, 
+        moves_harmless = ptree.moves_harmless, 
+        moves_all = all, 
+        attackable_sqs = ptree.attackable_sqs, 
+        protected_sqs = ptree.protected_sqs, 
+        paths = ptree.paths
+        // We don't set these, since they are so unusual that we do it oustside of the builder
+        //vulnerable_paths = vuln_paths,
+        //attackable_vulns = attackable_vulns
+    );
+}
+
+
+// --------------------------------------------------------------------
+// Inspectors
+// --------------------------------------------------------------------
+
 function move_tree_get_pos_status(move_tree, pos: integer): integer {
     // Check if position is in attacks list
     if (move_tree.attackable_sqs.contains(pos)) {
@@ -20,6 +51,19 @@ function move_tree_get_pos_status(move_tree, pos: integer): integer {
     log("  move_tree_get_pos_status() - Didn't find " + pos + " anywhere in the tree");
     return 0; // Not found
 }
+
+
+function move_tree_has_attackable_vuln(mt: move_tree): boolean {
+    val avs = mt.attackable_vulns;
+    if (avs != null) {
+        if (avs.attackable_old_vuln_square_to_piece.size() > 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 
 // ---------------------------
 // Builders
@@ -89,6 +133,40 @@ function move_tree_merge_internal(mt1: move_tree, mt2: move_tree): move_tree {
     val paths = list<path_base>();
     paths.add_all(mt1.paths);
     paths.add_all(mt2.paths);
+
+    // -----------------------------
+    // 6. Merge vulnerable paths
+    // -----------------------------
+    val vuln_paths = list<path_base>();
+
+    val vp1 = mt1.vulnerable_paths;
+    if (vp1 != null and vp1.size() > 0) {
+        vuln_paths.add_all(vp1);
+    }
+    val vp2 = mt2.vulnerable_paths;
+    if (vp2 != null and vp2.size() > 0) {
+        vuln_paths.add_all(vp2);
+    }
+    
+    // -----------------------------
+    // 7. Merge attackable vulnerabilities
+    // -----------------------------
+    var attackable_vulns: pre_vuln_context? = null;
+    var found_attackable_vuln_collections = 0;
+    if (move_tree_has_attackable_vuln(mt1)) {
+        found_attackable_vuln_collections++;
+        attackable_vulns = mt1.attackable_vulns; // No mernge
+    }
+    if (move_tree_has_attackable_vuln(mt2)) {
+        found_attackable_vuln_collections++;
+        attackable_vulns = mt2.attackable_vulns; // No merge 
+    }
+    
+    // There can ever only be one vuln path to attack
+    // and for pawns, this can only have ONE vuln square,
+    // so it is impossible to have multiple hits for pawns,
+    // but to make this future proof we check for multiple hits anyway
+    require(found_attackable_vuln_collections < 2, "We have not implemented merge of attackable vuln collections.");
     
     return move_tree(
         start_pos = start_pos,
@@ -97,7 +175,9 @@ function move_tree_merge_internal(mt1: move_tree, mt2: move_tree): move_tree {
         moves_all = all,
         attackable_sqs = attackable_sqs,
         protected_sqs = protectable_sqs,
-        paths = paths
+        paths = paths,
+        vulnerable_paths = vuln_paths,
+        attackable_vulns = attackable_vulns
     );
 }
 
