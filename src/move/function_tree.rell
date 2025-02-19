@@ -1,4 +1,3 @@
-
 // --------------------------------------------------------------------
 // Build
 // --------------------------------------------------------------------
@@ -19,7 +18,7 @@ function move_tree_build(pos: integer, ptree: pre_tree): move_tree {
         protected_sqs = ptree.protected_sqs, 
         paths = ptree.paths
         // We don't set these, since they are so unusual that we do it oustside of the builder
-        //vulnerable_paths = vuln_paths,
+        //potential_vuln_paths = vuln_paths,
         //attackable_vulns = attackable_vulns
     );
 }
@@ -63,7 +62,6 @@ function move_tree_has_attackable_vuln(mt: move_tree): boolean {
 
     return false;
 }
-
 
 // ---------------------------
 // Builders
@@ -139,11 +137,11 @@ function move_tree_merge_internal(mt1: move_tree, mt2: move_tree): move_tree {
     // -----------------------------
     val vuln_paths = list<path_base>();
 
-    val vp1 = mt1.vulnerable_paths;
+    val vp1 = mt1.potential_vuln_paths;
     if (vp1 != null and vp1.size() > 0) {
         vuln_paths.add_all(vp1);
     }
-    val vp2 = mt2.vulnerable_paths;
+    val vp2 = mt2.potential_vuln_paths;
     if (vp2 != null and vp2.size() > 0) {
         vuln_paths.add_all(vp2);
     }
@@ -176,8 +174,42 @@ function move_tree_merge_internal(mt1: move_tree, mt2: move_tree): move_tree {
         attackable_sqs = attackable_sqs,
         protected_sqs = protectable_sqs,
         paths = paths,
-        vulnerable_paths = vuln_paths,
+        potential_vuln_paths = vuln_paths,
         attackable_vulns = attackable_vulns
+    );
+}
+
+
+
+// ---------------
+// Mutators
+// ---------------
+
+// Take a move_tree and remove the attacks
+// and since this piece cannot attack we make moves harmless too.
+function move_tree_remove_attacks_and_make_moves_harmless(mt: move_tree): move_tree {
+    
+    // Create new paths list containing only paths that end in moves
+    val filtered_paths = list<path_base>();
+    for (p in mt.paths) {
+        val len = p.path.size();
+        val last_pos = p.path[len - 1];
+        if (mt.moves_all.contains(last_pos)) {
+            filtered_paths.add(p);
+        }
+    }
+
+    val harmless = set<integer>();
+    harmless.add_all(mt.moves_all);
+
+    return move_tree(
+        start_pos = mt.start_pos,
+        moves_normal = set<integer>(), // Empty
+        moves_harmless = harmless,
+        moves_all = mt.moves_all, // Shouldn't change
+        attackable_sqs = set<integer>(), // Empty attacks
+        protected_sqs = set<integer>(),  // Empty protections
+        paths = filtered_paths
     );
 }
 

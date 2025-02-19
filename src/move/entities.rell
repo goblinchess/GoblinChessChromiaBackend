@@ -20,6 +20,7 @@ entity move {
     to_position: integer; // 0-63
 
     // Some extra info
+    is_castle: boolean;
     is_check: boolean;
     is_checkmate: boolean;
     is_stalemate: boolean;
@@ -50,6 +51,21 @@ entity retaliation {
     defense_points: integer;
     damage_points: integer;
     is_kill: boolean;
+}
+// -------------------------------------
+// Vulnerable Path
+// -------------------------------------
+
+// We save the most recent vulnerable position for each player.
+//
+// Most common case:
+// A pawn two-step move, generating exactly one vulnerable_position. 
+entity current_vuln_path {
+    index game: game; 
+    color: alignment; // If the "mover" was white/black.
+    key game, color; // Can only ever be ONE vuln path per player.
+    move: move;
+    encoded_path: text; // 0-63_0-63_0-63 , where first number is the first position.
 }
 
 // -------------------------------------

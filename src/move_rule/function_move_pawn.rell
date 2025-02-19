@@ -16,18 +16,15 @@ function pawn_all_valid_moves(
     board_positions: board_positions_all,
     pos: integer,
     align: alignment,
-    prev_turn_vuln_path: path_base?  // The vulnerable path from the previous turn, that we MIGHT be able to attack.
+    pre_vuln_ctxt: pre_vuln_context  // The vulnerable path from the opponent's turn, that we MIGHT be able to attack.
 ): move_tree {
     val pre_tree = pre_tree();
-
-    // Only Pawn use this.
-    val pre_vuln_ctxt = pre_vuln_context(prev_turn_vuln_path);
     
     // Get moves based on alignment
     val (mt, new_vulnerable_paths) = when (align) {
         alignment.WHITE -> pawn_all_valid_white_moves(board_positions, pos, pre_tree, pre_vuln_ctxt);
         alignment.BLACK -> pawn_all_valid_black_moves(board_positions, pos, pre_tree, pre_vuln_ctxt);
-        else -> pawn_all_valid_neutral_moves(board_positions, pos, pre_tree, prev_turn_vuln_path);
+        else -> pawn_all_valid_neutral_moves(board_positions, pos, pre_tree, pre_vuln_ctxt);
     };
     
     // ---------------------
@@ -37,7 +34,7 @@ function pawn_all_valid_moves(
     // a) Potential new vuln paths.
     if (new_vulnerable_paths.size() > 0)
     {
-        mt.vulnerable_paths = new_vulnerable_paths;
+        mt.potential_vuln_paths = new_vulnerable_paths; // No need to merge here, just replace the null reference.
     }
 
     // b) Old vuln paths we can attack.
@@ -159,7 +156,7 @@ function pawn_all_valid_neutral_moves(
     board_positions: board_positions_all,
     pos: integer,
     pre_tree: pre_tree,
-    prev_turn_vuln_path: path_base?
+    pre_vuln_ctxt: pre_vuln_context // <- Probably shouldn't ever be used by netural.
 ): (move_tree, list<path_base>) {
     // Neutral moves not implemented
     require(false, "Error: Monster moves not implemented");
@@ -177,13 +174,13 @@ function pawn_all_valid_neutral_moves(
 // -----------------------------------------------
 function pawn_all_jump_over_moves(
     board_positions: board_positions_all,
-    pos: square_pos,
+    pos_int: integer,
     align: alignment
 ): move_tree {
     val pre_tree = pre_tree();
+    val pos = translate_integer_pos_to_square_pos(pos_int);
     val x = pos.x;
     val y = pos.y;
-    val pos_int = pos_to_int(pos);
     
     when (align) {
         alignment.WHITE -> {
@@ -424,8 +421,8 @@ function pawn_is_attackable(
                 log("Found a vulnerable mid square " + new_pos_int + ", with piece still at destination " + dest);
 
                 // Add the mid square and found piece to the context
-                val under_attack: with_pos_and_alignment? = board_get_at(board_positions, dest_int);
-                pre_vuln_ctxt.attackable_old_vuln_square_to_piece[new_pos_int] = under_attack!!;
+                val maybe_under_attack: with_pos_and_alignment? = board_get_at(board_positions, dest_int);
+                pre_vuln_ctxt.attackable_old_vuln_square_to_piece[new_pos_int] = maybe_under_attack!!;
                 return true;
             } else {
                 // Investigate, doesn't have to be an error, but would indeed be an unusual event.

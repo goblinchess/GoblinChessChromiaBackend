@@ -1,0 +1,83 @@
+// ----------------------------------------------------------------------------
+// Rook moves 
+// ----------------------------------------------------------------------------
+
+function rook_all_valid_moves(
+    board_positions: board_positions_all, 
+    pos: integer, 
+    align: alignment
+): move_tree {
+    val ptree = pre_tree();
+    
+    for (count in range(0, 4)) {
+        val dir = count * 2; // Step by 2 to get even numbers 0,2,4,6 for direction
+        rook_follow_path(board_positions, pos, align, dir, ptree);
+    }
+
+    return move_tree_build(pos, ptree);
+}
+
+function rook_follow_path(
+    board_positions: board_positions_all, 
+    pos: integer, 
+    align: alignment, 
+    dir: integer, 
+    pre_tree: pre_tree
+) {
+    val tmp_path = [pos]; // Initialize list with starting position
+    var shift = 0;
+    var continue_path = true;
+    
+    while (shift < 10 and continue_path) {
+        shift += 1;
+        val new_pos = pos_calc_from_directional_shift(pos, shift, dir);
+        require(new_pos != null, "Bug. New position is null");
+        val new_pos_int = pos_to_int(new_pos);
+        continue_path = rule_interpret_path_position(board_positions, align, new_pos_int, tmp_path, pre_tree);
+    }
+}
+
+function rook_all_jump_over_moves(
+    board_positions: board_positions_all, 
+    pos: integer, 
+    align: alignment
+): move_tree {
+    val pre_tree = pre_tree();
+    
+    for (count in range(0, 4)) {
+        val dir = count * 2; // Step by 2 to get even numbers 0,2,4,6 for direction
+        rook_follow_path_jump_over(board_positions, pos, align, dir, pre_tree);
+    }
+    
+    return move_tree_build(pos, pre_tree);
+}
+
+function rook_follow_path_jump_over(
+    board_positions: board_positions_all, 
+    pos: integer, 
+    align: alignment, 
+    dir: integer, 
+    pre_tree: pre_tree
+) {
+    val start_pos = pos;
+    var shift = 0;
+    var continue_path = true;
+    var has_passed_obstacle = false;
+    
+    while (shift < 10 and continue_path) {
+        shift += 1;
+        val new_pos = pos_calc_from_directional_shift(pos, shift, dir);
+        require(new_pos != null, "Bug. New position is null");
+        val new_pos_int = pos_to_int(new_pos);
+        
+        if (not has_passed_obstacle) {
+            val (new_continue_path, new_has_passed_obstacle) = rule_interpret_path_position_pre_obstacle(board_positions, new_pos);
+            continue_path = new_continue_path;
+            has_passed_obstacle = new_has_passed_obstacle;
+        } else {
+            continue_path = rule_interpret_path_position_post_obstacle(
+                board_positions, align, start_pos, new_pos_int, pre_tree
+            );
+        }
+    }
+}

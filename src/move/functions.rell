@@ -42,19 +42,4 @@ function move_setup_portal(owned_by: player_game, card: card, entry_pos: integer
     );
 }
 
-// ----------------
-// Jumps
-// ----------------
 
-// When a jump card is played, we need to set up the jump on the board.
-function move_set_jump(owned_by: player_game, card: card, piece: piece) {
-    create active_jump (
-        .played_by = owned_by,
-        .card = card,
-        .piece = piece
-    );
-}
-
-function move_remove_jump(owned_by: player_game) {
-    delete active_jump@? {.played_by == owned_by};
-}

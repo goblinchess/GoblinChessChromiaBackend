@@ -96,8 +96,10 @@ function move_peaceful_inner(
 
     // Get some data
     var align: alignment = alignment.BLACK;
+    var opp_align: alignment = alignment.WHITE;
     if (minimal_game.is_white) {
         align = alignment.WHITE;
+        opp_align = alignment.BLACK;
     }
 
     val (is_knighted: boolean, active_type: piece_type, org_type: piece_type) = piece_get_data(p);
@@ -105,33 +107,56 @@ function move_peaceful_inner(
     require(active_type == p_type, "Expected piece to have active type " + active_type + " but got " + piece_type_str + ", id:" + game_id);
     require(given_is_knighted == is_knighted, "KNIGHTED status mismatch, given: " + given_is_knighted + " but got " + is_knighted + ", id:" + game_id);
 
+
     // ----------------
-    // A.5. Verify if move is legal
+    // A.5 Get same state
     // ----------------
-    log("Move A.5");
+    // Has this piece an jump enchantment on it?
+    val is_enchanted_jump = move_has_enchanted_jump(minimal_game.player_game, p);
+
+    // Get the opponent's vulnerable positions if any
+    val opp_vuln_ctxt: pre_vuln_context = move_get_vuln_path(minimal_game.game, opp_align); 
+
+    // ----------------
+    // A.6. Verify if move is legal
+    // ----------------
+
     // Complex verification (still easier than check mate).
     var is_castle = false;
+    var rook: piece? = null;
+    var m_tree: move_tree? = null;
+
+
     if (castle_rook_from != null and castle_rook_to != null) { 
-        // 5.a) Only moronic validation for costling, leave the rest to the client.
-        require(p_type == piece_type.KING, "Only kings can castle, id:" + game_id);
+        // 5.a) Castling
+        log("Move A.6.a");
+        rook = move_castle_verify_and_return_rook(game_id, from_position, to_position, castle_rook_from, castle_rook_to, p_type, minimal_game.is_white, minimal_game.player_game);
         is_castle = true;
     } else {
 
+        // ----------------
         // 5.b) Normal move, must verify
+        // ----------------
+        log("Move A.6.b");
         val board: list<with_pos_and_alignment> = piece_get_all_vulnerables(minimal_game.game); 
         val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, align);
         val board_positions_all = build_board_positions_all(minimal_game.game, board, portals);
-        log ("Move A.5.1 - calc move trees ");
+
+
+        log ("Move A.6.b.1 - calc move trees ");
         val (ground_m_tree: move_tree?, jump_m_tree: move_tree?) = rules_get_all_valid_moves(
             board_positions_all, 
             p_type,
+            is_enchanted_jump,
             is_knighted,
             from_position,
-            align
+            align,
+            opp_vuln_ctxt
         );
-        log ("Move A.5.2 - move trees done ");
+
+        log ("Move A.6.b.2 - move trees done ");
         require(ground_m_tree != null or jump_m_tree != null, "No move tree found, cannot move " + piece_type_str + " from " + from_position + " to " + to_position + ", id:" + game_id);
-        val m_tree = move_tree_merge(ground_m_tree, jump_m_tree);
+        m_tree = move_tree_merge(ground_m_tree, jump_m_tree);
         require(m_tree != null, "Failed merge?");
 
         val found_move = move_tree_get_pos_status(m_tree, to_position);
@@ -140,24 +165,24 @@ function move_peaceful_inner(
     }
 
     // ----------------
-    // A.6. Verify Check and Mate status
+    // A.7. Verify Check and Mate status
     // ----------------
-    log("Move A.6");
     // Is this a check?
 
     var is_check = false;
     if (checking_piece != null) {
+        log("Move A.7.a");
         // Pretty easy to verify, since we just get the move tree for the piece 
         //and see if it touches the opponent's king.
 
 
         // TODO: Implement this
         is_check = true;
+    } else {
+        log("Move A.7.b"); // No check
     }
 
-
-
-    // TODO: Done in client, but could be expensive to repeat here?
+    // TODO: Mate calc done in client, but could be expensive to repeat here?
 
     log("Move passed verification, game_id: " + game_id + " type: " + piece_type_str + " from: " + from_position + " to: " + to_position);
 
@@ -181,23 +206,51 @@ function move_peaceful_inner(
     // (Really simple for peaceful moves)
     update p.vulnerable (.position = to_position);
 
+    if (is_castle) {
+        val v_rook = rook!!.vulnerable;
+        update v_rook(.position = castle_rook_to!!);
+    }
+
     // ----------------
     // B.3. Create move entity
     // ----------------
-    create move(
+    val m = create move(
         turn = new_turn, 
         piece_moved = p, 
         from_position = from_position, 
         to_position = to_position,
+        is_castle = is_castle,
         is_check = is_check,
         is_checkmate = is_checkmate,
         is_stalemate = is_stalemate
     );
+
 
     // ----------------
     // B.4. Move to next turn
     // ----------------
     update minimal_game.game (.current_turn = new_turn.number);
 
+    // ----------------
+    // B.5. Cleanup
+    // ----------------
+    // Enchanted jump (if exists)
+    if (is_enchanted_jump) {
+        move_remove_enchanted_jump(minimal_game.player_game);
+    }
+
+    // Vuln Path (if exists)
+    if (opp_vuln_ctxt.prev_turn_vuln_path != null) {
+        move_remove_vuln_path(minimal_game.game, align); // Removing this players old vulns
+    }
+
+    // Add new vuln path (if exists and match the actual move)
+    if (m_tree != null) {
+        val maybe_pot_paths: list<path_base>? = m_tree.potential_vuln_paths;
+        move_vuln_path_add_from_move(minimal_game.game, align, m, maybe_pot_paths, to_position);
+    }
+
+
+    update minimal_game.game (.current_turn = new_turn.number);
     log("Move completed, game_id: " + game_id + " type: " + piece_type_str + " from: " + from_position + " to: " + to_position);
 }

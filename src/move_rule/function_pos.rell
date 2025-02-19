@@ -55,8 +55,8 @@ function pos_calc_from_directional_shift(
         // Diagonal forward + left
         7 -> return square_pos(x = x_org - shift, y = y_org + shift);
         else -> {
-            print("Don't know direction " + dir);
-            return null;
+            log("Error: Don't know direction " + dir);
+            return null; // Doesn't happen
         }
     }
 }

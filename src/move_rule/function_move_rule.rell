@@ -127,8 +127,10 @@ function _add_attack_to_paths(tmp_path: list<integer>, is_jump: boolean, paths: 
     }
 }
 
-// Helper function for pre-obstacle path interpretation
-// Returns a tuple of (continue, obstacle_found)
+// Handles the case before we have encountered the obstacle. 
+// We return two things:
+// 1. continue = if "true" we should continue on this route to find the obstacle.
+// 2. obstacleFound = if "true" the given square had an obstacle on it, i.e. we found our goal.
 function rule_interpret_path_position_pre_obstacle(
     board_positions: board_positions_all,
     new_pos: square_pos 
@@ -151,7 +153,15 @@ function rule_interpret_path_position_pre_obstacle(
     }
 }
 
-// Helper function for post-obstacle path interpretation
+// ---------------------------------------------------------------------------------------------------------
+// This method will potentially add the "newPos" to a "movable square" or to an "attackable square" based on 
+// what the board tells us about this square. This logic should be same for most characters, since most can 
+// attack a square if it can move to it (but not always the case for elves, frogs). 
+//
+// The difference from [rule_interpret_path_position] is that every Path will be a Jump.
+// 
+// Returns "true" if we should continue on this path.
+// ---------------------------------------------------------------------------------------------------------
 function rule_interpret_path_position_post_obstacle(
     board_positions: board_positions_all,
     align: alignment,
@@ -190,7 +200,28 @@ function rule_interpret_path_position_post_obstacle(
             return false;
         }
         else -> {
-            return false; // Out of board, stop path
+            return false; // Out of board, does not matter, just quit
+        }
+    }
+}
+
+// Same as above, but for peaceful characters (toad).
+function rule_interpret_path_position_post_obstacle_peaceful(
+    board_positions: board_positions_all,
+    start_pos: integer,
+    new_pos: integer,
+    pre_tree: pre_tree
+): boolean {
+    val ss = board_get_square_status_int(board_positions, new_pos);
+    
+    when(ss) {
+        square_status.FREE -> {
+            pre_tree.movable_sqs.add(new_pos);
+            pre_tree.paths.add(path_jump_move_2(start_pos, new_pos));
+            return true; // Free space is not blocking, continue on path
+        }
+        else -> {
+            return false; // Friend, Foe, Out of board, does not matter, just quit
         }
     }
 }

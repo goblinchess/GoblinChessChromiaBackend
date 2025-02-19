@@ -1,30 +1,35 @@
-
-
-
 // Will find the MOVE_TREE for this piece.
 // Handles all piece types and all cases
 // of enchantment. 
 function rules_get_all_valid_moves(
     board_positions: board_positions_all, 
     piece_type: piece_type,
+    is_enchanted_jump: boolean,
     is_knighted: boolean,
     pos: integer, 
-    align: alignment
+    align: alignment,
+    opp_vuln_ctxt: pre_vuln_context // Path from opponent's turn (Only used by pawn)
 ): (move_tree?, move_tree?) {
 
     when (piece_type) {
         IMMOBILE -> {
             return (null, null);
         }
+        // ---------------
+        // Standard handing
+        // ---------------
         BISHOP -> {
             val mtb = bishop_all_valid_moves(board_positions, pos, align);
+            if (is_enchanted_jump) {
+                val mtb_jump = bishop_all_jump_over_moves(board_positions, pos, align);
+                return (null, mtb_jump); 
+            }
             if (is_knighted) {
                 val mtk = knight_all_valid_moves(board_positions, pos, align);
                 return (mtb, mtk);
             }
             return (mtb, null);
         }
-
         KNIGHT -> {
             val mtk = knight_all_valid_moves(board_positions, pos, align);
             if (is_knighted) {
@@ -36,23 +41,72 @@ function rules_get_all_valid_moves(
             return (null, mtk);
         }
         QUEEN -> {
-            require(1 == 2, "Not implemented");
-            return (null, null);
-        }
-        KING -> {
-            require(1 == 2, "Not implemented");
-            return (null, null);
-        }
-        PAWN -> {
-            require(1 == 2, "Not implemented");
-            return (null, null);
+            val mtq = queen_all_valid_moves(board_positions, pos, align);
+            if (is_enchanted_jump) { 
+                val mtq_jump = queen_all_jump_over_moves(board_positions, pos, align);
+                return (null, mtq_jump);
+            }
+            if (is_knighted) {
+                val mtk = knight_all_valid_moves(board_positions, pos, align);
+                return (mtq, mtk);
+            }
+            return (mtq, null);
         }
         ROOK -> {
-            require(1 == 2, "Not implemented");
-            return (null, null);
+            val mtr = rook_all_valid_moves(board_positions, pos, align);
+            if (is_enchanted_jump) {
+                val mtr_jump = rook_all_jump_over_moves(board_positions, pos, align);
+                return (null, mtr_jump);
+            }
+            if (is_knighted) {
+                val mtn = knight_all_valid_moves(board_positions, pos, align);
+                return (mtr, mtn);
+            }
+            return (mtr, null);
         }
-        else -> {
-            return (null, null);
+
+        // ---------------
+        // Special handling
+        // ---------------
+        PAWN -> { 
+            // Pawn is a bit different, since we need the vuln path
+            val mtp = pawn_all_valid_moves(board_positions, pos, align, opp_vuln_ctxt);
+            if (is_enchanted_jump) {
+                val mtp_jump = pawn_all_jump_over_moves(board_positions, pos, align);
+                return (null, mtp_jump);
+            }
+            if (is_knighted) {
+                val mtk = knight_all_valid_moves(board_positions, pos, align);
+                return (mtp, mtk);
+            }
+            return (mtp, null);
+        }
+        KING -> {
+            // King is different since it cannot be knighted and
+            // but CAN castle (not handled here).
+            val mtk = king_all_valid_moves(board_positions, pos, align);
+            if (is_enchanted_jump) {
+                val mtk_jump = king_all_jump_over_moves(board_positions, pos, align);
+                return (null, mtk_jump);
+            }
+            return (mtk, null);
+        }
+        FROG -> {
+            // Here we must be careful not to attack anything.
+            val mtf = frog_all_valid_moves(board_positions, pos, align);
+            if (is_enchanted_jump) {
+                val mtf_jump = frog_all_jump_over_moves(board_positions, pos, align);
+                // Already free from attacks.
+                return (null, mtf_jump);
+            }
+            if (is_knighted) {
+                val mtk = knight_all_valid_moves(board_positions, pos, align);
+
+                // Frog cannot attack
+                val mtk_harmless = move_tree_remove_attacks_and_make_moves_harmless(mtk);
+                return (mtf, mtk_harmless);
+            }
+            return (mtf, null);
         }
     }
 }

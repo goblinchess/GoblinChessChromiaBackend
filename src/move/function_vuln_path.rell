@@ -1,0 +1,96 @@
+
+
+// -------------------------------------
+// Inspectors
+// -------------------------------------
+
+function move_get_vuln_path(g: game, color: alignment): pre_vuln_context {
+            
+    // Fetch from DB.        
+    val encoded_path: text? = move_get_vuln_path_inner(g, color); 
+
+    // Build a path_base
+    if (encoded_path != null) {
+        val positions = move_dencode_text_pos_list(encoded_path);
+        val ret_path =path_base(path_type.GROUND_MOVE, positions); // Always a ground move (but doesn't matter)
+        return pre_vuln_context(ret_path);
+    } else {
+        return pre_vuln_context( prev_turn_vuln_path = null);
+    }
+}
+
+// Returns a list of all current vulnerable positions and the corresponding vulnerable piece.
+function move_get_vuln_path_inner(g: game, color: alignment): text? {
+    return (vp: current_vuln_path)@? {
+        vp.game == g, 
+        vp.color == color
+        } (vp.encoded_path);
+}
+
+// -------------------------------------
+// Mutators
+// -------------------------------------
+
+// Most moves won't generate a vulnerable path.
+function move_remove_vuln_path(g: game, color: alignment) {
+    delete current_vuln_path@? {g, color};
+}
+
+// Adds maximum one potential vuln path if it turned out to be the one we moved to. 
+function move_vuln_path_add_from_move(g: game, align: alignment, m: move, maybe_pot_paths: list<path_base>?, move_to_pos: integer) {
+     if (maybe_pot_paths != null) {
+        for (pot_vuln_path: path_base in maybe_pot_paths) {
+            val len = pot_vuln_path.path.size();
+
+            // Adding new vulns caused by this move
+            // if the ACTUAL move matches any of the potenial vulns.
+            if (pot_vuln_path.path[len -1] == move_to_pos) {
+                // Yes, the actual move is the vuln path.
+                move_vuln_path_set_inner(g, align, m, pot_vuln_path);        
+                return; // No need to keep going, this can only happen once.
+            }
+        }
+    }
+}
+
+// Adds a new vulnerable position to the list for the color/game.
+function move_vuln_path_set_inner(
+    g: game, 
+    color: alignment, 
+    m: move, 
+    vuln_path: path_base
+) {
+    val enc_path: text = move_encode_int_pos_list(vuln_path.path);
+    create current_vuln_path (g, color, m, enc_path);
+}
+
+// -------------------------------------
+// Nerd stuff
+// -------------------------------------
+// I think this if way faster than creating a seperate row for each 
+// position in a path.
+
+// Format is "7_16_62"
+function move_dencode_text_pos_list(enc_path: text): list<integer> {
+    val ret = list<integer>();
+    val positions: list<text> = enc_path.split("_");
+    for (p_text: text in positions) {
+        ret.add(integer(p_text));
+    }
+    return ret;
+}
+
+// Format is "7_16_62"
+function move_encode_int_pos_list(positions: list<integer>): text {
+    var enc_path = "";
+    for(pos: integer in positions) {
+        if (enc_path.size() < 1) {
+            // First
+            enc_path += "" + pos;
+        } else {
+            enc_path += "_" + pos;
+        }
+    }
+    return enc_path;
+}
+

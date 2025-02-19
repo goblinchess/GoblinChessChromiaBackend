@@ -1,0 +1,83 @@
+// ----------------------------------------------------------------------------
+// Toad moves 
+// ----------------------------------------------------------------------------
+
+// Returns all valid moves.
+// 
+// Toad cannon attack, so we're using this hackish solution to transfer the normal moves 
+// into the "harmless" set.
+function frog_all_valid_moves(
+    board_positions: board_positions_all, 
+    pos: integer, 
+    align: alignment
+): move_tree {
+    val ptree = pre_tree();
+    
+    for (dir in range(0, 8)) {
+        // One path per direction
+        frog_follow_path(board_positions, pos, align, dir, ptree);
+    }
+    
+    val frog_tree = pre_tree();
+    frog_tree.moves_harmless.add_all(ptree.movable_sqs); // We're using the "normal" as "harmless"
+    // No attacks and no protections
+    frog_tree.paths.add_all(ptree.paths); // We're getting too many paths here, but it will likely not matter
+    
+    return move_tree_build(pos, frog_tree);
+}
+
+function frog_follow_path(
+    board_positions: board_positions_all, 
+    pos: integer, 
+    align: alignment, 
+    dir: integer, 
+    pre_tree: pre_tree
+) {
+    val tmp_path = [pos]; // Initialize list with starting position
+    val new_pos = pos_calc_from_directional_shift(pos, 1, dir);
+    require(new_pos != null, "Bug. New position is null");
+    val new_pos_int = pos_to_int(new_pos);
+    rule_interpret_single_step_position(board_positions, align, new_pos_int, tmp_path, pre_tree, false);
+}
+
+function frog_all_jump_over_moves(
+    board_positions: board_positions_all, 
+    pos: integer, 
+    align: alignment
+): move_tree {
+    val pre_tree = pre_tree();
+    
+    for (dir in range(0, 8)) {
+         // One path per direction
+        frog_follow_path_jump_over(board_positions, pos, align, dir, pre_tree);
+    }
+    
+    return move_tree_build(pos, pre_tree);
+}
+
+function frog_follow_path_jump_over(
+    board_positions: board_positions_all, 
+    pos: integer, 
+    align: alignment, 
+    dir: integer, 
+    pre_tree: pre_tree
+) {
+    val obstacle_pos = pos_calc_from_directional_shift(pos, 1, dir);
+    require(obstacle_pos != null, "Bug. Obstacle position is null");
+    val obstacle_pos_int = pos_to_int(obstacle_pos);
+    
+    val (continue_path, has_passed_obstacle) = rule_interpret_path_position_pre_obstacle(
+        board_positions, obstacle_pos
+    );
+    
+    if (has_passed_obstacle) {
+        val behind_obstacle_pos = pos_calc_from_directional_shift(obstacle_pos_int, 1, dir);
+        require(behind_obstacle_pos != null, "Bug. Behind obstacle position is null");
+        val behind_obstacle_pos_int = pos_to_int(behind_obstacle_pos);
+        
+        // NOTE: We're using the peaceful version here.
+        rule_interpret_path_position_post_obstacle_peaceful(
+            board_positions, pos, behind_obstacle_pos_int, pre_tree
+        );
+    }
+}

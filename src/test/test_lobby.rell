@@ -6,6 +6,14 @@ import ^^.piece.*;
 import ^^.move.*;
 import ^^.turn.*;
 
+function test_move_encode_decode() {
+    val positions = [7, 16, 62];
+    val enc_path = move_encode_int_pos_list(positions);
+    val decoded_positions = move_dencode_text_pos_list(enc_path);
+
+    assert_equals(positions, decoded_positions);
+}
+
 function test_elo_draw_1() {
 
    val player1_rating: integer = 1200;

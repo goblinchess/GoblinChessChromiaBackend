@@ -26,7 +26,8 @@ struct pre_vuln_context {
     // A vulnerable path from previous turn (usually "null")
     prev_turn_vuln_path: path_base?;
     // Maps every vulnerable square (from previous turn) that can be 
-    // attacked this turn, to the piece that will be attacked. 
+    // attacked by a specific piece this turn (i.e. by looking at the piece's move_tree),
+    // to the piece that will be attacked. 
     // Important to understand that the piece is NO LONGER on the square we're attacking.
     attackable_old_vuln_square_to_piece: map<integer, with_pos_and_alignment> = map<integer, with_pos_and_alignment>();
 }
@@ -68,7 +69,8 @@ struct move_tree {
     // A theoretical generalization, but currently only pawns ever use this.
     // When pawn makes a double move, there will be ONE square that's vulnerable to "en passant" 
     // during opponent's turn. We must remember this 
-    mutable vulnerable_paths: list<path_base>? = null;
+    // This is still only "potential" since we don't know the actual move yet.
+    mutable potential_vuln_paths: list<path_base>? = null;
 
     // Related to the above, but here we keep track of what of the opponent's vulnerable squares
     // (from prev turn) we can attack with this move tree.
