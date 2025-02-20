@@ -23,6 +23,7 @@ function get_minimal_game_data(caller_pubkey: pubkey) :minimal_game_result? {
             player = res.player,
             player_game = res.player_game,
             game = res.game,
+            curr_turn_nr = res.game.current_turn,
             is_white =res.is_white 
         );
     } else {

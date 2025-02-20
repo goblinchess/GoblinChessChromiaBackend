@@ -1,4 +1,91 @@
 
+// Skip the move
+// Can only happen in combination with certain spells.
+operation skip_move(
+    game_id: integer,
+    last_seen_turn: integer // What turn the client last saw.
+) {
+    // -----------    
+    // A. Verication
+    // -----------    
+    log("Skip Move Begin: game_id: " + game_id + " last turn: " + last_seen_turn);
+
+    val current_signers = op_context.get_signers();
+    val caller_pubkey = current_signers[0];
+
+    // ----------------
+    // A.1. Check player entity
+    // ----------------
+    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+    require (minimal_game != null, "Player is not in a game, id:" + game_id);
+
+    // ----------------
+    // A.2. Is game is out of sync? 
+    // ----------------
+    val curr_turn = minimal_game.curr_turn_nr;
+    require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
+
+    // ----------------------------------------------    
+    // B. Updates 
+    // ----------------------------------------------    
+    var new_turn_type = turn_type.BLACK_MOVE_SKIPPED;
+    if (minimal_game.is_white) { 
+        new_turn_type = turn_type.WHITE_MOVE_SKIPPED;
+    }
+
+    // ----------------
+    // B.1. Create the turn record
+    // ----------------
+    // lots of verification in here.
+    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
+    log("/Skip Move End: game_id: " + game_id + " new turn type: " + new_turn_type);
+}
+
+
+
+// Skip the neutral move
+// We usually skip neutral in v1.0, but we need it for double move.
+operation skip_neutral(
+    game_id: integer,
+    last_seen_turn: integer // What turn the client last saw.
+) {
+    // -----------    
+    // A. Verication
+    // -----------    
+    log("Skip Neutral Begin: game_id: " + game_id + " last_turn: " + last_seen_turn);
+
+    val current_signers = op_context.get_signers();
+    val caller_pubkey = current_signers[0];
+
+    // ----------------
+    // A.1. Check player entity
+    // ----------------
+    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+    require (minimal_game != null, "Player is not in a game, id:" + game_id);
+
+    // ----------------
+    // A.2. Is game is out of sync? 
+    // ----------------
+    val curr_turn = minimal_game.curr_turn_nr;
+    require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
+
+    // ----------------------------------------------    
+    // B. Updates 
+    // ----------------------------------------------    
+    var new_turn_type = turn_type.NEUTRAL_MOVE_2_SKIPPED;
+    if (minimal_game.is_white) { 
+        new_turn_type = turn_type.NEUTRAL_MOVE_1_SKIPPED;
+    }
+
+    // ----------------
+    // B.1. Create the turn record
+    // ----------------
+    // lots of verification in here.
+    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
+    log("/Skip Neutral End: game_id: " + game_id + " new turn type: " + new_turn_type);
+}
+
+
 // Move a piece to a empty square.
 operation move_peaceful(
     game_id: integer,
@@ -64,32 +151,51 @@ function move_peaceful_inner(
     // ----------------------------------------------    
     // No need to do any updates before we have verified everything.
     // (But Chromia will roll back any updates if we get an error, so it's not critical that we do it this way.)
+
+    var dbg = "";
+    if (given_is_knighted) {
+        dbg += "K ";
+    }
+    if (checking_piece != null) {
+        dbg += "C ";
+    }
+    if (is_checkmate) {
+        dbg += "CM ";
+    }
+    if (is_stalemate) {
+        dbg += "SM ";
+    }
+    if (castle_rook_from != null) {
+        dbg += "Castle ";
+    }
+
+    log("Move Peaceful Begin: game_id: " + game_id + ", last_turn: " + last_seen_turn, ", type: " + piece_type_str + ", from " + from_position + " to " + to_position + ", flags: " + dbg);
     
     // ----------------
     // A.1. Check player entity
     // ----------------
-    log("Move A.1");
+    //log("Move A.1");
     val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
     require (minimal_game != null, "Player is not in a game, id:" + game_id);
 
     // ----------------
     // A.2. Is game is out of sync? 
     // ----------------
-    log("Move A.2");
-    val curr_turn = minimal_game.game.current_turn;
+    //log("Move A.2");
+    val curr_turn = minimal_game.curr_turn_nr;
     require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
 
     // ----------------
     // A.3. Validate positions
     // ----------------
-    log("Move A.3");
+    //log("Move A.3");
     require(not pos_is_out_of_board_int(from_position) , "Invalid board position " + from_position + ", id:" + game_id);
     require(not pos_is_out_of_board_int(to_position) , "Invalid board position " + to_position + ", id:" + game_id);
 
     // ----------------
     // A.4. Verify piece type and position
     // ----------------
-    log("Move A.4: " + piece_type_str + " at " + from_position);
+    //log("Move A.4: " + piece_type_str + " at " + from_position);
     val p_type: piece_type = piece_type.value(piece_type_str);
     val p: piece? = piece_get_via_owner_and_position(minimal_game.player_game, from_position);
     require(p != null, "No piece at position " + from_position + ", id:" + game_id);
@@ -103,7 +209,7 @@ function move_peaceful_inner(
     }
 
     val (is_knighted: boolean, active_type: piece_type, org_type: piece_type) = piece_get_data(p);
-    log("Move A.4: " + active_type + " " + p_type);
+    //log("Move A.4: " + active_type + " " + p_type);
     require(active_type == p_type, "Expected piece to have active type " + active_type + " but got " + piece_type_str + ", id:" + game_id);
     require(given_is_knighted == is_knighted, "KNIGHTED status mismatch, given: " + given_is_knighted + " but got " + is_knighted + ", id:" + game_id);
 
@@ -129,7 +235,7 @@ function move_peaceful_inner(
 
     if (castle_rook_from != null and castle_rook_to != null) { 
         // 5.a) Castling
-        log("Move A.6.a");
+        //log("Move A.6.a");
         rook = move_castle_verify_and_return_rook(game_id, from_position, to_position, castle_rook_from, castle_rook_to, p_type, minimal_game.is_white, minimal_game.player_game);
         is_castle = true;
     } else {
@@ -137,13 +243,13 @@ function move_peaceful_inner(
         // ----------------
         // 5.b) Normal move, must verify
         // ----------------
-        log("Move A.6.b");
+        //log("Move A.6.b");
         val board: list<with_pos_and_alignment> = piece_get_all_vulnerables(minimal_game.game); 
         val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, align);
         val board_positions_all = build_board_positions_all(minimal_game.game, board, portals);
 
 
-        log ("Move A.6.b.1 - calc move trees ");
+        //log ("Move A.6.b.1 - calc move trees ");
         val (ground_m_tree: move_tree?, jump_m_tree: move_tree?) = rules_get_all_valid_moves(
             board_positions_all, 
             p_type,
@@ -154,7 +260,7 @@ function move_peaceful_inner(
             opp_vuln_ctxt
         );
 
-        log ("Move A.6.b.2 - move trees done ");
+        //log ("Move A.6.b.2 - move trees done ");
         require(ground_m_tree != null or jump_m_tree != null, "No move tree found, cannot move " + piece_type_str + " from " + from_position + " to " + to_position + ", id:" + game_id);
         m_tree = move_tree_merge(ground_m_tree, jump_m_tree);
         require(m_tree != null, "Failed merge?");
@@ -171,7 +277,7 @@ function move_peaceful_inner(
 
     var is_check = false;
     if (checking_piece != null) {
-        log("Move A.7.a");
+        //log("Move A.7.a");
         // Pretty easy to verify, since we just get the move tree for the piece 
         //and see if it touches the opponent's king.
 
@@ -179,12 +285,12 @@ function move_peaceful_inner(
         // TODO: Implement this
         is_check = true;
     } else {
-        log("Move A.7.b"); // No check
+        //log("Move A.7.b"); // No check
     }
 
     // TODO: Mate calc done in client, but could be expensive to repeat here?
 
-    log("Move passed verification, game_id: " + game_id + " type: " + piece_type_str + " from: " + from_position + " to: " + to_position);
+    log("Move Peaceful passed verification, game_id: " + game_id + ", type: " + piece_type_str + ", from: " + from_position + " to: " + to_position + ", flags: " + dbg);
 
     // ----------------------------------------------    
     // B. Updates 
@@ -225,14 +331,8 @@ function move_peaceful_inner(
         is_stalemate = is_stalemate
     );
 
-
     // ----------------
-    // B.4. Move to next turn
-    // ----------------
-    update minimal_game.game (.current_turn = new_turn.number);
-
-    // ----------------
-    // B.5. Cleanup
+    // B.4. Cleanup
     // ----------------
     // Enchanted jump (if exists)
     if (is_enchanted_jump) {
@@ -252,5 +352,5 @@ function move_peaceful_inner(
 
 
     update minimal_game.game (.current_turn = new_turn.number);
-    log("Move completed, game_id: " + game_id + " type: " + piece_type_str + " from: " + from_position + " to: " + to_position);
+    log("/Move Peaceful End, game_id: " + game_id + ", new turn type: " + new_turn_type + ", type: " + piece_type_str + ", from: " + from_position + " to: " + to_position + ", flags: " + dbg);
 }

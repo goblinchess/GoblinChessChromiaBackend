@@ -8,7 +8,7 @@ struct in_game_result {
     opponent_pubkey: pubkey;
     opponent_name: text;
     opponent_elo: integer;
-    current_turn: integer; // If the game just started, this will be -1
+    curr_turn_nr: integer; // If the game just started, this will be 0
     created_at: timestamp; // When the game was created
 }
 
@@ -18,5 +18,6 @@ struct minimal_game_result {
     player: player;
     player_game: player_game;
     game: game;
+    curr_turn_nr: integer; // We always check this, so best to store it.
     is_white: boolean;
 }

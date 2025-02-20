@@ -89,7 +89,7 @@ function test_ten_to_the_power_of() {
 }
 
 
-function test_lobby() {
+function test_full_game() {
 
     // ------------
     // Check if DB is empty
@@ -135,8 +135,8 @@ function test_lobby() {
     // ------------
     val found_game: in_game_result? = in_game(rell.test.keypairs.alice.pub);
     assert_not_null(found_game);
-    val alice_game = found_game;
-    val alice_white = alice_game.is_white;
+    val the_game = found_game;
+    val alice_white = the_game.is_white;
     var alice_color = "black";
     var white_player = rell.test.keypairs.charlie;
     var black_player = rell.test.keypairs.alice;
@@ -147,16 +147,16 @@ function test_lobby() {
     }
 
 
-    assert_equals(alice_game.game_type, game_type.SPEED_10_CLASSIC);
-    assert_equals(alice_game.opponent_pubkey, opp_player);
-    assert_equals(alice_game.opponent_name, "Charlie");
-    assert_equals(alice_game.opponent_elo, 1200);
-    assert_equals(alice_game.current_turn, 0);
+    assert_equals(the_game.game_type, game_type.SPEED_10_CLASSIC);
+    assert_equals(the_game.opponent_pubkey, opp_player);
+    assert_equals(the_game.opponent_name, "Charlie");
+    assert_equals(the_game.opponent_elo, 1200);
+    assert_equals(the_game.curr_turn_nr, 0);
 
     // ------------
     log("New Game: Verify pieces");
     // ------------
-    val pieces = get_my_living_pieces(alice_game.game_rowid, true);
+    val pieces = get_my_living_pieces(the_game.game_rowid, true);
     assert_equals(pieces.size(), 16);
     var out_str = alice_color + " pieces: ";
     for (p in pieces) {
@@ -173,7 +173,7 @@ function test_lobby() {
     // ------------
     val card_picks = [63]; // Turns black rook into frog
     var last_seen_turn = 0;
-    rell.test.tx(play_card(alice_game.game_rowid, last_seen_turn, "FROG", 1, card_picks)).sign(white_player).run();
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks)).sign(white_player).run();
     last_seen_turn += 1;
 
     // ------------
@@ -188,7 +188,7 @@ function test_lobby() {
     // ------------
     val wrong_orig_pos = 22; // Nothing on this position
     val wrong_to_pos = 23; 
-    val failed_due_to_wrong_pos = assert_fails(move_peaceful_inner(white_player.pub, alice_game.game_rowid, last_seen_turn, wrong_orig_pos, wrong_to_pos, bishop_type, false, null, false, false, null, null, 
+    val failed_due_to_wrong_pos = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, wrong_orig_pos, wrong_to_pos, bishop_type, false, null, false, false, null, null, 
         * // Note, this star is what makes it work.
         ));
     val expected_wrong_pos: text = "No piece at position " + wrong_orig_pos;
@@ -199,7 +199,7 @@ function test_lobby() {
     // ------------
     val knight_orig_pos = 1; // b1 (correct)
     val knight_to_pos = 16;  // a3 (Valid move)
-    val failed_wrong_type = assert_fails(move_peaceful_inner(white_player.pub, alice_game.game_rowid, last_seen_turn, knight_orig_pos, knight_to_pos, bishop_type, false, null, false, false, null, null, 
+    val failed_wrong_type = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, knight_orig_pos, knight_to_pos, bishop_type, false, null, false, false, null, null, 
         * // Note, this star is what makes it work.
     ));
     val expected_wrong_type: text = "Expected piece to have active type KNIGHT but got BISHOP";
@@ -209,7 +209,7 @@ function test_lobby() {
     log("Fail C. Invalid move pattern");
     // ------------
     val knight_to_wrong_pos = 17;  // b3 (Invalid move)
-    val failed_wrong_move = assert_fails(move_peaceful_inner(white_player.pub, alice_game.game_rowid, last_seen_turn, knight_orig_pos, knight_to_wrong_pos, knight_type, false, null, false, false, null, null, 
+    val failed_wrong_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, knight_orig_pos, knight_to_wrong_pos, knight_type, false, null, false, false, null, null, 
         * // Note, this star is what makes it work.
     ));
     log(failed_wrong_move.message);
@@ -222,7 +222,7 @@ function test_lobby() {
     // ------------
     val bishop_orig_pos = 2; // c1 (correct)
     val bishop_to_pos = 9; // Vaild move pattern, but pawn here, cannot move this way
-    val failed_move_on_friend = assert_fails(move_peaceful_inner(white_player.pub, alice_game.game_rowid, last_seen_turn, bishop_orig_pos, bishop_to_pos, bishop_type, false, null, false, false, null, null, 
+    val failed_move_on_friend = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, bishop_orig_pos, bishop_to_pos, bishop_type, false, null, false, false, null, null, 
         * // Note, this star is what makes it work.
     ));
     val expected_move_on_friend: text = "Illegal move";
@@ -231,14 +231,32 @@ function test_lobby() {
     // ------------
     log("Turn 2: White makes a valid move Kn b1->a3");
     // ------------
-    rell.test.tx(move_peaceful(alice_game.game_rowid, last_seen_turn, knight_orig_pos, knight_to_pos, knight_type, false, null, false, false, null, null)).sign(white_player).run();
-
-
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, knight_orig_pos, knight_to_pos, knight_type, false, null, false, false, null, null)).sign(white_player).run();
     last_seen_turn += 1;
 
     // ------------
-    // Black moves
+    log ("Turn 3: Skip neutral.");
     // ------------
+    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    // ------------
+    log ("Turn 4: Black skips spell");
+    // ------------
+    rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    last_seen_turn += 1;
+
+
+    // ------------
+    log ("Turn 5: Black skips spell");
+    // ------------
+
+    // Pawn double move 
+    val black_move_1_from = 49; // a7
+    val black_move_1_to = 33; // a5
+    val pawn_type = "PAWN";
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, black_move_1_from, black_move_1_to, pawn_type, false, null, false, false, null, null)).sign(black_player).run();
+    last_seen_turn += 1;
     
 }
 

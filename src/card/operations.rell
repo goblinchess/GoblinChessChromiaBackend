@@ -2,6 +2,44 @@
 // Card
 // -------------------------------------
 
+operation skip_card(
+    game_id: integer, 
+    last_seen_turn: integer // What turn the client last saw.
+) {
+    // -----------    
+    // A. Verication
+    // -----------    
+    log("Skip Card Beign, game: " + game_id + " last turn: " + last_seen_turn );
+
+    val current_signers = op_context.get_signers();
+    val caller_pubkey = current_signers[0];
+    
+    // 1. Check player entity
+    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+    require (minimal_game != null, "Player is not in a game");
+
+    // A.2. Is game is out of sync? 
+    val curr_turn = minimal_game.curr_turn_nr;
+    require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
+    
+    // -----------    
+    // B. Updates 
+    // -----------    
+    var new_turn_type = turn_type.BLACK_CARD_SKIPPED;
+    if (minimal_game.is_white) { 
+        new_turn_type = turn_type.WHITE_CARD_SKIPPED;
+    }
+
+    // B.1. Create the turn record
+    // Lots of verification in here.
+    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
+
+    log("/Skip Card End, game: " + game_id + ", new turn type: " + new_turn_type);
+}
+
+ 
+
+
 // Play a card during a player's card turn
 operation play_card(
     game_id: integer, 
@@ -11,12 +49,14 @@ operation play_card(
     card_picks: list<integer> // The squares picked by the player when playing the card.
 ) {
     // -----------    
-    // Verication
+    // A. Verication
     // -----------    
+    log("Play Card Beign, game: " + game_id + ", last turn: " + last_seen_turn + ", type: " + card_type_str + ", order number: " + card_order_number );
+
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
     
-    // 1. Check player entity
+    // A.1. Check player entity
     val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
     require (minimal_game != null, "Player is not in a game");
 
@@ -24,19 +64,19 @@ operation play_card(
     val found_game_rowid = minimal_game.game.rowid.to_integer();
     require (found_game_rowid == game_id, "Player things the game is " + game_id + " but is currently in game " + found_game_rowid);
 
-    // 2. Is game is out of sync? 
-    val curr_turn = minimal_game.game.current_turn;
+    // A.2. Is game is out of sync? 
+    val curr_turn = minimal_game.curr_turn_nr;
     require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
     
-    // 3. Check card type
+    // A.3. Check card type
     val card_type: card_type = card_type.value(card_type_str);
 
-    // 4. Check if correct number of picks are sent for this card
+    // A.4. Check if correct number of picks are sent for this card
     val expected_pick_types: list<card_pick_type> = get_picks_for_card(card_type); 
     val expected_nr_of_picks = expected_pick_types.size();
     require(expected_nr_of_picks == card_picks.size(), "Expected " + expected_nr_of_picks + " picks for card " + card_type_str + " but got " + card_picks.size());
 
-    // 5. Check if correct pick types are sent for this card
+    // A.5. Check if correct pick types are sent for this card
     var pick_summary = "";
     val pick_piece_map = map<integer, piece>(); // Save the pieces we found on the board for the pick.
     for (i: integer in range(expected_nr_of_picks)) {
@@ -58,34 +98,31 @@ operation play_card(
 
     }
 
-    // 6. Check if player has cards left
+    // A.6. Check if player has cards left
     val cards_left = minimal_game.player_game.cards_left;
     require(cards_left > 0, "Player has no cards left");
     
     log("Card passed verification, game: " + game_id +", type: " + card_type_str + " order number: " + card_order_number + " picks: " + pick_summary);
 
     // -----------    
-    // Updates 
+    // B. Updates 
     // -----------    
     var new_turn_type = turn_type.BLACK_CARD;
     if (minimal_game.is_white) { 
         new_turn_type = turn_type.WHITE_CARD;
     }
 
-    // 1. Create the turn record
+    // B.1. Create the turn record
     // Do this FIRST since lots of verification in here.
     val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
 
-    // 2. We create the card when it's played
+    // B.2. We create the card when it's played
     val new_card =create card(minimal_game.player_game, new_turn, card_type, card_order_number);
 
-    // 3. Count down the cards left
+    // B.3. Count down the cards left
     update minimal_game.player_game (.cards_left = cards_left - 1);
 
-    // 4. Move to next turn
-    update minimal_game.game (.current_turn = new_turn.number);
-
-    // 5. Create the picks
+    // B.4. Create the picks
     for (i: integer in range(expected_nr_of_picks)) {
         val expected_p_type: card_pick_type = expected_pick_types[i];
         val given_pos: integer = card_picks[i];
@@ -106,7 +143,7 @@ operation play_card(
     }
 
     // -----------    
-    // 6. Implement the effect of the card
+    // B.5. Implement the effect of the card
     // -----------    
     // Card pick verification should have been done already.
     when (card_type) {
@@ -148,9 +185,8 @@ operation play_card(
         }
     }
 
-    // 7. Move to next turn
-    update minimal_game.game (.current_turn = new_turn.number);
-    log("Card played, game: " + game_id + " type: " + card_type_str + " order number: " + card_order_number + " picks: " + pick_summary);
+    // 6. Move to next turn
+    log("/Play Card End, game: " + game_id + ", new turn type: " + new_turn_type + ", type: " + card_type_str + ", order number: " + card_order_number + ", picks: " + pick_summary);
 }
 
 // -------------------------------------

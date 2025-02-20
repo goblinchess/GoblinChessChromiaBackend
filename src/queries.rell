@@ -54,25 +54,27 @@ query in_game (caller_pubkey: pubkey) :in_game_result? {
     if (minimal_game == null) {
         return null;
     } else {
-        val found_game = minimal_game.game;
+        val g_data = game@ {.rowid == minimal_game.game.rowid} (.rowid, .black_player, .white_player, .game_type, .created_at);
+
+
         val plays_white = minimal_game.is_white;
         var opp: player? = null;
  
         if (plays_white) {
-            opp = found_game.black_player;
+            opp = g_data.black_player;
         } else {
-            opp = found_game.white_player;
+            opp = g_data.white_player;
         }
 
         return in_game_result(
-            game_rowid = found_game.rowid.to_integer(),
-            game_type = found_game.game_type,
+            game_rowid = g_data.rowid.to_integer(),
+            game_type = g_data.game_type,
             is_white = plays_white,
             opponent_pubkey = opp.signer,
             opponent_name = opp.name,
             opponent_elo = opp.elo_rating,
-            current_turn = found_game.current_turn,
-            created_at = found_game.created_at
+            curr_turn_nr = minimal_game.curr_turn_nr,
+            created_at = g_data.created_at
         );
     }
 }

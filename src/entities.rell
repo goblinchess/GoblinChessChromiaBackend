@@ -22,7 +22,7 @@ entity game {
     index white_player: player;
     index black_player: player;
     index game_type: game_type;
-    mutable current_turn: integer;
+    mutable current_turn: integer;  //GAME cannot have a reference to the (current) TURN entity since TURN references GAME, and Rell doesn't allow two-way FKs.
     mutable is_finished: boolean;
     mutable is_draw: boolean;
     created_at: timestamp;

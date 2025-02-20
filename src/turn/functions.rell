@@ -62,6 +62,9 @@ function turn_create(game: game, created_by: player_game, new_turn_type: turn_ty
 
     update current_turn@ {game} (.current_turn = new_turn);
 
+    //GAME cannot have a reference to the (current) TURN since we don't allow two-way FKs.
+    update game (.current_turn = new_turn.number);  
+
     return new_turn;
 }
 
