@@ -1,5 +1,3 @@
-
-
 // We need to know the owner of the portal.
 struct owned_portal {
     entry_pos: integer;
@@ -87,3 +85,45 @@ struct move_tree {
 
 
 }
+
+// Move data, used for attacks too.
+struct move_arguments {
+    game_id: integer;
+    last_seen_turn: integer; // What turn the client last saw.
+    from_position: integer;
+    to_position: integer;
+    piece_type_str: text; // The type of piece we are moving
+    given_is_knighted: boolean; // If the piece is KNIGHTED
+
+    // Check and mate status
+    checking_piece: integer?; // Client claims this piece is checking opponent's king (easy to verify)
+    is_checkmate: boolean; // Client thinks this is a checkmate
+    is_stalemate: boolean; // Client thinks this is a stalemate
+}
+
+// Attack data, mandatory for attacks.
+struct move_attack_arguments {
+    attacked_position: integer; // 0-63 DOESN'T HAVE TO BE THE SAME AS THE "TO_POSITION"
+    attack_result_type_str: text; // The result type of the attack
+    defender_defense_points: integer; // The opponent's defense power
+    damage_points: integer; // How much we damage the opponent
+}
+
+// Only chaos mode uses these arguments, classic mode can send null.
+struct move_chaos_mode_arguments {
+    defender_can_retaliate: boolean; // Some objects cannot retaliate (stones, for example)
+    is_flash_attack: boolean; // Jumps for example cannot be retaliated against.
+    is_luck: boolean; // true if attack was lucky and rolled highest score
+}
+
+// Only chaos mode uses these arguments, classic mode can send null.
+// If a) main attack result is "hit" and b) this is chaos mode 
+// Then client must send this. 
+struct move_retaliation_arguments {
+    retaliation_result_type_str: text; // The result type of the retaliation
+    attacker_defence_points: integer;  // The attacker's defense power (the attacker is curretly defending himself)
+    damage_points: integer; // How much the retaliation damaged the attacker
+}
+
+
+

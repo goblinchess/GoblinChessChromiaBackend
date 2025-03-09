@@ -1,19 +1,4 @@
-// Keeps track of how many picks each card type needs
-// And what type of pick it should be
-function get_picks_for_card(c_type: card_type): list<card_pick_type> {
-    when (c_type) {
-        FROG -> return [card_pick_type.PIECE_SQUARE];
-        TURN_TO_STONE -> return [card_pick_type.PIECE_SQUARE];
-        POTION -> return [card_pick_type.PIECE_SQUARE];
-        KNIGHTED -> return [card_pick_type.PIECE_SQUARE];
-        JUMP -> return [card_pick_type.PIECE_SQUARE, card_pick_type.ANY_SQUARE]; // The second square is the Jump destination (could be empty or occupied)
-        SWITCH_PLACE -> return [card_pick_type.PIECE_SQUARE, card_pick_type.PIECE_SQUARE];
-        WALL -> return [card_pick_type.FREE_SQUARE, card_pick_type.FREE_SQUARE, card_pick_type.FREE_SQUARE];
-        PORTAL -> return [card_pick_type.PIECE_SQUARE, card_pick_type.FREE_SQUARE]; // Actually only 1 pick, but here we need to know where the portal leads, and we PRETEND that the destination is a pick
-        RESURRECT -> return [];
-        DOUBLE_MOVE -> return [];
-    }
-}
+
 
 // "true" if this card will cause the player to skip their move
 function will_card_skip_move(c_type: card_type): boolean {

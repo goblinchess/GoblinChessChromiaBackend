@@ -1,0 +1,114 @@
+
+// Returns a battle_result (holding the result of the attack)
+// based on the chaos mode.
+function calculate_chaos_attack_result(
+
+    // Defender
+    def_hp: integer,
+    def_strength: die_set,
+    def_defense: integer,
+
+    // Attacker
+    att_hp: integer,
+    att_strength: die_set,
+    att_defense: integer,
+
+    chaos_args: move_chaos_mode_arguments,
+    rnd_numbers: list<integer>
+): battle_result {
+
+    val can_retaliate = chaos_args.defender_can_retaliate;
+    val flash_attack = chaos_args.is_flash_attack;
+
+    val rnd_results = list<rnd_result>(); 
+
+    // ------------------
+    // Main Attack
+    // ------------------
+    // Attacker
+    val attack_res = die_set_roll(att_strength, rnd_numbers);
+    val attack_die_res_set = attack_res[0];
+    rnd_results.add_all(attack_res[1]); // Don't forget to save the rnds
+
+    val attack_damage = die_res_set_calc(attack_die_res_set);
+    
+    // Boost check
+    val max_result = die_res_set_max_result(attack_die_res_set);
+    val luck = attack_damage == max_result;
+    
+    var result: battle_result_type = battle_result_type.error;
+    var d_lost_hp = 0;
+    var retaliation_result = battle_result_type.error;
+    var a_lost_hp = 0;
+    
+    val d_curr_hp = def_hp;
+    val att_res = attack_damage - def_defense;
+    
+    val d_health_left = d_curr_hp - att_res;
+    
+    log("calculate_chaos_attack_result() - Attack res " + die_set_debug(att_strength) + " = (Attack Damage: " + attack_damage + " - Defense: " + def_defense + ") = Calculated damage:  " + att_res + ". Def Hp: " + d_curr_hp);
+    
+    // Calc main battle result type
+    if (att_res > 0) {
+        if (att_res >= d_curr_hp) {
+            result = battle_result_type.kill;
+        } else {
+            result = battle_result_type.hit;
+            d_lost_hp = att_res;
+        }
+    } else {
+        result = battle_result_type.miss;
+    }
+    
+    // ------------------
+    // Retaliation
+    // ------------------
+    // A dead defender cannot retaliate
+    // The simplest way to VISUALIZE the "miss" is to place the attacker far away during the attack
+    // (being far away makes retalation strange), therefore only "Hit" will give retaliation.
+    var retaliation_die_res_set: die_result_set? = null;
+    
+    if (result == battle_result_type.hit) {
+        if (can_retaliate and not flash_attack) {
+            // Retaliation 
+
+            val new_rnd_numbers = random_new_numbers_list(rnd_results, rnd_numbers);
+            val retaliation_res = die_set_roll(def_strength, new_rnd_numbers);
+            retaliation_die_res_set = retaliation_res[0];
+            rnd_results.add_all(retaliation_res[1]); // Don't forget to save the rnds
+
+            val retaliation_damage = die_res_set_calc(retaliation_die_res_set);
+            
+            val a_curr_hp = att_hp;
+            val def_res = retaliation_damage - att_defense - 7; // 7 is the penalty for retaliation, it's much harder to retaliate.
+            
+            val a_health_left = a_curr_hp - def_res;
+        
+            log("calculate_attack_result() - Retaliation res " + die_set_debug(def_strength) + " =  " + retaliation_damage + ". Calculated damage: " + def_res + ".");
+        
+            // Calc retaliation result type
+            if (def_res > 0) {
+                if (def_res >= a_curr_hp) {
+                    retaliation_result = battle_result_type.kill;
+                } else {
+                    retaliation_result = battle_result_type.hit;
+                    a_lost_hp = def_res;
+                }
+            } else {
+                retaliation_result = battle_result_type.miss;
+            }
+        } else {
+            retaliation_result = battle_result_type.miss; // There was no retaliation, but we count it as a "miss".
+        }
+    }
+    
+    return battle_result(
+        result = result,
+        defender_lost_hp = d_lost_hp,
+        retaliation_result = retaliation_result,
+        attacker_lost_hp = a_lost_hp,
+        luck = luck,
+        rnd_results = rnd_results
+    );
+
+}

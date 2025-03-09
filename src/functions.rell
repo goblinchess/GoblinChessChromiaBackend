@@ -1,28 +1,5 @@
 
 
-// Generate a list of COUNT random numbers
-// based on the seed and the MAX_VALUE.
-//
-// Since this is open source, if a hacker knows the seed,
-// they can predict all the "random" numbers,
-function generate_random_numbers(seed: integer, count: integer, max_value: integer): list<integer> {
-    // Parameters for LCG (using common values)
-    val a = 1664525;
-    val c = 1013904223;
-    val modu = 4294967296; // = 2^32. We CANNOT use integer.MAX_VALUE (=2^64) since it would give us integer overflow
-    
-    var current = seed;
-    val results = list<integer>();
-    
-    for (i in range(count)) {
-        // Generate next number using LCG formula: X(n+1) = (a * X(n) + c) mod MODU
-        current = (a * current + c) % modu;
-        // Scale to desired range (0 to max_value)
-        results.add(abs(current % (max_value + 1)));
-    }
-    
-    return results;
-}
 
 
 // -------------------------------------

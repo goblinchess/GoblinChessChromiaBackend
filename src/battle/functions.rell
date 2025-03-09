@@ -1,0 +1,10 @@
+
+function battle_result_dbg(br: battle_result): text {
+
+    return "battle_result( result: " + br.result + 
+        ", defender lost hp: " + br.defender_lost_hp + 
+        ", retaliation result: " + br.retaliation_result + 
+        ", attacker lost hp: " + br.attacker_lost_hp + 
+        ", luck: " + br.luck + ")";
+
+}

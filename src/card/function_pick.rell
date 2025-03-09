@@ -1,0 +1,113 @@
+
+// -------------------------------------
+// Card Picks
+// -------------------------------------
+// For most cards it's not enough to just play the card,
+// the player must also pick one or more squares.
+// -------------------------------------
+
+
+// Keeps track of how many picks each card type needs
+// And what type of pick it should be
+function card_pick_get_by_card_type(c_type: card_type): list<card_pick_type> {
+    when (c_type) {
+        // Enchantment cards (any piece but the kings)
+        FROG -> return [card_pick_type.PIECE_NON_KING_SQUARE];
+        TURN_TO_STONE -> return [card_pick_type.PIECE_NON_KING_SQUARE];
+        POTION -> return [card_pick_type.PIECE_NON_KING_SQUARE];
+        KNIGHTED -> return [card_pick_type.PIECE_NON_KING_SQUARE];
+
+        // Enchanted moves (My pieces only)
+        JUMP -> return [card_pick_type.PIECE_MINE_SQUARE, card_pick_type.ANY_SQUARE]; // The second square is the Jump destination (could be empty or occupied)
+        SWITCH_PLACE -> return [card_pick_type.PIECE_MINE_SQUARE, card_pick_type.PIECE_MINE_SQUARE];
+
+        // Mine non-king
+        PORTAL -> return [card_pick_type.PIECE_MINE_NON_KING_SQUARE, card_pick_type.FREE_SQUARE]; // Actually only 1 pick, but here we need to know where the portal leads, and we PRETEND that the destination is a pick
+
+        // Free squares only
+        WALL -> return [card_pick_type.FREE_SQUARE, card_pick_type.FREE_SQUARE, card_pick_type.FREE_SQUARE];
+
+        // No picks
+        RESURRECT -> return [];
+        DOUBLE_MOVE -> return [];
+    }
+}
+
+// Will break if invalid picks are sent.
+function card_pick_are_valid(
+    g: game,
+    card_type: card_type, 
+    card_type_str: text,
+    expected_pick_types: list<card_pick_type>,
+    card_picks: list<integer>,
+    my_color: alignment,
+    pick_piece_map: map<integer, piece> // Stores the square picks that maps to a piece.
+) {
+
+    val expected_nr_of_picks = expected_pick_types.size();
+    require(expected_nr_of_picks == card_picks.size(), "Expected " + expected_nr_of_picks + " picks for card " + card_type_str + " but got " + card_picks.size());
+
+    var pick_summary = "";
+  
+    for (pick_index: integer in range(expected_nr_of_picks)) {
+        val expected_p_type: card_pick_type = expected_pick_types[pick_index];
+        val given_pos: integer = card_picks[pick_index];
+        // Out of board is never allowed
+        require(piece_is_pos_on_board(given_pos), "Pick at pos " + pick_index + " is out of board.");
+
+        // Now, check card specific rules
+        // Let's see if there is/isn't a piece where we expect one.
+        val maybe_piece: piece_living_data? = piece_get_living_data_from_pos(g, given_pos);
+        pick_summary += card_pick_validate_single_pick(pick_index, maybe_piece, expected_p_type, given_pos, my_color, pick_piece_map);
+    }
+
+    return pick_summary;
+}
+
+// Validate a single pick and return the summary for that pick.
+function card_pick_validate_single_pick(
+    pick_index: integer,
+    maybe_piece: piece_living_data?,
+    expected_p_type: card_pick_type,
+    given_pos: integer,
+    my_color: alignment,
+    pick_piece_map: map<integer, piece>
+): text {
+
+
+    when (expected_p_type) {
+        card_pick_type.ANY_SQUARE -> {
+            // Always ok!
+            return "any(" + given_pos + "), ";
+        }
+        card_pick_type.FREE_SQUARE -> {
+            require(maybe_piece == null, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a piece at position " + given_pos + ".");
+            return "free(" + given_pos + "), ";
+        }
+        card_pick_type.PIECE_SQUARE -> {
+            require(maybe_piece != null, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a free square at position " + given_pos + "."); 
+            pick_piece_map[pick_index] = maybe_piece.p;
+            return "piece(" + given_pos + "), ";
+        }
+        card_pick_type.PIECE_NON_KING_SQUARE -> {
+            require(maybe_piece != null, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a free square at position " + given_pos + "."); 
+            require(maybe_piece.original_type != piece_type.KING, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a king at position " + given_pos + "."); 
+            pick_piece_map[pick_index] = maybe_piece.p;
+            return "piece_non_king(" + given_pos + "), ";
+        }
+        card_pick_type.PIECE_MINE_SQUARE -> {
+            require(maybe_piece != null, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a free square at position " + given_pos + "."); 
+            require(maybe_piece.align == my_color, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but opponent piece at position " + given_pos + "."); 
+            pick_piece_map[pick_index] = maybe_piece.p;
+            return "piece_mine(" + given_pos + "), ";
+        }
+        card_pick_type.PIECE_MINE_NON_KING_SQUARE -> {
+            require(maybe_piece != null, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a free square at position " + given_pos + "."); 
+            require(maybe_piece.align == my_color, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but opponent piece at position " + given_pos + "."); 
+            require(maybe_piece.original_type != piece_type.KING, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a king at position " + given_pos + "."); 
+            pick_piece_map[pick_index] = maybe_piece.p;
+            return "piece_mine_non_king(" + given_pos + "), ";
+        }
+    }
+}
+

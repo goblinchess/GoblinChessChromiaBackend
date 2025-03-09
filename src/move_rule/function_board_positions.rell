@@ -34,7 +34,7 @@ function build_board_positions_all(
 // ----------------
 
 function board_is_empty(board_positions_all, pos: integer): boolean {
-    require(not pos_is_out_of_board_int(pos), "Illegal position: " + pos);
+    require(piece_is_pos_on_board(pos), "Illegal position: " + pos);
     
     if (board_positions_all.board_characters.contains(pos)) {
         return false;
@@ -76,7 +76,7 @@ function board_is_attackable_white_or_neutral_at(board_positions_all, pos: squar
 // Getters
 // ----------------
 function board_get_at(board_positions_all, pos: integer): with_pos_and_alignment? {
-    require(not pos_is_out_of_board_int(pos), "Out of board " + pos);
+    require(piece_is_pos_on_board(pos), "Out of board " + pos);
 
     if (board_positions_all.board_characters.contains(pos)) {
         return board_positions_all.board_characters[pos];
@@ -93,7 +93,7 @@ function board_get_square_status(board_positions_all, pos: square_pos): square_s
 }
 
 function board_get_square_status_int(board_positions_all, pos: integer): square_status {
-    if (pos_is_out_of_board_int(pos)) {
+    if (piece_is_pos_out_of_board(pos)) {
         return square_status.OUT_OF_BOARD;
     }
     

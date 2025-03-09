@@ -1,0 +1,167 @@
+
+
+// A non-attacking move
+function move_peaceful_inner(
+    caller_pubkey: pubkey,
+    m_args: move_arguments,
+
+    // Treat castle as special case
+    castle_rook_from: integer?, // If this is a castle, the rook's starting position.
+    castle_rook_to: integer? // If this is a castle, the rook's ending position.
+) {
+    // ----------------------------------------------    
+    // A. Verification
+    // ----------------------------------------------    
+    // No need to do any updates before we have verified everything.
+    // (But Chromia will roll back any updates if we get an error, so it's not critical that we do it this way.)
+
+    var dbg = move_debug_str(m_args);
+    if (castle_rook_from != null) {
+        dbg += "Castle ";
+    }
+    val p_dbg = "type: " + m_args.piece_type_str + " (from: " + m_args.from_position + " to: " + m_args.to_position + ")";
+
+    val game_id = m_args.game_id;
+    log("Move Peaceful Begin: last_turn: " + m_args.last_seen_turn, ", piece " + p_dbg + ", flags: " + dbg + ", game_id: " + game_id);
+    
+    // ----------------
+    // A.1. Check player entity
+    // ----------------
+    //log("Move A.1");
+    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+    require (minimal_game != null, "Player is not in a game, id:" + game_id);
+
+    // ----------------
+    // A.2. Is game is out of sync? 
+    // ----------------
+    //log("Move A.2");
+    val curr_turn = minimal_game.curr_turn_nr;
+    require(curr_turn == m_args.last_seen_turn, "Player client is on turn " + m_args.last_seen_turn + " but blockchain is on turn " + curr_turn);
+
+    // ----------------
+    // A.3. Validate positions
+    // ----------------
+    //log("Move A.3");
+    move_verify_pos(game_id, m_args);
+
+    // ----------------
+    // A.4. Verify piece type and position
+    // ----------------
+    //log("Move A.4: " + piece_type_str + " at " + from_position);
+    val v_res = move_verify_basic_move(game_id, m_args, minimal_game);
+    val p_type = v_res.p_type; // The main piece type
+    val p = v_res.p; // The main piece data
+    val align = v_res.align; // This players color
+    val opp_align = v_res.opp_align; // Opponent's color
+
+
+    // ----------------
+    // A.5 Get same state
+    // ----------------
+    // Has this piece an jump enchantment on it?
+    val is_enchanted_jump = move_has_enchanted_jump(minimal_game.player_game, p.p);
+
+    // Get the opponent's vulnerable positions if any
+    val opp_vuln_ctxt: pre_vuln_context = move_get_vuln_path(minimal_game.game, opp_align); 
+
+    // ----------------
+    // A.6. Verify if move is legal
+    // ----------------
+
+    // Complex verification (still easier than check mate).
+    var is_castle = false;
+    var rook: piece? = null;
+    var m_tree: move_tree? = null;
+
+
+    if (castle_rook_from != null and castle_rook_to != null) { 
+        // 5.a) Castling
+        //log("Move A.6.a");
+        rook = move_castle_verify_and_return_rook(game_id, m_args.from_position, m_args.to_position, castle_rook_from, castle_rook_to, p_type, minimal_game.is_white, minimal_game.game);
+        is_castle = true;
+    } else {
+
+        // ----------------
+        // 5.b) Normal move, must verify
+        // ----------------
+        //log("Move A.6.b");
+        val board: list<with_pos_and_alignment> = piece_get_all_vulnerables(minimal_game.game); 
+        val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, align);
+        val board_positions_all = build_board_positions_all(minimal_game.game, board, portals);
+
+
+        //log ("Move A.6.b.1 - calc move trees ");
+        val (ground_m_tree: move_tree?, jump_m_tree: move_tree?) = rules_get_all_valid_moves(
+            board_positions_all, 
+            p_type,
+            is_enchanted_jump,
+            p.is_knighted,
+            m_args.from_position,
+            align,
+            opp_vuln_ctxt
+        );
+
+        //log ("Move A.6.b.2 - move trees done ");
+        require(ground_m_tree != null or jump_m_tree != null, "No move tree found, cannot move piece " + p_dbg + ", id:" + game_id);
+        m_tree = move_tree_merge(ground_m_tree, jump_m_tree);
+        require(m_tree != null, "Failed merge?");
+
+        val found_move = move_tree_get_pos_status(m_tree, m_args.to_position);
+        require(found_move > 0, "Illegal move: " + p_dbg + ", id:" + game_id);
+        require(found_move != 2, "Reported peaceful move is attacking move: " + p_dbg + ", id:" + game_id);
+    }
+
+    // ----------------
+    // A.7. Verify Check and Mate status
+    // ----------------
+    // Is this a check?
+
+    var is_check = false;
+    if (m_args.checking_piece != null) {
+        //log("Move A.7.a")/;
+        // Pretty easy to verify, since we just get the move tree for the piece 
+        //and see if it touches the opponent's king.
+
+
+        // TODO: Implement this
+        is_check = true;
+    } else {
+        //log("Move A.7.b"); // No check
+    }
+
+    // TODO: Mate calc done in client, but could be expensive to repeat here?
+
+    log("Move Peaceful passed verification, piece " + p_dbg + ", flags: " + dbg + ", game_id: " + game_id);
+
+    // ----------------------------------------------    
+    // B. Updates 
+    // ----------------------------------------------    
+    var new_turn_type = turn_type.BLACK_MOVE;
+    if (minimal_game.is_white) { 
+        new_turn_type = turn_type.WHITE_MOVE;
+    }
+
+    // Do the updates
+    val m_res = move_update(m_args, minimal_game, align, is_castle, is_check, p, new_turn_type); 
+    val m = m_res.m;
+    val new_turn = m_res.new_turn;
+
+    if (is_castle) {
+        val v_rook = rook!!.vulnerable;
+        update v_rook(.position = castle_rook_to!!);
+    }
+
+    // Cleanup
+    move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, align);
+
+
+    // Add new vuln path (if exists and match the actual move)
+    if (m_tree != null) {
+        val maybe_pot_paths: list<path_base>? = m_tree.potential_vuln_paths;
+        move_vuln_path_add_from_move(minimal_game.game, align, m, maybe_pot_paths, m_args.to_position);
+    }
+
+
+    update minimal_game.game (.current_turn = new_turn.number);
+    log("/Move Peaceful End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + "game_id: " + game_id );
+}

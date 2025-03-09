@@ -42,4 +42,3 @@ function move_setup_portal(owned_by: player_game, card: card, entry_pos: integer
     );
 }
 
-

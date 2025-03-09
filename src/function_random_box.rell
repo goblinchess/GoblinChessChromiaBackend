@@ -1,0 +1,66 @@
+
+
+// If we already have some rnd results, 
+// we want to remove these numbers from the original rnd_numbers list
+function random_new_numbers_list(
+    rnd_results: list<rnd_result>, 
+    org_rnd_numbers: list<integer>
+): list<integer> {
+    var o = rnd_results.size();
+    return org_rnd_numbers.sub(o); // Remove the "o" first posts
+}
+
+
+
+// Returns: the result and the new seed
+function random_generate_numbers(from: integer, to: integer, org_seed: integer): (result: integer, curr_seed:integer) {
+    val max_starting_from_zero = to - from; // Max starting from zero. Example D6: 5
+    val count = 1;
+    val results = generate_random_numbers(org_seed, count, max_starting_from_zero);
+
+    val raw_result = results.results[0]; // The raw random. Example D6: 0-5
+    val die_res_num = raw_result + from; // The die roll. Example D6: 1-6
+
+    return (result = die_res_num, curr_seed = results.new_seed);
+}
+
+// ----------------------------------
+// Generate a list of COUNT random numbers
+// based on the seed and the MAX_VALUE.
+//
+// Since this is open source, if a hacker knows the seed,
+// they can predict all the "random" numbers,
+// ----------------------------------
+function generate_random_numbers(seed: integer, count: integer, max_value: integer): random_results {
+    // Parameters for LCG (using common values)
+    val a = 1664525;
+    val c = 1013904223;
+    val modu = 4294967296; // = 2^32. We CANNOT use integer.MAX_VALUE (=2^64) since it would give us integer overflow
+    
+    var current = seed;
+    val results = list<integer>();
+    
+    for (i in range(count)) {
+        // Generate next number using LCG formula: X(n+1) = (a * X(n) + c) mod MODU
+        current = (a * current + c) % modu;
+        // Scale to desired range (0 to max_value)
+        results.add(abs(current % (max_value + 1)));
+    }
+    
+    return random_results(results, base_seed = seed, new_seed = current);
+}
+
+
+
+
+// For getting a random element in a collection
+function random_box_get_next_int(from: integer, to: integer, rb: random_box): (integer, integer) {
+    val max_starting_from_zero = to - from; // Max starting from zero. 
+    val results = generate_random_numbers(rb.current_seed, 1, max_starting_from_zero);
+    val raw_result = results.results[0]; // The raw random. If from=30, to=100, then 0-70
+    val real_res_num = raw_result + from; // The real result. If from=30, to=100, then 30-100
+
+    return (results.new_seed, real_res_num);
+}
+
+

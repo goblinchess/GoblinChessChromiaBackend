@@ -1,0 +1,261 @@
+
+function move_attack_inner(
+    caller_pubkey: pubkey,
+    m_args: move_arguments,
+
+    att_args: move_attack_arguments,
+
+
+    // ----------------------
+    // Needed for chaos mode
+    // ----------------------
+
+    // ----------------------
+    // Random 
+    // If any randomness was used while attacking, the numbers generated goes in here.
+    // The list can have different length:
+    // 1. classical mode = 0
+    // 2. chaos mode normal attack: 2 die rolls or sometimes 3 die rolls if miss, 
+    // 3. chaos mode retaliation: 4 die rolls.
+    // ----------------------
+    rnd_numbers: list<integer>, 
+
+    // ----------------------
+    // Some args
+    // ----------------------
+    chaos_args: move_chaos_mode_arguments? = null,
+
+    // Only used if there is retaliation.
+    ret_args: move_retaliation_arguments? = null
+
+) {
+    // ----------------------------------------------    
+    // A. Verification
+    // ----------------------------------------------    
+    // No need to do any updates before we have verified everything.
+    // (But Chromia will roll back any updates if we get an error, so it's not critical that we do it this way.)
+
+    var dbg = move_debug_str(m_args);
+    val p_dbg = "type: " + m_args.piece_type_str + " (from: " + m_args.from_position + "attack on: " + att_args.attacked_position + " to: " + m_args.to_position + ")";
+
+    val game_id = m_args.game_id;
+    log("Move Attack Begin: game_id: " + game_id + ", last_turn: " + m_args.last_seen_turn, ", piece " + p_dbg + ", flags: " + dbg);
+    
+    // ----------------
+    // A.1. Check player entity
+    // ----------------
+    //log("Move A.1");
+    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+    require (minimal_game != null, "Player is not in a game, id:" + game_id);
+
+    // ----------------
+    // A.2. Is game is out of sync? 
+    // ----------------
+    //log("Move A.2");
+    val curr_turn = minimal_game.curr_turn_nr;
+    require(curr_turn == m_args.last_seen_turn, "Player client is on turn " + m_args.last_seen_turn + " but blockchain is on turn " + curr_turn);
+
+    // ----------------
+    // A.3. Validate positions
+    // ----------------
+    //log("Move A.3");
+    move_verify_pos(game_id, m_args);
+
+    // ----------------
+    // A.4. Verify attacker piece type and position
+    // ----------------
+    //log("Move A.4: Attacker" + piece_type_str + " at " + from_position);
+    val v_res = move_verify_basic_move(game_id, m_args, minimal_game);
+    val p_type = v_res.p_type; // The main piece type
+    val p = v_res.p; // The main piece data
+    val align = v_res.align; // This players color
+    val opp_align = v_res.opp_align; // Opponent's color
+
+    // ----------------
+    // A.5 Verify opponent's piece
+    // ----------------
+    val opp: piece_living_data = move_verify_opponent_piece(game_id, align, att_args, minimal_game);
+  
+    // ----------------
+    // A.6 Battle calculation
+    // ----------------
+    val is_classic_mode: boolean = game_is_classic(minimal_game.game_type); 
+    val is_chaos_mode: boolean = not is_classic_mode; // Else it's chaos mode.
+
+    // After this we know that our calculation matches the given data.
+    val battle_res = move_calc_and_verify_battle_result(
+        game_id = game_id,
+        m_args = m_args,
+        att_args = att_args,
+        p = p,
+        opp = opp,
+        rnd_numbers = rnd_numbers,
+        is_chaos_mode = is_chaos_mode,
+        chaos_args = chaos_args,
+        ret_args = ret_args
+    );
+
+    // ----------------
+    // A.6 Get same state
+    // ----------------
+    // Has this piece an jump enchantment on it?
+    val is_enchanted_jump = move_has_enchanted_jump(minimal_game.player_game, p.p);
+
+    // Get the opponent's vulnerable positions if any
+    val opp_vuln_ctxt: pre_vuln_context = move_get_vuln_path(minimal_game.game, opp_align); 
+
+    // ----------------
+    // A.6. Verify if move is legal
+    // ----------------
+
+    // Complex verification (still easier than check mate).
+    var m_tree: move_tree? = null;
+
+
+    val board: list<with_pos_and_alignment> = piece_get_all_vulnerables(minimal_game.game); 
+    val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, align);
+    val board_positions_all = build_board_positions_all(minimal_game.game, board, portals);
+
+
+    //log ("Move A.6.1 - calc move trees ");
+    val (ground_m_tree: move_tree?, jump_m_tree: move_tree?) = rules_get_all_valid_moves(
+            board_positions_all, 
+            p_type,
+            is_enchanted_jump,
+            p.is_knighted,
+            m_args.from_position,
+            align,
+            opp_vuln_ctxt
+    );
+
+    //log ("Move A.6.2 - move trees done ");
+    require(ground_m_tree != null or jump_m_tree != null, "No move tree found, cannot move piece " + p_dbg + ", id:" + game_id);
+    m_tree = move_tree_merge(ground_m_tree, jump_m_tree);
+    require(m_tree != null, "Failed merge?");
+
+    // Note: 
+    // The move that must exist in the move tree is the "attack_position", 
+    // the "to_position" can be anything, but must be empty.
+    val found_move = move_tree_get_pos_status(m_tree, att_args.attacked_position);
+    require(found_move > 0, "Illegal move: piece " + p_dbg + ", id:" + game_id);
+    require(found_move != 2, "Expected an attacking move, but on piece on attacked position, piece " + p_dbg + ", id:" + game_id);
+
+
+
+    // ----------------
+    // A.7. Verify Check and Mate status
+    // ----------------
+    // Is this a check?
+
+    var is_check = false;
+    if (m_args.checking_piece != null) {
+        //log("Move A.7.a");
+        // Pretty easy to verify, since we just get the move tree for the piece 
+        //and see if it touches the opponent's king.
+
+
+        // TODO: Implement this
+        is_check = true;
+    } else {
+        //log("Move A.7.b"); // No check
+    }
+
+    // TODO: Mate calc done in client, but could be expensive to repeat here?
+
+    log("Move Attack passed verification, piece " + p_dbg + ", flags: " + dbg + ", game_id: " + game_id);
+
+    // ----------------------------------------------    
+    // B. Updates 
+    // ----------------------------------------------    
+    var new_turn_type = turn_type.BLACK_MOVE;
+    if (minimal_game.is_white) { 
+        new_turn_type = turn_type.WHITE_MOVE;
+    }
+
+    // B.1 Do the updates for the attacker
+    val is_castle = false; // Must be false for attacks
+    val m_res = move_update(m_args, minimal_game, align, is_castle, is_check, p, new_turn_type); 
+    val m = m_res.m;
+    val new_turn = m_res.new_turn;
+
+
+    // B.2 Update hp and is_alive for both attacker and defender
+    move_battle_update_health(battle_res, is_chaos_mode, p, opp);
+  
+
+    // ----------------
+    // B.3. Create attack_move entity
+    // ----------------
+
+    val am = create attack_move(
+        move = m,
+        attacked_position = att_args.attacked_position,
+        result_type = battle_res.result,
+        defender_defense_points = att_args.defender_defense_points,
+        damage_points = att_args.damage_points
+    );
+
+    if (is_chaos_mode) {
+
+        // B.3.chaos.1. Create chaos_mode_args entity
+        require(chaos_args != null, "Internal error: Chaos mode args is null, id:" + game_id); // Already checked above.
+        create chaos_mode_args(
+            attack_move = am,
+            defender_can_retaliate = chaos_args.defender_can_retaliate,
+            is_flash_attack = chaos_args.is_flash_attack,
+            is_luck = chaos_args.is_luck 
+        );
+
+        when (battle_res.result) {
+            battle_result_type.hit -> {
+                // B.3.chaos.2. Create retaliation entity
+                require(ret_args != null, "Internal error: Retaliation args is null, id:" + game_id); // Already checked above.
+                val retaliation_move = create retaliation(
+                    attack_move = am,
+                    result_type = battle_res.retaliation_result,
+                    attacker_defence_points = ret_args.attacker_defence_points,
+                    damage_points = ret_args.damage_points
+                );
+            }
+        }
+
+        // ----------------
+        // B.3.chaos.3. Save the rnd results
+        // ----------------
+        turn_player_rnd_nr_create(new_turn, battle_res.rnd_results);
+    }
+
+
+    // ----------------
+    // B.4. Cleanup
+    // ----------------
+
+    move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, align);
+
+    // Won't add any vulns for attacks.
+
+
+    update minimal_game.game (.current_turn = new_turn.number);
+    log("/Move Attack End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + ", game_id: " + game_id);
+}
+
+
+// ------------------------------------------------------------
+// Helper functions
+// ------------------------------------------------------------
+
+
+// Verify some basic stuff about the opponent's piece.
+// We don't care about opponent's type etc.
+function move_verify_opponent_piece(game_id: integer, attacker_align: alignment, att_args: move_attack_arguments, minimal_game: minimal_game_result): piece_living_data {
+    val opp: piece_living_data? = piece_get_living_data_from_pos(minimal_game.game, att_args.attacked_position);
+    require(opp != null, "No opponent piece at position " + att_args.attacked_position + ", id:" + game_id);
+
+    // We can attack neutral pieces.
+    require(opp.align != attacker_align, "Expected opponent piece to NOT have the same alignment as the attacker " + opp.align + ", id:" + game_id);
+
+    //log("Move A.5: Opponent remaining hp: " + opp.remaining_hit_points + ", defence: " + opp.defence);
+    require(att_args.defender_defense_points == opp.defence, "Given defense points " + att_args.defender_defense_points + " does not match opponent's defence " + opp.defence + ", id:" + game_id);
+
+    return opp;
+}

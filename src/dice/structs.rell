@@ -1,0 +1,65 @@
+
+// -----------------------------------------------------
+// Logic for dice rolls
+// -----------------------------------------------------
+// This module allows you to roll many different dice types in a single roll.
+// This is somewhat over engineered since we currently only use D6 in this game.
+//
+// Note:
+// The reason we have a "_result_" struct on every level is that we need to 
+// present the individual results to the UI. On the server side this might not be strictly 
+// needed, but it's kept for debugging purposes.
+// -----------------------------------------------------
+
+// The type of die
+enum die_type {
+    d4,
+    d6,
+    d8,
+    d10 // 0-9
+}
+
+// Result of a single die roll
+struct die_result {
+    die_type;
+    result: integer;
+}
+
+// ----------
+// Dice number = many of the same type
+// ----------
+
+// How many of a certain dice should be used?
+struct dice_number {
+    type: die_type;
+    number_of_dice: integer; // How many?
+}
+
+// Result of a rolling a "dice_number" 
+// I.e. 3D6 => 1, 5, 3 
+struct dice_number_result {
+    dice_results: list<die_result>;
+    rnd_results: list<rnd_result>; // Save this in the db for later verification.
+}
+
+// ----------
+// Set of dice_number
+// ----------
+// Unusual, but we ALLOW for combination of different dice types in a set.
+// For example 3D6 + 2D4 + 1
+
+
+// A various dice that amounts to the attack of a piece
+struct die_set {
+    dice_numbers: list<dice_number>;
+    modifier: integer; // Usually a positive integer always added to the attack result.
+}
+
+
+// Set of dice results including modifier
+struct die_result_set {
+    dice_results: list<die_result>; // The actual results of the dice rolls. 3D6 + 2D4 => 1, 6, 3, 1, 2
+    dice_numbers: list<dice_number>; // Represents the dice in the die_set, like 3D6 + 2D4.
+    modifier: integer; // Usually a positive integer always added to the attack result.
+}
+

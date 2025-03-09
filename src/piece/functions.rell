@@ -4,6 +4,19 @@
 // Inspectors
 // ------------------------------------------------------------
 
+function piece_is_pos_out_of_board(pos: integer): boolean {
+    return not piece_is_pos_on_board(pos);
+}
+
+function piece_is_pos_on_board(pos: integer): boolean {
+    return pos > -1 and pos < 64;
+}
+
+
+// ------------------------------------------------------------
+// Get Piece
+// ------------------------------------------------------------
+
 // Get the piece occupying a given position, or null if none.
 function piece_get_via_game_and_position(game: game, pos: integer): piece? {
     return (v: vulnerable, p: piece)@? {
@@ -48,17 +61,36 @@ function piece_get_all_vulnerables(game: game): list<with_pos_and_alignment> {
     return res;
 }
 
+// Get data for a living piece, if exists.
 // We do this for performance reasons, 
 // since every single field access could else generate a new SELECT.
-// Returns:
-// 1. is_knighted
-// 2. active_type
-// 3. original_type
-function piece_get_data(given_piece: piece): (is_knighted: boolean, active_type: piece_type, original_type: piece_type) {
-    return (p: piece, op: owned_piece) @ {
-        p == given_piece,
-        op.piece == p
-    } (p.is_knighted, p.active_type, p.original_type );
+function piece_get_living_data_from_pos(g: game, given_pos: integer) :piece_living_data? {
+
+    val res = (pi: piece, v: vulnerable)@? {
+        g == v.game,
+        v == pi.vulnerable,
+        v.is_alive == true,
+        v.position == given_pos,
+    } (v.color, v.start_hit_points, v.remaining_hit_points, v.strength, v.defence, pi.is_knighted, pi.original_type, pi.active_type, found_piece = pi);
+
+    if (res != null) {
+
+        return piece_living_data(
+            align = res.color,
+            position = given_pos, // Duh?
+            start_hit_points = res.start_hit_points,
+            remaining_hit_points = res.remaining_hit_points,
+            strength = res.strength,
+            defence = res.defence,
+            is_knighted = res.is_knighted,
+            original_type = res.original_type,
+            active_type = res.active_type,
+            p = res.found_piece
+        );
+
+    } else {
+        return null;
+    }
 }
 
 // ------------------------------------------------------------
@@ -68,6 +100,7 @@ function piece_get_data(given_piece: piece): (is_knighted: boolean, active_type:
 function obstacle_create(game: game, pos: integer): vulnerable {
     return create vulnerable (
         .game = game,
+        .start_position = pos,
         .position = pos,
         .is_obstacle = true,
         .color = alignment.NEUTRAL,
@@ -88,6 +121,7 @@ function piece_create(g: game, owner: player_game, pos: integer, align: alignmen
 
     val v = create vulnerable (
         .game = g,
+        .start_position = pos,
         .position = pos,
         .is_obstacle = false,
         .color = align,
@@ -182,17 +216,15 @@ function piece_set_knighted(piece: piece) {
 // 5. JUMP -- Handled by the move module.
 
 // 6. SWITCH_PLACE
-function piece_switch_place(owned_by: player_game, piece1: piece, piece2: piece) {
+function piece_switch_place(align: alignment, piece1: piece, piece2: piece) {
     // Validation
     require(piece1.vulnerable.position != piece2.vulnerable.position, "Cannot switch place with itself");
 
     val pos1 = piece1.vulnerable.position;
     val pos2 = piece2.vulnerable.position;
 
-    val owned1 = owned_piece@? {piece1, owned_by};
-    require(owned1 != null, "Piece1 at " + pos1 + " is not owned by the player");
-    val owned2 = owned_piece@? {piece2, owned_by};
-    require(owned2 != null, "Piece2 at " + pos2 + " is not owned by the player");
+    require(piece1.vulnerable.color == align, "Piece1 at " + pos1 + " is not owned by the player");
+    require(piece2.vulnerable.color == align, "Piece2 at " + pos2 + " is not owned by the player");
 
 
     update piece1.vulnerable (.position = 1000); // Ugly, but must do this to avoid unique constraint.

@@ -8,10 +8,6 @@ function pos_to_int(pos: square_pos): integer {
     return pos.x + (pos.y * 8);
 }
 
-function pos_is_out_of_board_int(pos: integer): boolean {
-    val square_pos = translate_integer_pos_to_square_pos(pos);
-    return pos_is_out_of_board(square_pos);
-}
 
 function pos_is_out_of_board(pos: square_pos): boolean {
     return pos.x < 0 or pos.y < 0 or pos.x > 7 or pos.y > 7;

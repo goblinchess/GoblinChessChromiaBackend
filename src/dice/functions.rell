@@ -1,0 +1,11 @@
+// What is the maximum result of a single die?
+function die_max_result(dt: die_type): integer {
+    when (dt) {
+        die_type.d4 -> return 4;
+        die_type.d6 -> return 6;
+        die_type.d8 -> return 8;
+        die_type.d10 -> return 9; // Note: not 10.
+    }
+}
+
+

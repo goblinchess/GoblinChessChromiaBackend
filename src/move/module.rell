@@ -1,4 +1,6 @@
 import ^.turn.*;
 import ^.piece.*;
 import ^.move_rule.*;
+import ^.dice.*;
+import ^.battle.*;
 import ^.*;

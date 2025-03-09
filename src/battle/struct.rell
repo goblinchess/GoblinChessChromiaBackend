@@ -1,0 +1,32 @@
+
+
+// ------------------------------------------------------------
+// Battle
+// ------------------------------------------------------------
+// In classic mode most battles end with a kill.
+// This MIGHT not be true, if the defender has a A LOT of hit points (kings and stones)
+
+
+enum battle_result_type {
+    kill,    // The victim dies, in real chess this always happens (but chess calls it "capture").
+    hit,     // The attack makes at least some damage, meaning that the attack CANNOT occupy the same square as the defender.
+    miss,    // The attack does zero damage AND the attacker goes to the wrong square (meaning no retaliation possible)
+    error    // Error case (but also used when we don't care about the result, like a missing retaliation).
+}
+
+
+// Holds the information about the battle result
+struct battle_result {
+    result: battle_result_type;
+    defender_lost_hp: integer;
+    retaliation_result: battle_result_type;
+    attacker_lost_hp: integer;
+    luck: boolean; // true if attack was lucky and rolled highest score
+
+    rnd_results: list<rnd_result>; // Needed for the validation in the end of the game
+    
+    // Perhaps needed for Debug?
+    //attacker_die_result_set: die_result_set;
+    //retaliation_die_result_set: die_result_set?; // Doesn't have to exist
+}
+

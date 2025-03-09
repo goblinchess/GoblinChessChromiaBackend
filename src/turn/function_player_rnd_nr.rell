@@ -1,0 +1,90 @@
+
+
+
+// -------------------------------------
+// Rnd Result
+// -------------------------------------
+
+// Save the rnd_results for a turn.
+function turn_player_rnd_nr_create(
+    t: turn,
+    rnd_results: list<rnd_result>,
+) {
+
+    var idx: integer = 0;
+    for (rnd_result in rnd_results) {
+        create player_rnd_nr(turn = t, idx = idx, result = rnd_result.result, min = rnd_result.min, max = rnd_result.max);
+        idx++;
+    }
+}
+
+
+// ------------------------------------------------------------------
+// Find all rnd_result_full that for the player_game and validate them.
+// If something is wrong we return an error message and save the error!
+//
+// We do this after the game, b/c in the end of the game the client will send us 
+// the seed (s)he used (before that we don't have the seed).
+// ------------------------------------------------------------------
+function turn_player_rnd_nr_validate(
+    pg: player_game,
+    org_seed: integer, // Client's seed, unique for each game/player
+    game_id: integer // Just for debugging
+): text? {
+    // --------------------------
+    // 1. Find all data for the player
+    // --------------------------
+    val res_list = (r: player_rnd_nr, t: turn) @* {
+        t.created_by == pg,
+        r.turn == t
+    } (t.number, r.idx, r.result, r.min, r.max, playa_rnd_nr = r); 
+
+    // --------------------------
+    // 2. Translate to proper structs
+    // --------------------------
+    val rnd_results = list<rnd_result_full>();
+    for(res in res_list) {
+        val rnd_result = rnd_result_full(
+            result = res.result,
+            min = res.min,
+            max = res.max,
+            turn_nr = res.number,
+            player_rnd_nr = res.playa_rnd_nr
+        );
+
+        rnd_results.add(rnd_result);
+    }
+
+    // --------------------------
+    // 3. Validate the rnd_results
+    // --------------------------
+    var idx: integer = 0;
+    var curr_seed = org_seed;
+    for(rnd_result in rnd_results) {
+        val r = random_generate_numbers(rnd_result.min, rnd_result.max, curr_seed);
+        curr_seed = r.curr_seed;
+        if(r.result != rnd_result.result) {
+            // This could be either a hacker or a bug.
+            // If it's a bug, it will be pretty hard to find unless we have a detailed error message.
+            val err_msg = "Invalid random number at turn "+ rnd_result.turn_nr +" (index "+ idx + "), our number: "+ r.result +", client number: " + rnd_result.result + " (min: " + rnd_result.min + ", max: " + rnd_result.max + "), for game: " + game_id;
+            log(err_msg);
+
+            // Save the error
+            create player_rnd_nr_err(
+                player_rnd_nr = rnd_result.player_rnd_nr,
+                error_msg = err_msg
+            );
+
+            return err_msg; // No need to go on, one error is enough!
+        }
+
+        idx++;
+    }
+
+    return null; // No errors
+}
+
+
+
+
+

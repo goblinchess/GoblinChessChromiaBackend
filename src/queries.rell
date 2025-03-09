@@ -54,7 +54,7 @@ query in_game (caller_pubkey: pubkey) :in_game_result? {
     if (minimal_game == null) {
         return null;
     } else {
-        val g_data = game@ {.rowid == minimal_game.game.rowid} (.rowid, .black_player, .white_player, .game_type, .created_at);
+        val g_data = game@ {.rowid == minimal_game.game.rowid} (.rowid, .black_player, .white_player, .created_at);
 
 
         val plays_white = minimal_game.is_white;
@@ -68,7 +68,7 @@ query in_game (caller_pubkey: pubkey) :in_game_result? {
 
         return in_game_result(
             game_rowid = g_data.rowid.to_integer(),
-            game_type = g_data.game_type,
+            game_type = minimal_game.game_type,
             is_white = plays_white,
             opponent_pubkey = opp.signer,
             opponent_name = opp.name,

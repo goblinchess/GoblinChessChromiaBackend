@@ -31,26 +31,26 @@ entity move {
 entity attack_move {
     key move: move;
     attacked_position: integer; // 0-63 DOESN'T HAVE TO BE THE SAME AS THE "TO_POSITION"
+    result_type: battle_result_type;
+    defender_defense_points: integer; // The opponent's defense power
+    damage_points: integer; // How much we damage the opponent
+}
 
-    // For chaos mode we need use the die roll.
-    die_roll: integer; 
-    attack_points: integer;
-    defense_points: integer;
-    damage_points: integer;
-    is_kill: boolean;
+// In Chaos mode we need extra info about the attack.
+entity chaos_mode_args {
+    key attack_move: attack_move; // Can only happen after an attack move
+    defender_can_retaliate: boolean; // Some objects cannot retaliate (stones, for example)
+    is_flash_attack: boolean; // Jumps for example cannot be retaliated against.
+    is_luck: boolean; // true if attack was lucky and rolled highest score
 }
 
 // In Chaos mode, when an attack doesn't kill the defender, 
 // the defender MIGHT retaliate.
 entity retaliation {
     key attack_move: attack_move; // Can only happen after an attack move
-
-    // For chaos mode we need use the die roll.
-    die_roll: integer; 
-    attack_points: integer;
-    defense_points: integer;
-    damage_points: integer;
-    is_kill: boolean;
+    result_type: battle_result_type;
+    attacker_defence_points: integer;  // The attacker's defense power (the attacker is curretly defending himself)
+    damage_points: integer; // How much the retaliation damaged the attacker
 }
 // -------------------------------------
 // Vulnerable Path

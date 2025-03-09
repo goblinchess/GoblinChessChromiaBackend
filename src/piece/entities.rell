@@ -15,6 +15,7 @@
 // as to not break the unique constraint.
 entity vulnerable {
     index game: game;
+    start_position: integer; // 0-63 - This is needed since we put dead pieces on "-start_position"
     mutable position: integer; // 0-63
     key game, position; // No two objects can be in the same position
 

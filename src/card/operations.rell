@@ -38,15 +38,17 @@ operation skip_card(
 }
 
  
-
-
+// -------------------------------------
 // Play a card during a player's card turn
+// Main work is that every single card type needs specific verification.
+// -------------------------------------
 operation play_card(
     game_id: integer, 
     last_seen_turn: integer, // What turn the client last saw.
     card_type_str: text, 
     card_order_number: integer, // The order number when the card was drawn/generated.
-    card_picks: list<integer> // The squares picked by the player when playing the card.
+    card_picks: list<integer>, // The squares picked by the player when playing the card.
+    rnd_numbers: list<integer> // If any randomness was used playing this card, the numbers generated goes in here.
 ) {
     // -----------    
     // A. Verication
@@ -55,11 +57,45 @@ operation play_card(
 
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
-    
+
+    play_card_inner(
+        caller_pubkey, 
+        game_id, 
+        last_seen_turn, 
+        card_type_str, 
+        card_order_number, 
+        card_picks,
+        rnd_numbers
+    );
+}
+
+// -------------------------------------
+// A function is easier to test. 
+// -------------------------------------
+function play_card_inner(
+    caller_pubkey: pubkey,
+    game_id: integer, 
+    last_seen_turn: integer, // What turn the client last saw.
+    card_type_str: text, 
+    card_order_number: integer, // The order number when the card was drawn/generated.
+    card_picks: list<integer>, // The squares picked by the player when playing the card.
+    rnd_numbers: list<integer> // If any randomness was used playing this card, the numbers generated goes in here.
+) {
+    // -----------    
+    // A. Verication
+    // -----------    
+
     // A.1. Check player entity
     val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
     require (minimal_game != null, "Player is not in a game");
 
+    var new_turn_type = turn_type.BLACK_CARD;
+    var my_color = alignment.BLACK;
+    if (minimal_game.is_white) { 
+        new_turn_type = turn_type.WHITE_CARD;
+        my_color = alignment.WHITE;
+    }
+    
     // Yeah, but is it the CORRECT game?
     val found_game_rowid = minimal_game.game.rowid.to_integer();
     require (found_game_rowid == game_id, "Player things the game is " + game_id + " but is currently in game " + found_game_rowid);
@@ -72,33 +108,11 @@ operation play_card(
     val card_type: card_type = card_type.value(card_type_str);
 
     // A.4. Check if correct number of picks are sent for this card
-    val expected_pick_types: list<card_pick_type> = get_picks_for_card(card_type); 
-    val expected_nr_of_picks = expected_pick_types.size();
-    require(expected_nr_of_picks == card_picks.size(), "Expected " + expected_nr_of_picks + " picks for card " + card_type_str + " but got " + card_picks.size());
-
-    // A.5. Check if correct pick types are sent for this card
-    var pick_summary = "";
+    val expected_pick_types: list<card_pick_type> = card_pick_get_by_card_type(card_type); 
     val pick_piece_map = map<integer, piece>(); // Save the pieces we found on the board for the pick.
-    for (i: integer in range(expected_nr_of_picks)) {
-        val expected_p_type: card_pick_type = expected_pick_types[i];
-        val given_pos: integer = card_picks[i];
+    val pick_summary = card_pick_are_valid(minimal_game.game, card_type, card_type_str, expected_pick_types, card_picks, my_color, pick_piece_map);
 
-        // Let's see if there is/isn't a piece where we expect one.
-        val maybe_piece: piece? = piece_get_via_game_and_position(minimal_game.game, given_pos);
-        if (maybe_piece != null) {
-            require(expected_p_type == card_pick_type.PIECE_SQUARE or expected_p_type == card_pick_type.ANY_SQUARE, 
-                "Expected pick at pos " + i + " to be type " + expected_p_type + " but found a piece at position " + given_pos + ".");
-            pick_summary += "piece(" + given_pos + "), ";
-            pick_piece_map[i] = maybe_piece;
-        } else {
-            require(expected_p_type == card_pick_type.FREE_SQUARE or expected_p_type == card_pick_type.ANY_SQUARE, 
-                "Expected pick at pos " + i + " to be type " + expected_p_type + " but found a free square at position " + given_pos + ".");
-            pick_summary += "free(" + given_pos + "), ";
-        }
-
-    }
-
-    // A.6. Check if player has cards left
+    // A.5. Check if player has cards left
     val cards_left = minimal_game.player_game.cards_left;
     require(cards_left > 0, "Player has no cards left");
     
@@ -107,10 +121,6 @@ operation play_card(
     // -----------    
     // B. Updates 
     // -----------    
-    var new_turn_type = turn_type.BLACK_CARD;
-    if (minimal_game.is_white) { 
-        new_turn_type = turn_type.WHITE_CARD;
-    }
 
     // B.1. Create the turn record
     // Do this FIRST since lots of verification in here.
@@ -123,7 +133,7 @@ operation play_card(
     update minimal_game.player_game (.cards_left = cards_left - 1);
 
     // B.4. Create the picks
-    for (i: integer in range(expected_nr_of_picks)) {
+    for (i: integer in range(expected_pick_types.size())) {
         val expected_p_type: card_pick_type = expected_pick_types[i];
         val given_pos: integer = card_picks[i];
 
@@ -163,7 +173,7 @@ operation play_card(
             create_jump(minimal_game.player_game, new_card, pick_piece_map[0]);
         }
         SWITCH_PLACE -> {
-            create_switch_place(minimal_game.player_game, new_card, pick_piece_map[0], pick_piece_map[1]);
+            create_switch_place(my_color, new_card, pick_piece_map[0], pick_piece_map[1]);
         }
         WALL -> {
             create_wall(minimal_game.game, new_card, pick_piece_map, card_picks);
@@ -227,8 +237,8 @@ function create_jump(played_by: player_game, new_card: card, picked_piece: piece
 }
 
 // 6. SWITCH_PLACE
-function create_switch_place(played_by: player_game, new_card: card, picked_piece1: piece, picked_piece2: piece) {
-    piece_switch_place(played_by, picked_piece1, picked_piece2); // Piece function
+function create_switch_place(align: alignment, new_card: card, picked_piece1: piece, picked_piece2: piece) {
+    piece_switch_place(align, picked_piece1, picked_piece2); // Piece function
 }
 
 // 7. WALL

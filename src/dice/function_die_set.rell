@@ -1,0 +1,120 @@
+
+
+// Returns the default chaotic die set (2d6)
+// The idea is that various pieces should use different die sets, 
+// but so far it's not implemented.
+function die_set_get_default_chaotic(): die_set {
+    val dice_number = dice_number(die_type.d6, 2);
+    val dice_numbers: list<dice_number> = [dice_number];
+    return die_set(dice_numbers, 0);
+}
+
+
+// -----------------------------------------------------
+// Rolling all dice. 
+// -----------------------------------------------------
+// Main function of this module.
+//
+// Returns:
+// (die_result_set, random_box)
+// -----------------------------------------------------
+function die_set_roll(given_dice: die_set, rnd_numbers: list<integer>): (die_result_set, list<rnd_result>) {
+    var rnd_results = list<rnd_result>();
+
+    var rnd_offset = 0;
+    val dice_results = list<die_result>();
+    for (dn: dice_number in given_dice.dice_numbers) {
+        val dn_res: dice_number_result = dice_number_roll(dn, rnd_numbers, rnd_offset);
+
+        rnd_offset += dn.number_of_dice;
+        
+        // Add the dice_results
+        dice_results.add_all(dn_res.dice_results); // No need to keep different dice_number result lists separated.
+
+        // Add the rnd_results
+        rnd_results.add_all(dn_res.rnd_results);
+    }
+
+    val die_res_set = die_result_set(dice_results, given_dice.dice_numbers, given_dice.modifier);
+    return (die_res_set, rnd_results);
+}
+
+
+// -----------------------------------------------------
+// die_result_set
+// -----------------------------------------------------
+// These functions work on the RESULT of die_set roll.
+
+
+// Calculate the result of a die result set.
+function die_res_set_calc(die_res_set: die_result_set): integer {
+    var res = 0;
+    for (dr in  die_res_set.dice_results) {
+        res += dr.result;
+    }
+    return res +  die_res_set.modifier;
+}
+
+// Calculate the maximum die result of a die result set.
+function die_res_set_max_result(die_res_set: die_result_set): integer {
+    var max_res = 0;
+    for (dn: dice_number in die_res_set.dice_numbers) {
+        max_res += dice_number_max_result(dn);
+    }
+    return max_res + die_res_set.modifier;
+}
+
+// -----------------------------------------------------
+// Debug
+// -----------------------------------------------------
+
+// Generate a string representation of what dice to roll (e.g. "2D6+D4 +1")
+function die_set_debug(ds: die_set): text {
+    var result = "";
+    var first = true;
+    
+    for (dn: dice_number in ds.dice_numbers) {
+        if (not first) {
+            result += "+";
+        }
+        result += dice_number_debug(dn);
+        first = false;
+    }
+    
+    if (ds.modifier != 0) {
+        if (ds.modifier > 0) {
+            result += " +" + ds.modifier;
+        } else {
+            result += " " + ds.modifier;
+        }
+    }
+    
+    return result;
+}
+
+
+// Generate a short string representation of dice results (e.g. "5+2+1 +3")
+function die_res_set_debug(die_res_set: die_result_set): text {
+    var result = "";
+    var first = true;
+    
+    for (dr in die_res_set.dice_results) {
+        if (not first) {
+            result += "+";
+        }
+        result += "" + dr.result;
+        first = false;
+    }
+    
+    if (die_res_set.modifier != 0) {
+        if (die_res_set.modifier > 0) {
+            result += " +" + die_res_set.modifier;
+        } else {
+            result += " " + die_res_set.modifier;
+        }
+    }
+    
+    return result;
+}
+
+

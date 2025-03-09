@@ -1,0 +1,80 @@
+
+// Returns the maximum result of a die number (e.g. 3d6 = 18)
+function dice_number_max_result(dn: dice_number): integer {
+    val single_die_max = die_max_result(dn.type);
+    return single_die_max * dn.number_of_dice;
+}
+
+// E.g. 3d6 or d6 (if 1)
+function dice_number_debug(dn: dice_number): text {
+    if (dn.number_of_dice == 1) { 
+        return "" + dn.type.name;
+    }
+    else {
+        return "" + dn.number_of_dice + dn.type.name;
+    }
+}
+
+// ----------------------------------
+// Roll a type of die "count" times and return the result.
+// We don't actually roll the dice, just validate the rnd_numbers.
+// 
+// Note: This is over engineered since we currently only use D6. 
+// ----------------------------------
+function dice_number_roll(dn: dice_number, rnd_numbers: list<integer>, rnd_offset: integer): dice_number_result {
+    when (dn.type) {
+        die_type.d4 -> return dice_number_roll_d4(dn.number_of_dice, rnd_numbers, rnd_offset);
+        die_type.d6 -> return dice_number_roll_d6(dn.number_of_dice, rnd_numbers, rnd_offset);
+        die_type.d8 -> return dice_number_roll_d8(dn.number_of_dice, rnd_numbers, rnd_offset);
+        die_type.d10 -> return dice_number_roll_d10(dn.number_of_dice, rnd_numbers, rnd_offset);
+    }
+}
+
+// 1-4
+function dice_number_roll_d4(dice_count: integer, rnd_numbers: list<integer>, rnd_offset: integer): dice_number_result {
+    return inner_random_basic_check(dice_count, 1, 5, die_type.d4, rnd_numbers, rnd_offset);
+}
+
+// 1-6
+function dice_number_roll_d6(dice_count: integer, rnd_numbers: list<integer>, rnd_offset: integer): dice_number_result {
+    return inner_random_basic_check(dice_count, 1, 7, die_type.d6, rnd_numbers, rnd_offset);
+}
+
+// 1-8
+function dice_number_roll_d8(dice_count: integer, rnd_numbers: list<integer>, rnd_offset: integer): dice_number_result {
+    return inner_random_basic_check(dice_count, 1, 9, die_type.d8, rnd_numbers, rnd_offset);
+}
+
+// 0-9
+function dice_number_roll_d10(dice_count: integer, rnd_numbers: list<integer>, rnd_offset: integer): dice_number_result {
+    return inner_random_basic_check(dice_count, 0, 10, die_type.d10, rnd_numbers, rnd_offset);
+}
+
+// ----------------------------------
+// Not rolling any dice, just checks if the given numbers are within bounds.
+// The real verification comes in the end of the game.
+// ----------------------------------
+function inner_random_basic_check(count: integer, from: integer, to: integer, dt: die_type, rnd_numbers: list<integer>, rnd_offset: integer): dice_number_result {
+
+    // Build the result list
+    val dice_results = list<die_result>();
+    val rnd_results = list<rnd_result>();
+
+    for (i in range(count)) {
+        val actual_index = i + rnd_offset;
+        val rnd_num = rnd_numbers[actual_index];
+        require(from <= rnd_num and rnd_num <= to, "Invalid random number: " + rnd_num + " given at index: " + actual_index + ", for die type: " + dt.name + " (from: " + from + " - to: " + to + ")");
+
+        // Add the die result
+        val die_result = die_result(dt, rnd_num);
+        dice_results.add(die_result);
+
+        // Add the rnd_result
+        val rnd_result = rnd_result(result = rnd_num, min = from, max = to);
+        rnd_results.add(rnd_result);
+    }
+
+    return dice_number_result(dice_results, rnd_results);
+}
+
+

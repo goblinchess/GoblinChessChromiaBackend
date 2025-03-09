@@ -8,6 +8,16 @@
 // Inspectors
 // ----------
 
+
+function game_is_classic(gt: game_type) :boolean {
+    when (gt) {
+        game_type.SPEED_5_CLASSIC -> return true;
+        game_type.SPEED_10_CLASSIC -> return true;
+        else -> return false;
+    }
+}
+
+
 // Will find the player, the game and the color 
 // from the player's pubkey
 function get_minimal_game_data(caller_pubkey: pubkey) :minimal_game_result? {
@@ -16,13 +26,14 @@ function get_minimal_game_data(caller_pubkey: pubkey) :minimal_game_result? {
         p.signer == caller_pubkey, 
         pg.player == p, 
         pg.is_finished == false }
-        (player = pg.player, player_game = pg, game = pg.game, is_white = pg.is_white);
+        (player = pg.player, player_game = pg, game = pg.game, game_type = pg.game.game_type, is_white = pg.is_white);
 
     if (res != null) {
         return minimal_game_result(
             player = res.player,
             player_game = res.player_game,
             game = res.game,
+            game_type = res.game.game_type,
             curr_turn_nr = res.game.current_turn,
             is_white =res.is_white 
         );

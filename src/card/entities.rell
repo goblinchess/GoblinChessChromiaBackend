@@ -54,12 +54,15 @@ entity card_pick_piece {
     picked_piece: piece; // The piece that was picked
 }
 
+// What we expect.
 enum card_pick_type {
-    ANY_SQUARE, // Picked any square
-    FREE_SQUARE, // Picked empty square
-    PIECE_SQUARE // Picked a piece
+    ANY_SQUARE, // Pick any square (not used)
+    FREE_SQUARE, // Pick empty square
+    PIECE_SQUARE, // Pick a piece
+    PIECE_MINE_SQUARE, // Pick a piece same color as the player
+    PIECE_NON_KING_SQUARE, // Pick a piece that is not a king
+    PIECE_MINE_NON_KING_SQUARE // Pick a piece that is not a king and same color as the player
 }
-
 
 // -------------------------------------
 // Active Data
