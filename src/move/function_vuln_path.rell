@@ -4,27 +4,28 @@
 // Inspectors
 // -------------------------------------
 
-function move_get_vuln_path(g: game, color: alignment): pre_vuln_context {
+function move_get_vuln_path(g: game, color: alignment): (v_ctxt: pre_vuln_context, moved_piece: piece?) {
             
     // Fetch from DB.        
-    val encoded_path: text? = move_get_vuln_path_inner(g, color); 
+    val res = move_get_vuln_path_inner(g, color); 
 
     // Build a path_base
-    if (encoded_path != null) {
-        val positions = move_dencode_text_pos_list(encoded_path);
+    if (res != null) {
+        val positions = move_dencode_text_pos_list(res.encoded_path);
         val ret_path =path_base(path_type.GROUND_MOVE, positions); // Always a ground move (but doesn't matter)
-        return pre_vuln_context(ret_path);
+        return (v_ctxt = pre_vuln_context(ret_path), moved_piece = res.p);
     } else {
-        return pre_vuln_context( prev_turn_vuln_path = null);
+        return (v_ctxt = pre_vuln_context( prev_turn_vuln_path = null), moved_piece = null);
     }
 }
 
 // Returns a list of all current vulnerable positions and the corresponding vulnerable piece.
-function move_get_vuln_path_inner(g: game, color: alignment): text? {
-    return (vp: current_vuln_path)@? {
+function move_get_vuln_path_inner(g: game, color: alignment): (encoded_path: text, p: piece)? {
+    return (vp: current_vuln_path, m: move)@? {
         vp.game == g, 
-        vp.color == color
-        } (vp.encoded_path);
+        vp.color == color,
+        m == vp.move
+        } (encoded_path = vp.encoded_path, p = m.piece_moved);
 }
 
 // -------------------------------------

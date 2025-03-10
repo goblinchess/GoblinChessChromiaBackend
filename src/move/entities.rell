@@ -65,7 +65,7 @@ entity current_vuln_path {
     color: alignment; // If the "mover" was white/black.
     key game, color; // Can only ever be ONE vuln path per player.
     move: move;
-    encoded_path: text; // 0-63_0-63_0-63 , where first number is the first position.
+    encoded_path: text; // 0-63_0-63_0-63_0-63 e.g. 9_17_25 , where first number is the first position.
 }
 
 // -------------------------------------

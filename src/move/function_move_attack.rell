@@ -36,7 +36,7 @@ function move_attack_inner(
     // (But Chromia will roll back any updates if we get an error, so it's not critical that we do it this way.)
 
     var dbg = move_debug_str(m_args);
-    val p_dbg = "type: " + m_args.piece_type_str + " (from: " + m_args.from_position + "attack on: " + att_args.attacked_position + " to: " + m_args.to_position + ")";
+    val p_dbg = "type: " + m_args.piece_type_str + " (from: " + m_args.from_position + " -> attack on: " + att_args.attacked_position + " -> dest " + m_args.to_position + ")";
 
     val game_id = m_args.game_id;
     log("Move Attack Begin: game_id: " + game_id + ", last_turn: " + m_args.last_seen_turn, ", piece " + p_dbg + ", flags: " + dbg);
@@ -74,7 +74,12 @@ function move_attack_inner(
     // ----------------
     // A.5 Verify opponent's piece
     // ----------------
-    val opp: piece_living_data = move_verify_opponent_piece(game_id, align, att_args, minimal_game);
+    // Get the opponent's vulnerable positions if any
+    val res_v_path = move_get_vuln_path(minimal_game.game, opp_align); 
+    val opp_vuln_ctxt: pre_vuln_context = res_v_path.v_ctxt;
+    val v_path_opp_piece: piece? = res_v_path.moved_piece;
+
+    val opp: piece_living_data = move_verify_opponent_piece(game_id, align, att_args, minimal_game, opp_vuln_ctxt, v_path_opp_piece);
   
     // ----------------
     // A.6 Battle calculation
@@ -100,9 +105,6 @@ function move_attack_inner(
     // ----------------
     // Has this piece an jump enchantment on it?
     val is_enchanted_jump = move_has_enchanted_jump(minimal_game.player_game, p.p);
-
-    // Get the opponent's vulnerable positions if any
-    val opp_vuln_ctxt: pre_vuln_context = move_get_vuln_path(minimal_game.game, opp_align); 
 
     // ----------------
     // A.6. Verify if move is legal
@@ -138,7 +140,7 @@ function move_attack_inner(
     // the "to_position" can be anything, but must be empty.
     val found_move = move_tree_get_pos_status(m_tree, att_args.attacked_position);
     require(found_move > 0, "Illegal move: piece " + p_dbg + ", id:" + game_id);
-    require(found_move != 2, "Expected an attacking move, but on piece on attacked position, piece " + p_dbg + ", id:" + game_id);
+    require(found_move == 2, "Expected an attacking move, but on piece on attacked position, piece " + p_dbg + ", id:" + game_id);
 
 
 
@@ -207,7 +209,7 @@ function move_attack_inner(
         );
 
         when (battle_res.result) {
-            battle_result_type.hit -> {
+            battle_result_type.HIT -> {
                 // B.3.chaos.2. Create retaliation entity
                 require(ret_args != null, "Internal error: Retaliation args is null, id:" + game_id); // Already checked above.
                 val retaliation_move = create retaliation(
@@ -239,23 +241,3 @@ function move_attack_inner(
     log("/Move Attack End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + ", game_id: " + game_id);
 }
 
-
-// ------------------------------------------------------------
-// Helper functions
-// ------------------------------------------------------------
-
-
-// Verify some basic stuff about the opponent's piece.
-// We don't care about opponent's type etc.
-function move_verify_opponent_piece(game_id: integer, attacker_align: alignment, att_args: move_attack_arguments, minimal_game: minimal_game_result): piece_living_data {
-    val opp: piece_living_data? = piece_get_living_data_from_pos(minimal_game.game, att_args.attacked_position);
-    require(opp != null, "No opponent piece at position " + att_args.attacked_position + ", id:" + game_id);
-
-    // We can attack neutral pieces.
-    require(opp.align != attacker_align, "Expected opponent piece to NOT have the same alignment as the attacker " + opp.align + ", id:" + game_id);
-
-    //log("Move A.5: Opponent remaining hp: " + opp.remaining_hit_points + ", defence: " + opp.defence);
-    require(att_args.defender_defense_points == opp.defence, "Given defense points " + att_args.defender_defense_points + " does not match opponent's defence " + opp.defence + ", id:" + game_id);
-
-    return opp;
-}

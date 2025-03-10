@@ -36,9 +36,9 @@ function calculate_chaos_attack_result(
     val max_result = die_res_set_max_result(attack_die_res_set);
     val luck = attack_damage == max_result;
     
-    var result: battle_result_type = battle_result_type.error;
+    var result: battle_result_type = battle_result_type.ERROR;
     var d_lost_hp = 0;
-    var retaliation_result = battle_result_type.error;
+    var retaliation_result = battle_result_type.ERROR;
     var a_lost_hp = 0;
     
     val d_curr_hp = def_hp;
@@ -51,13 +51,13 @@ function calculate_chaos_attack_result(
     // Calc main battle result type
     if (att_res > 0) {
         if (att_res >= d_curr_hp) {
-            result = battle_result_type.kill;
+            result = battle_result_type.KILL;
         } else {
-            result = battle_result_type.hit;
+            result = battle_result_type.HIT;
             d_lost_hp = att_res;
         }
     } else {
-        result = battle_result_type.miss;
+        result = battle_result_type.MISS;
     }
     
     // ------------------
@@ -68,7 +68,7 @@ function calculate_chaos_attack_result(
     // (being far away makes retalation strange), therefore only "Hit" will give retaliation.
     var retaliation_die_res_set: die_result_set? = null;
     
-    if (result == battle_result_type.hit) {
+    if (result == battle_result_type.HIT) {
         if (can_retaliate and not flash_attack) {
             // Retaliation 
 
@@ -89,16 +89,16 @@ function calculate_chaos_attack_result(
             // Calc retaliation result type
             if (def_res > 0) {
                 if (def_res >= a_curr_hp) {
-                    retaliation_result = battle_result_type.kill;
+                    retaliation_result = battle_result_type.KILL;
                 } else {
-                    retaliation_result = battle_result_type.hit;
+                    retaliation_result = battle_result_type.HIT;
                     a_lost_hp = def_res;
                 }
             } else {
-                retaliation_result = battle_result_type.miss;
+                retaliation_result = battle_result_type.MISS;
             }
         } else {
-            retaliation_result = battle_result_type.miss; // There was no retaliation, but we count it as a "miss".
+            retaliation_result = battle_result_type.MISS; // There was no retaliation, but we count it as a "miss".
         }
     }
     

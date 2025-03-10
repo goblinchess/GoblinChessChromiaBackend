@@ -4,26 +4,26 @@
 // ------------------------------------------------------------
 function move_battle_update_health(battle_res: battle_result, is_chaos_mode: boolean, p: piece_living_data, opp: piece_living_data) {
       when(battle_res.result) {
-        battle_result_type.kill -> {
+        battle_result_type.KILL -> {
             update opp.p.vulnerable (
                 .is_alive = false,
                 .position = -opp.p.vulnerable.start_position // Remember that pos + game is unique. We cannot put dead pieces just anywhere.
             );
         }
-        battle_result_type.hit -> {
+        battle_result_type.HIT -> {
             update opp.p.vulnerable (
                 .remaining_hit_points = opp.p.vulnerable.remaining_hit_points - battle_res.defender_lost_hp,
             );
 
             if (is_chaos_mode) {
                 when(battle_res.retaliation_result) {
-                    battle_result_type.kill -> {
+                    battle_result_type.KILL -> {
                         update p.p.vulnerable ( // <-- The attacker
                             .is_alive = false,
                             .position = -p.p.vulnerable.start_position // Remember that pos + game is unique. We cannot put dead pieces just anywhere.
                         );
                     }
-                    battle_result_type.hit -> {
+                    battle_result_type.HIT -> {
                         update p.p.vulnerable ( // <-- The attacker
                             .remaining_hit_points = p.p.vulnerable.remaining_hit_points - battle_res.attacker_lost_hp,
                         );

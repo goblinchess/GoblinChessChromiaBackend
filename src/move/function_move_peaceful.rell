@@ -61,8 +61,8 @@ function move_peaceful_inner(
     // Has this piece an jump enchantment on it?
     val is_enchanted_jump = move_has_enchanted_jump(minimal_game.player_game, p.p);
 
-    // Get the opponent's vulnerable positions if any
-    val opp_vuln_ctxt: pre_vuln_context = move_get_vuln_path(minimal_game.game, opp_align); 
+    val res = move_get_vuln_path(minimal_game.game, opp_align); 
+    val opp_vuln_ctxt: pre_vuln_context = res.v_ctxt;
 
     // ----------------
     // A.6. Verify if move is legal
@@ -98,7 +98,7 @@ function move_peaceful_inner(
             p.is_knighted,
             m_args.from_position,
             align,
-            opp_vuln_ctxt
+            opp_vuln_ctxt // Not actually needed. (this is a peaceful move, so we don't need to check for vulnerable paths)
         );
 
         //log ("Move A.6.b.2 - move trees done ");
@@ -108,7 +108,7 @@ function move_peaceful_inner(
 
         val found_move = move_tree_get_pos_status(m_tree, m_args.to_position);
         require(found_move > 0, "Illegal move: " + p_dbg + ", id:" + game_id);
-        require(found_move != 2, "Reported peaceful move is attacking move: " + p_dbg + ", id:" + game_id);
+        require(found_move == 1, "Reported peaceful move is attacking move: " + p_dbg + ", id:" + game_id);
     }
 
     // ----------------

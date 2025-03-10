@@ -70,12 +70,12 @@ function move_calc_and_verify_battle_result(
         "Given Battle result type "+ att_args.attack_result_type_str + " doesn't match calculated result " + battle_res.result + ", id:" + game_id);
 
     when (battle_res.result) {
-        battle_result_type.kill -> {
+        battle_result_type.KILL -> {
             // USUALLY the case for both classic and chaos mode, 
             // not much to validate (since no retaliation is possible).
             // We don't even care about damage points here, dead is dead.
         }
-        battle_result_type.miss -> {
+        battle_result_type.MISS -> {
             require(m_args.to_position != att_args.attacked_position, 
                 "When we miss we cannot occupy the opponents square at "+ att_args.attacked_position + ", id:" + game_id);
             // TODO: We COULD go on to verify:
@@ -85,7 +85,7 @@ function move_calc_and_verify_battle_result(
             // 
             // Note: No retaliation is possible when the attacker went to the wrong square.
         }
-        battle_result_type.hit -> {
+        battle_result_type.HIT -> {
             require(m_args.to_position != att_args.attacked_position, 
                 "Hit means the defender survived, so we cannot occupy the square at "+ att_args.attacked_position + ", id:" + game_id);
             // TODO: We COULD go on to verify:
@@ -107,7 +107,7 @@ function move_calc_and_verify_battle_result(
                     "Given retaliation result type "+ ret_args.retaliation_result_type_str + " doesn't match calculated result " + battle_res.retaliation_result + ", id:" + game_id);
             
                 when (battle_res.retaliation_result) {
-                    battle_result_type.hit -> {
+                    battle_result_type.HIT -> {
                         // Here we can verify the retaliation damage 
                         require(battle_res.attacker_lost_hp == ret_args.damage_points, 
                             "Retaliation calculated damage " + battle_res.attacker_lost_hp + " doesn't match given retaliation damage " + ret_args.damage_points + ", id:" + game_id);
@@ -131,7 +131,7 @@ function move_attack_verify_rnd_results(game_id: integer, battle_res: battle_res
     if (given_rnd_num_size > calc_rnd_num_size) { 
         // This CAN happen! 
         // (If we miss and want to calculate how much shorter the advance is)
-        if (battle_res.result == battle_result_type.miss) {
+        if (battle_res.result == battle_result_type.MISS) {
             // This is OK, no need to go deeper
             val rnd_move_die_roll = rnd_numbers[calc_rnd_num_size];
             val rnd_res_miss = rnd_result(result = rnd_move_die_roll, min = 1, max = 6);

@@ -8,10 +8,10 @@
 
 
 enum battle_result_type {
-    kill,    // The victim dies, in real chess this always happens (but chess calls it "capture").
-    hit,     // The attack makes at least some damage, meaning that the attack CANNOT occupy the same square as the defender.
-    miss,    // The attack does zero damage AND the attacker goes to the wrong square (meaning no retaliation possible)
-    error    // Error case (but also used when we don't care about the result, like a missing retaliation).
+    KILL,    // The victim dies, in real chess this always happens (but chess calls it "capture").
+    HIT,     // The attack makes at least some damage, meaning that the attack CANNOT occupy the same square as the defender.
+    MISS,    // The attack does zero damage AND the attacker goes to the wrong square (meaning no retaliation possible)
+    ERROR    // Error case (but also used when we don't care about the result, like a missing retaliation).
 }
 
 

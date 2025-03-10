@@ -13,7 +13,7 @@ function calculate_classic_attack_result(
     // ------------------
     val attack_damage = 7; // Always 7 in classic mode
     
-    var result: battle_result_type = battle_result_type.error;
+    var result: battle_result_type = battle_result_type.ERROR;
     var d_lost_hp = 0;
     
     val d_curr_hp = def_hp;
@@ -26,16 +26,16 @@ function calculate_classic_attack_result(
     // Calc main battle result type
     require(att_res > 0, "Error for classical mode.");
     if (att_res >= d_curr_hp) {
-        result = battle_result_type.kill;
+        result = battle_result_type.KILL;
     } else {
-        result = battle_result_type.hit;
+        result = battle_result_type.HIT;
         d_lost_hp = att_res;
     }
     
     return battle_result(
         result = result,
         defender_lost_hp = d_lost_hp,
-        retaliation_result = battle_result_type.error, // Does not apply
+        retaliation_result = battle_result_type.ERROR, // Does not apply
         attacker_lost_hp = 0, // Does not apply
         luck = false, // Does not apply
         rnd_results = list<rnd_result>() // Empty
