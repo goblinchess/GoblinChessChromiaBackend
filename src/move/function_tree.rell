@@ -28,6 +28,18 @@ function move_tree_build(pos: integer, ptree: pre_tree): move_tree {
 // Inspectors
 // --------------------------------------------------------------------
 
+// Returns "true" if this move tree has ANY action it can take this turn.
+// Note: protections are not actions we can take THIS turn.
+function move_tree_can_take_action(mt: move_tree): boolean {
+    if (mt.moves_all.size() > 0) {
+        return true;
+    }
+    if (mt.attackable_sqs.size() > 0) {
+        return true;
+    }
+    return false;
+}
+
 function move_tree_get_pos_status(mt: move_tree, pos: integer): integer {
     // Check if position is in attacks list
     if (mt.attackable_sqs.contains(pos)) {
@@ -51,6 +63,18 @@ function move_tree_get_pos_status(mt: move_tree, pos: integer): integer {
     return 0; // Not found
 }
 
+function move_tree_build_active_path_from_destination(mt: move_tree, pos: integer): path_base? {
+    for(tmp_path: path_base in mt.paths) {
+        if(path_is_destination_in_path(pos, tmp_path)) {
+            return path_build_active(tmp_path, pos);
+        }
+    }
+
+    // Not sure if this is an error?
+    log("move_tree_build_active_path_from_destination() - Pos " + pos + " not found in any of the paths.");
+    return null;
+}
+
 
 function move_tree_has_attackable_vuln(mt: move_tree): boolean {
     val avs = mt.attackable_vulns;
@@ -61,6 +85,14 @@ function move_tree_has_attackable_vuln(mt: move_tree): boolean {
     }
 
     return false;
+}
+
+// Returns ALL moves: moves_all + attackable_sqs
+function move_tree_moves_n_attacks(mt: move_tree): list<integer> {
+    val all = list<integer>();
+    all.add_all(mt.moves_all);
+    all.add_all(mt.attackable_sqs);
+    return all;
 }
 
 // ---------------------------

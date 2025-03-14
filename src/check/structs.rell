@@ -1,0 +1,39 @@
+
+
+// -------------------------------------------------------------------
+// This type is used for both normal check and check mate calculations.
+//
+// [king_escape_data] holds the squares of the king's [move_tree].
+// Knows what squares are currently attacked (by the "other player")
+// i.e. where the King-under-attack can/cannot move.
+// -------------------------------------------------------------------
+struct check_mate_calc_data {
+    king_escape_data: king_escape_data; // holds the squares of the king's [move_tree].
+    check_sb_data: check_stat_board_calculator_data;  // keeps track of the paths the attackers use to check the king.
+    board_all: board_positions_all; 
+}
+
+struct king_escape_data {
+    king_pos: integer; // The king's position
+    mating_team: character_team; // The King's opponent's team
+    board_all: board_positions_all; // The board 
+    empty_squares: list<integer>; 
+    opponent_squares: list<integer>; 
+}
+
+// Holds:
+// a) KingPos = where the king is at the moment.
+// a) [List<CheckingAttacker>] keeps track of the paths the attackers use to check the king.
+//    (We need these paths to see if they can be blocked).
+struct check_stat_board_calculator_data {
+    king_pos: integer;
+    checking_attackers: list<checking_attacker>;
+}
+
+// An attacker currenly checking the king.
+struct checking_attacker {
+    attacker_pos: integer;
+    check_path: path_base;   // An attacker only checks using one single path.
+    all_check_path_squares: set<integer>; // Hold all squares we are intereseted in.
+}
+

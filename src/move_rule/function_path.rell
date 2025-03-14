@@ -27,6 +27,47 @@ function path_jump_attack_2(start_pos: integer, end_pos: integer): path_base {
     return path_base(new_path, path_type.JUMP_ATTACK);
 }
 
+// ----------------------------------------------------------------------------
+// "Active path" means that this is a real move, not a potential move 
+// (which might be longer).
+//
+// Returs a new [path_base] based on the current path but ending with the given destination 
+//
+// Here we know that there are no enemies BEFORE the end of the path
+// (or else the path wouldn't exist).
+// So if we make the path shorter it will be transformed into a move.
+// ----------------------------------------------------------------------------
+function path_build_active(org_path: path_base, dest: integer): path_base {
+    val active = path_get_active(org_path, dest);
+    return path_base(active, org_path.path_type);
+}
+
+
+function path_get_active(org_path: path_base, dest: integer): list<integer> {
+    val res: list<integer> = [];
+    for (tmp_pos: integer in org_path.path) {
+        res.add(tmp_pos);
+        if (tmp_pos == dest) {
+            return res;
+        }
+    }
+    require(false, "Destination " + dest + " not found in path " + org_path.path);
+    return res; // Never reached
+}
+
+// ----------------------------------------------------------------------------
+// Inspectors
+// ----------------------------------------------------------------------------
+
+function path_is_destination_in_path(dest_pos: integer, path: path_base): boolean {
+    for(tmp_pos: integer in path.path) {
+        if (tmp_pos == dest_pos) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 // Returns the mid positions of a path.
 // If a path is 1,2,3,4 the "mid" is 2,3.
@@ -50,6 +91,18 @@ function path_get_mid_positions(path: path_base): list<integer> {
 
         return ret;
     }
+}
+
+// ----------------------------------------------------------------------------
+// Debug
+// ----------------------------------------------------------------------------
+function path_debug(path: path_base): text {
+    var dbg = "(";
+    for(pos: integer in path.path) {
+        dbg += " -> " + pos;
+    }
+    dbg += ")";
+    return dbg;
 }
 
 

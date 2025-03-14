@@ -1,0 +1,148 @@
+// -------------------------------------------------------------------
+// This type is used for both normal check and check mate calculations.
+//
+// If the king is in check, it is NOT mate if:
+// ++++++++++++++++++++
+// 1. The King can escape by moving to a "safe square" (not attacked square), or
+// 2. Some (subject) piece can stop the check, by either blocking or capture the checker.
+// 
+// We'll check these in order to, since they are increasingly expensive/complex.
+// 
+// Rules unique to this game:
+// ++++++++++++++++++++
+// There are two ways to win: 
+// 1. Classical check mate: king is in check and cannot move out of check.
+// 2. Kill the king by reducing HPs to zero.
+// 
+// The reason for (2) is that:
+// a) when trying to get out of check, the king migth not succeed, since when the king
+// (or any from same team) tries to take out the attacking piece, they fail.
+// b) Now during opponents turn, the attacking piece might attack the king. 
+//    Usually this isn't a problem, since the king has A LOT of HP, and should survive many attacks.
+// c) This makes our next turn a copy of previous turn, with the only difference that the king has lower HP.
+// I.e. the king is in check at the beginning of the turn and must find a way to avoid it.
+// 
+// The alternative would have been if the king fails to get out of check he immediately loses.
+// But this would alter the game making simple check too dangerous.
+// -------------------------------------------------------------------
+
+
+function check_mate_calc_data_constructor(
+    king: with_pos_and_alignment, 
+    mating_team: character_team, 
+    board_all: board_positions_all, 
+    check_sb_data: check_stat_board_calculator_data): check_mate_calc_data
+{
+
+    val king_escape_data = king_escape_builder(king, mating_team, board_all);
+    return check_mate_calc_data(king_escape_data, check_sb_data, board_all);
+}
+
+// -----------------------------------------------
+// Returns "false" if the king is check mate.
+//
+// Prereq: King is in check.
+// -----------------------------------------------
+function check_mate_can_escape(
+    data: check_mate_calc_data,
+    kings_team: character_team
+): boolean {
+    val maybe_king = team_get_king(kings_team);
+    val king = maybe_king!!;
+    val kings_align = king.align;
+    val king_wpaa = with_pos_and_alignment(king.position, kings_align);
+    
+    // Begin check mate calculation (do the cheapest checks first)
+    val (escape_pos, is_attack) = king_escape_find_first_without_help(data.king_escape_data, king_wpaa);
+    if (escape_pos != null) {
+        return true; // No prob, king can wiggle free
+    }
+    
+    if (check_sb_is_multi_check(data.check_sb_data)) {
+        log("check_mate_can_escape() - There is never any way to beat two attackers = Mate.");
+        return false;
+    }
+    
+    // We loop all king's subjects to see if ANY of them can
+    // create a safe square for the king (expensive?)
+    for (p in team_get_subjects_list(kings_team)) {
+        val dbg_k = if (p.is_knighted) "K" else "";
+        val dbg_str = "(" + p.active_type + " " + dbg_k + ", pos: " + p.position + ")";
+
+        val is_enchanted_jump = false;  // <-- Magic Jumps shouldn't be relevant here.
+        val (subject_mt, subject_mt_jump) = rules_get_all_valid_moves(
+            data.board_all, 
+            p.active_type,  // We wanna know how it moves, not what it is.
+            is_enchanted_jump,
+            p.is_knighted,
+            p.position, 
+            p.align,
+            pre_vuln_context(null) // We don't care about "en passant" here since it won't effect check mate.
+        );
+        // Ignore castle, since this never a king.
+        
+        log("check_mate_can_escape() - Verify if subject " + dbg_str + " can help.");
+        if (check_mate_can_subject_save_king(data, subject_mt, subject_mt_jump, kings_align, dbg_str)) {
+            return true; // No prob, subject can save the king
+        }
+    }
+    
+    log("check_mate_can_escape() - No subject was able to help the king = Mate.");
+    return false;
+}
+
+// -----------------------------------------------
+// This is the most complex part of this logic.
+// There are two ways the subject can help the king:
+// 
+// 1. (The subject) can attack the checker.
+// 2. (The subject) can block the path of the checker.
+//    a) By going to the path directly, or
+//    b) By going to a portal entry that ends up at the path square.
+// 
+// Note a) 1 & 2 can only work for a single checker.
+// -----------------------------------------------
+function check_mate_can_subject_save_king(
+    data: check_mate_calc_data,
+    subject_mt_ground: move_tree?,
+    subject_mt_jump: move_tree?,
+    align_of_mover: alignment,
+    dbg_str: text
+): boolean {
+    var mt: move_tree? = move_tree_merge(subject_mt_ground, subject_mt_jump);
+    require(mt != null, "Internal error, a merged move tree is never null.");
+    
+    // 1. (The subject) can attack the checker.
+    // Note on portals: Portals are NOT relevant for kills, since the kill will solve the problem
+    // no matter if there is a portal below the enemy or not.
+    if (check_sb_can_subject_kill_checker(data.check_sb_data, mt.attackable_sqs, dbg_str)) {
+        return true;
+    }
+    
+    // 2. (The subject) can block the path of the checker.
+    // Note on portals: Portals are relevant here, since
+    // a) if the "blocking square" is an entrance to a unblocked portal (owned by us) it wont work, 
+    //    since the subject will go to portal's exit.
+    // b) if the "blocking square" is an exit, we might use the portal's entry (somewhere) to get to that square
+    //    (and block the check).
+    val moves_with_portals = set<integer>();
+    val moves_n_attacks = move_tree_moves_n_attacks(mt);  // Doesn't matter if some opponent is blocking the entry, we assume it will be killed
+    for (pos in moves_n_attacks) {
+        val portal = board_is_unblocked_portal_at(data.board_all, pos, align_of_mover);
+        if (portal != null) {
+            // We MUST use this portal
+            print("check_mate_can_subject_save_king() - Subject has (own) portal entry at " + pos + " -> " + portal.exit_pos + ".");
+            moves_with_portals.add(portal.exit_pos);
+        } else {
+            moves_with_portals.add(pos); // No portal
+        }
+    }
+    
+    if (check_sb_can_subject_block_path(data.check_sb_data, moves_with_portals, dbg_str)) {
+        return true;
+    }
+    
+    return false; // Tried everything
+}
+
+

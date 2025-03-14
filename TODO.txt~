@@ -1,8 +1,6 @@
 
  TODO: 
  
- 1. Send random number from client to server
-    every time the client uses random. 
+ 1. Use given_can_retaliate
+    
 
-    These must be saved in a table, to be 
-    validate in the end of the game.

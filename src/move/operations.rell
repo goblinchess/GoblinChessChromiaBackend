@@ -92,7 +92,12 @@ operation move_peaceful(
 
     // Treat castle as special case
     castle_rook_from: integer?, // If this is a castle, the rook's starting position.
-    castle_rook_to: integer? // If this is a castle, the rook's ending position.
+    castle_rook_to: integer?, // If this is a castle, the rook's ending position.
+
+    // ----------------------
+    // Only if the client wants
+    // ----------------------
+    check_args: move_check_arguments? = null
 ) {
 
     // -----------    
@@ -106,7 +111,8 @@ operation move_peaceful(
         caller_pubkey, 
         m_args,
         castle_rook_from,
-        castle_rook_to
+        castle_rook_to,
+        check_args
     );
 }
 
@@ -115,7 +121,6 @@ operation move_attack(
 
     // Mandatory arguments
     att_args: move_attack_arguments,
-
 
     // ----------------------
     // Random 
@@ -126,6 +131,11 @@ operation move_attack(
     // 3. chaos mode retaliation: 4 die rolls.
     // ----------------------
     rnd_numbers: list<integer>,  
+
+    // ----------------------
+    // Only if the client wants
+    // ----------------------
+    check_args: move_check_arguments? = null,
 
     // ----------------------
     // Needed for chaos mode
@@ -149,6 +159,7 @@ operation move_attack(
         m_args,
         att_args,
         rnd_numbers,
+        check_args,
         chaos_args,
         ret_args
     );

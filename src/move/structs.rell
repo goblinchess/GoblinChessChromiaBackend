@@ -94,9 +94,22 @@ struct move_arguments {
     to_position: integer;
     piece_type_str: text; // The type of piece we are moving
     given_is_knighted: boolean; // If the piece is KNIGHTED
+}
 
-    // Check and mate status
-    checking_piece: integer?; // Client claims this piece is checking opponent's king (easy to verify)
+// ------------------------------------------------------------------------------
+// Check and mate etc
+// We don't want to REQUIRE the client to send these, since we want to allow
+// for simple clients that doesn't want to implement these calculations.
+// 
+// However, IF the client has the capability to do it's own check/stale/mate calculations,
+// the benefit of sending these values will be:
+// 1. Skip checkmate test on the node unless the client claims checkmate, this will save some CPU.
+//    (the node will always verify the is_check and is_stalemate, so nothing to be saved in there). 
+// 2. Discover differences between how the client and the node calculate the 
+//    check/stale/mate status as early as possible.
+// ------------------------------------------------------------------------------
+struct move_check_arguments {
+    is_check: boolean; // Client thinks this is a check
     is_checkmate: boolean; // Client thinks this is a checkmate
     is_stalemate: boolean; // Client thinks this is a stalemate
 }

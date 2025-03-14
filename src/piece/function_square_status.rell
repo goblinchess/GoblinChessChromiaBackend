@@ -1,0 +1,9 @@
+
+function square_status_is_piece(s: square_status): boolean {
+    when (s) {
+        square_status.WHITE_PIECE, 
+        square_status.BLACK_PIECE,
+        square_status.NEUTRAL_PIECE -> return true;
+        else -> return false;
+    }
+}

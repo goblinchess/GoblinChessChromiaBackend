@@ -22,8 +22,6 @@ entity move {
     // Some extra info
     is_castle: boolean;
     is_check: boolean;
-    is_checkmate: boolean;
-    is_stalemate: boolean;
 }
 
 // A move that is an attack (perhaps a capture)

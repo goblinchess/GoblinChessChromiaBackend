@@ -77,7 +77,7 @@ function piece_get_living_data_from_pos(g: game, given_pos: integer) :piece_livi
 
         return piece_living_data(
             align = res.color,
-            position = given_pos, // Duh?
+            position = given_pos, 
             start_hit_points = res.start_hit_points,
             remaining_hit_points = res.remaining_hit_points,
             strength = res.strength,
@@ -91,6 +91,40 @@ function piece_get_living_data_from_pos(g: game, given_pos: integer) :piece_livi
     } else {
         return null;
     }
+}
+
+// Get data for all living pieces of a given color.
+// We want to get as many pieces as possible in one SELECT.
+function piece_get_living_data_from_align(g: game, given_align: alignment) :list<piece_living_data> {
+
+    val ret = list<piece_living_data>();
+
+    val results = (pi: piece, v: vulnerable)@* {
+        g == v.game,
+        v == pi.vulnerable,
+        v.is_alive == true,
+        v.color == given_align
+    } (v.position, v.start_hit_points, v.remaining_hit_points, v.strength, v.defence, pi.is_knighted, pi.original_type, pi.active_type, found_piece = pi);
+
+    for (res in results) {
+
+        val pld = piece_living_data(
+            align = given_align, 
+            position = res.position, 
+            start_hit_points = res.start_hit_points,
+            remaining_hit_points = res.remaining_hit_points,
+            strength = res.strength,
+            defence = res.defence,
+            is_knighted = res.is_knighted,
+            original_type = res.original_type,
+            active_type = res.active_type,
+            p = res.found_piece
+        );
+
+        ret.add(pld);
+    }
+
+    return ret;
 }
 
 // ------------------------------------------------------------

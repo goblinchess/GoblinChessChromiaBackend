@@ -7,7 +7,9 @@ function move_peaceful_inner(
 
     // Treat castle as special case
     castle_rook_from: integer?, // If this is a castle, the rook's starting position.
-    castle_rook_to: integer? // If this is a castle, the rook's ending position.
+    castle_rook_to: integer?, // If this is a castle, the rook's ending position.
+
+    check_args: move_check_arguments? = null
 ) {
     // ----------------------------------------------    
     // A. Verification
@@ -15,7 +17,7 @@ function move_peaceful_inner(
     // No need to do any updates before we have verified everything.
     // (But Chromia will roll back any updates if we get an error, so it's not critical that we do it this way.)
 
-    var dbg = move_debug_str(m_args);
+    var dbg = move_debug_str(m_args, check_args);
     if (castle_rook_from != null) {
         dbg += "Castle ";
     }
@@ -68,27 +70,35 @@ function move_peaceful_inner(
     // A.6. Verify if move is legal
     // ----------------
 
+    //log("A.6.1");
+    val board: list<with_pos_and_alignment> = piece_get_all_vulnerables(minimal_game.game); 
+    val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, align);
+    val board_positions_all = build_board_positions_all(minimal_game.game, board, portals);
+
+
     // Complex verification (still easier than check mate).
     var is_castle = false;
     var rook: piece? = null;
     var m_tree: move_tree? = null;
+    var selected_path: path_base? = null;
 
 
     if (castle_rook_from != null and castle_rook_to != null) { 
-        // 5.a) Castling
+        // ----------------
+        // 6.a) Castling
+        // ----------------
         //log("Move A.6.a");
         rook = move_castle_verify_and_return_rook(game_id, m_args.from_position, m_args.to_position, castle_rook_from, castle_rook_to, p_type, minimal_game.is_white, minimal_game.game);
         is_castle = true;
+
+        // We use the kings path as the main path
+        selected_path = move_castle_get_king_path(game_id, m_args.from_position, m_args.to_position, minimal_game.is_white);
+
     } else {
 
         // ----------------
-        // 5.b) Normal move, must verify
+        // 6.b) Normal move, must verify
         // ----------------
-        //log("Move A.6.b");
-        val board: list<with_pos_and_alignment> = piece_get_all_vulnerables(minimal_game.game); 
-        val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, align);
-        val board_positions_all = build_board_positions_all(minimal_game.game, board, portals);
-
 
         //log ("Move A.6.b.1 - calc move trees ");
         val (ground_m_tree: move_tree?, jump_m_tree: move_tree?) = rules_get_all_valid_moves(
@@ -109,27 +119,35 @@ function move_peaceful_inner(
         val found_move = move_tree_get_pos_status(m_tree, m_args.to_position);
         require(found_move > 0, "Illegal move: " + p_dbg + ", id:" + game_id);
         require(found_move == 1, "Reported peaceful move is attacking move: " + p_dbg + ", id:" + game_id);
+
+        selected_path = move_tree_build_active_path_from_destination(m_tree, m_args.to_position);
     }
+    require(selected_path != null, "Failed to build active path from destination: " + p_dbg + ", id:" + game_id);
+
+    // Get all pieces of both teams
+    // Expensive, so we wait until last moment
+    val our_team = team_build_from_db(minimal_game.game, align);
+    val opp_team = team_build_from_db(minimal_game.game, opp_align);
+
+    val our_king = team_get_king(our_team)!!;
+    val opp_king = team_get_king(our_team)!!;
 
     // ----------------
-    // A.7. Verify Check and Mate status
+    // A.7. Verify if this move will get us into check
     // ----------------
-    // Is this a check?
+    //log ("Move A.7 - Verify if this move will get us into check ");
+    val p_wpaa = with_pos_and_alignment(m_args.from_position, align);
+    val get_into_check = will_hypothetical_move_cause_check(
+            selected_path,
+            p_wpaa,
+            align,
+            our_king.position,
+            opp_team,
+            board_positions_all
+    );
 
-    var is_check = false;
-    if (m_args.checking_piece != null) {
-        //log("Move A.7.a")/;
-        // Pretty easy to verify, since we just get the move tree for the piece 
-        //and see if it touches the opponent's king.
-
-
-        // TODO: Implement this
-        is_check = true;
-    } else {
-        //log("Move A.7.b"); // No check
-    }
-
-    // TODO: Mate calc done in client, but could be expensive to repeat here?
+    // The client should have stopped this move from happening.
+    require(not get_into_check, "Move puts us into check: " + p_dbg + ", id:" + game_id);
 
     log("Move Peaceful passed verification, piece " + p_dbg + ", flags: " + dbg + ", game_id: " + game_id);
 
@@ -140,28 +158,52 @@ function move_peaceful_inner(
     if (minimal_game.is_white) { 
         new_turn_type = turn_type.WHITE_MOVE;
     }
+    // B.1 (Really simple for peaceful moves)
+    update p.p.vulnerable (.position = m_args.to_position);
 
-    // Do the updates
-    val m_res = move_update(m_args, minimal_game, align, is_castle, is_check, p, new_turn_type); 
+    // B.2 Verify if we just won via checkmate?
+    val (is_check, is_checkmate, is_stalemate) = move_common_check_stale_n_mate(minimal_game, opp_align, opp_king, our_team, opp_team, check_args);
+
+    // B.3 Do the updates
+    val m_res = move_turn_and_static_move_creation(m_args, minimal_game, align, is_castle, is_check, p, new_turn_type); 
     val m = m_res.m;
     val new_turn = m_res.new_turn;
 
+    // B.4 Castle needs to move the rook too
     if (is_castle) {
         val v_rook = rook!!.vulnerable;
         update v_rook(.position = castle_rook_to!!);
     }
 
-    // Cleanup
-    move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, align);
+    // ----------------
+    // B.5 Is it over?
+    // ----------------
+    if (is_checkmate or is_stalemate) {
+        log("Game Over");
+        if (is_checkmate) {
+            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = false);
 
+            // TODO
+        } else {
+            // Stalemate
+            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = true);
 
-    // Add new vuln path (if exists and match the actual move)
-    if (m_tree != null) {
-        val maybe_pot_paths: list<path_base>? = m_tree.potential_vuln_paths;
-        move_vuln_path_add_from_move(minimal_game.game, align, m, maybe_pot_paths, m_args.to_position);
+            // TODO
+        }
+
+    } else {
+        // Cleanup
+        move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, align);
+
+        // Add new vuln path (if exists and match the actual move)
+        if (m_tree != null) {
+            val maybe_pot_paths: list<path_base>? = m_tree.potential_vuln_paths;
+            move_vuln_path_add_from_move(minimal_game.game, align, m, maybe_pot_paths, m_args.to_position);
+        }
+
+        update minimal_game.game (.current_turn = new_turn.number);
     }
 
-
-    update minimal_game.game (.current_turn = new_turn.number);
     log("/Move Peaceful End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + "game_id: " + game_id );
 }
+

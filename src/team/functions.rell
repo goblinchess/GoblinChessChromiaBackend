@@ -1,0 +1,132 @@
+// --------------------------------------------------------------------
+// Team
+// --------------------------------------------------------------------
+
+
+// --------------------------------------------------------------------
+// build
+// We typically have to do this call every turn 
+// (since we will do a mate verification after every move).
+// The important thing is that when we load the pieces of a team (black/white),
+// we want to do it in one single SELECT statement, not one per piece. 
+// --------------------------------------------------------------------
+function team_build_from_db(g: game, align: alignment): character_team {
+
+    val plds = piece_get_living_data_from_align(g, align);
+
+    // Translate to map
+    val members = map<rowid, piece_living_data>();
+    for(pld in plds) {
+        members[pld.p.rowid] = pld;
+    }
+
+    return character_team(
+        align = align,
+        members = members
+    );
+}
+
+
+
+// ---------------------------
+// Inspectors
+// ---------------------------
+
+// Turn the dictionary into a list.
+function team_get_list(team: character_team): list<piece_living_data> {
+    return team.members.values();
+}
+      
+// Get all but the king
+function team_get_subjects_list(team: character_team): list<piece_living_data> {
+    val ret = list<piece_living_data>();
+    var has_king = false;
+    
+    for (pld in team_get_list(team)) {
+        if (pld.original_type == piece_type.KING) {
+            require(not has_king, "Multiple kings found in team");
+            has_king = true;
+        } else {
+            ret.add(pld);
+        }
+    }
+    
+    require(has_king, "No king found in team");
+    return ret;
+}
+
+function team_get_king(team: character_team): piece_living_data? {
+    for (pld in team_get_list(team)) {
+        if (pld.original_type == piece_type.KING) {
+            return pld;
+        }
+    }
+    require(false, "King not found in team");
+    return null; // Never reached
+}
+
+// ---------------------------
+// Move Trees
+// ---------------------------
+
+// Returns a list with all [MoveTree]s of this team.
+// 
+// WARNING:
+// Note that we're using the given [board_positions_all], which might be hypothetical,
+// but we're using the ACTUAL position of the piece.
+// THIS MEANS WE CANNOT EVER CHANGE THE HYPOTHETICAL POSITION OF THE TEAM WE ARE ABOUT TO GENERATE A MOVE TREE FROM.
+function team_get_all_move_trees(team: character_team, board_all: board_positions_all): list<move_tree> {
+    val ret = list<move_tree>();
+    
+    for (pld in team_get_list(team)) {
+        _inner_add_move_tree(pld, board_all, ret);
+    }
+    
+    return ret;
+}
+
+// Same as above, but if there is a piece on "except_for_pos" we'll ignore that one.
+// Use case: Sometimes we want to exclude the move tree of a piece that will die during the (hypothetical) move.
+function team_get_all_move_trees_except_for_one(
+    team: character_team,
+    board_all: board_positions_all, 
+    except_for_pos: integer, // Position of the (enemy) piece we want to exclude.
+    count_enemy_at_pos_as_dead: integer // Position of a (enemy) piece standing on a portal entry.
+): list<move_tree> {
+    val ret = list<move_tree>();
+    
+    for (pld in team_get_list(team)) {
+        if (pld.position == except_for_pos) {
+            //log("team_get_all_move_trees_except_for_one() - Excluding piece standing on " + except_for_pos);
+        } else if (pld.position == count_enemy_at_pos_as_dead) {
+            //log("team_get_all_move_trees_except_for_one() - Excluding the enemy standing on portal entry at " + count_enemy_at_pos_as_dead );
+        } else {
+            _inner_add_move_tree(pld, board_all, ret);
+        }
+    }
+    
+    return ret;
+}
+
+function _inner_add_move_tree(p: piece_living_data, board_all: board_positions_all, ret: list<move_tree>) {
+
+    // I think the enchanted jump is already consumed when we calculate check/mate.
+    val is_enchanted_jump = false;  // <-- We wanna save DB lookups.
+
+    val (ground, jumps) = rules_get_all_valid_moves(
+        board_all, 
+        p.active_type,  // We wanna know how it moves, not what it is.
+        is_enchanted_jump,
+        p.is_knighted,
+        p.position, // <-- NOTE: we're using the ACTUAL position of the [piece] 
+        p.align,
+        pre_vuln_context(null) // We don't care about "en passant" here since it won't effect check mate.
+    );
+    
+    val merged = move_tree_merge(ground, jumps);
+    if (merged != null) {
+        ret.add(merged);
+    }
+}
+
+

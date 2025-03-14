@@ -20,6 +20,8 @@ function move_attack_inner(
     // ----------------------
     rnd_numbers: list<integer>, 
 
+    check_args: move_check_arguments? = null,
+
     // ----------------------
     // Some args
     // ----------------------
@@ -35,7 +37,7 @@ function move_attack_inner(
     // No need to do any updates before we have verified everything.
     // (But Chromia will roll back any updates if we get an error, so it's not critical that we do it this way.)
 
-    var dbg = move_debug_str(m_args);
+    var dbg = move_debug_str(m_args, check_args);
     val p_dbg = "type: " + m_args.piece_type_str + " (from: " + m_args.from_position + " -> attack on: " + att_args.attacked_position + " -> dest " + m_args.to_position + ")";
 
     val game_id = m_args.game_id;
@@ -142,27 +144,34 @@ function move_attack_inner(
     require(found_move > 0, "Illegal move: piece " + p_dbg + ", id:" + game_id);
     require(found_move == 2, "Expected an attacking move, but on piece on attacked position, piece " + p_dbg + ", id:" + game_id);
 
+    val selected_path = move_tree_build_active_path_from_destination(m_tree, m_args.to_position);
+    require(selected_path != null, "Failed to build active path from destination: " + p_dbg + ", id:" + game_id);
 
+    // Get all pieces of both teams
+    // Expensive, so we wait until last moment
+    val our_team = team_build_from_db(minimal_game.game, align);
+    val opp_team = team_build_from_db(minimal_game.game, opp_align);
+
+    val our_king = team_get_king(our_team)!!;
+    val opp_king = team_get_king(our_team)!!;
 
     // ----------------
-    // A.7. Verify Check and Mate status
+    // A.7. Verify if this move will get us into check
     // ----------------
-    // Is this a check?
+    //log ("Move A.7 - Verify if this move will get us into check ");
+    val p_wpaa = with_pos_and_alignment(m_args.from_position, align);
+    val get_into_check = will_hypothetical_move_cause_check(
+            selected_path,
+            p_wpaa,
+            align,
+            our_king.position,
+            opp_team,
+            board_positions_all
+    );
 
-    var is_check = false;
-    if (m_args.checking_piece != null) {
-        //log("Move A.7.a");
-        // Pretty easy to verify, since we just get the move tree for the piece 
-        //and see if it touches the opponent's king.
+    // The client should have stopped this move from happening.
+    require(not get_into_check, "Move puts us into check: " + p_dbg + ", id:" + game_id);
 
-
-        // TODO: Implement this
-        is_check = true;
-    } else {
-        //log("Move A.7.b"); // No check
-    }
-
-    // TODO: Mate calc done in client, but could be expensive to repeat here?
 
     log("Move Attack passed verification, piece " + p_dbg + ", flags: " + dbg + ", game_id: " + game_id);
 
@@ -173,20 +182,26 @@ function move_attack_inner(
     if (minimal_game.is_white) { 
         new_turn_type = turn_type.WHITE_MOVE;
     }
-
-    // B.1 Do the updates for the attacker
-    val is_castle = false; // Must be false for attacks
-    val m_res = move_update(m_args, minimal_game, align, is_castle, is_check, p, new_turn_type); 
-    val m = m_res.m;
-    val new_turn = m_res.new_turn;
-
+    // ----------------
+    // Update piece position
+    // ----------------
+    // B.1 Same as for peaceful move
+    update p.p.vulnerable (.position = m_args.to_position);
 
     // B.2 Update hp and is_alive for both attacker and defender
     move_battle_update_health(battle_res, is_chaos_mode, p, opp);
-  
+
+    // B.3 Verify if we just won via checkmate?
+    val (is_check, is_checkmate, is_stalemate) = move_common_check_stale_n_mate(minimal_game, opp_align, opp_king, our_team, opp_team, check_args);
+
+    // B.4 Turn and static move
+    val is_castle = false; // Must be false for attacks
+    val m_res = move_turn_and_static_move_creation(m_args, minimal_game, align, is_castle, is_check, p, new_turn_type); 
+    val m = m_res.m;
+    val new_turn = m_res.new_turn;
 
     // ----------------
-    // B.3. Create attack_move entity
+    // B.5. Create attack_move entity
     // ----------------
 
     val am = create attack_move(
@@ -199,7 +214,7 @@ function move_attack_inner(
 
     if (is_chaos_mode) {
 
-        // B.3.chaos.1. Create chaos_mode_args entity
+        // B.5.chaos.1. Create chaos_mode_args entity
         require(chaos_args != null, "Internal error: Chaos mode args is null, id:" + game_id); // Already checked above.
         create chaos_mode_args(
             attack_move = am,
@@ -210,7 +225,7 @@ function move_attack_inner(
 
         when (battle_res.result) {
             battle_result_type.HIT -> {
-                // B.3.chaos.2. Create retaliation entity
+                // B.5.chaos.2. Create retaliation entity
                 require(ret_args != null, "Internal error: Retaliation args is null, id:" + game_id); // Already checked above.
                 val retaliation_move = create retaliation(
                     attack_move = am,
@@ -222,22 +237,35 @@ function move_attack_inner(
         }
 
         // ----------------
-        // B.3.chaos.3. Save the rnd results
+        // B.5.chaos.3. Save the rnd results
         // ----------------
         turn_player_rnd_nr_create(new_turn, battle_res.rnd_results);
     }
 
-
     // ----------------
-    // B.4. Cleanup
+    // B.6 Is it over?
     // ----------------
+    if (is_checkmate or is_stalemate) {
+        log("Game Over");
+        if (is_checkmate) {
+            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = false);
 
-    move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, align);
+            // TODO
+        } else {
+            // Stalemate
+            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = true);
 
-    // Won't add any vulns for attacks.
+            // TODO
+        }
 
+    } else {
+        // Cleanup
+        move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, align);
+        // Won't add any vulns for attacks.
 
-    update minimal_game.game (.current_turn = new_turn.number);
+        update minimal_game.game (.current_turn = new_turn.number);
+    }
+
     log("/Move Attack End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + ", game_id: " + game_id);
 }
 

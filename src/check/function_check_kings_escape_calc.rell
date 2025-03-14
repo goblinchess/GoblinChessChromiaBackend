@@ -1,0 +1,123 @@
+
+// This class can be used both for calculating checkmate and stalemate.
+//
+// Portals won't effect check mate logic.
+// To understand the reason we discuss the three relevant cases:
+//
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Entry    | Exit     | Description
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Free     | Free     | If both portal entry and exit are free, king can move
+//          |          | to the entry and will simply be transported to the exit.
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Attacked | Free     | We don't allow king to move to the portal entry if its entry square is under attack
+//          |          |  (for the same reason as the king cannot castle by passing an attacked square).
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Free     | Attacked | If the portal entry is free but the portal exit is under attack, the king is
+//          |          | allowed to move to the entry, but stays on the entry square(i.e.don't enter the portal). 
+//          |          | King will remain on the entry square until the exit isn't under attack, when he is transported to the exit. 
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+// ---------------------------------------------------
+// Factory
+// ---------------------------------------------------
+
+function king_escape_builder(king: with_pos_and_alignment, mating_team: character_team, board_all: board_positions_all): king_escape_data {
+    
+    val (king_mt: move_tree?, king_mt_jump: move_tree?) = rules_get_all_valid_moves(
+        board_all,
+        piece_type.KING,
+        false, // Don't need to consider enchanted jump since 1) spell is already been consumed here, or 2) would be cast next turn (and we are mated before that) 
+        false, // Kannot knigth a king
+        king.pos,
+        king.alignment,
+        pre_vuln_context(null) // Only relevant for pawns
+    );
+
+    // We SHOULDN'T have to add castling moves here, since castle is never a way to get out of check/mate.
+    // (Reasoning: if the king cannot take one step in the direction of the rook, it also cannot castle)
+    if (king_mt_jump != null and king_mt_jump.moves_all.size() > 0) {
+        log("Error: We don't expect the king to jump");
+    }
+
+    return king_escape_constructor(
+        king_pos = king.pos,
+        king_move_tree = king_mt!!,
+        mating_team = mating_team,
+        board_all = board_all
+    );
+}
+
+
+function king_escape_constructor(king_pos: integer, king_move_tree: move_tree, mating_team: character_team, board_all: board_positions_all) {
+
+    val empty_squares = list<integer>();
+    for (pos in king_move_tree.moves_all) {
+        empty_squares.add(pos);
+    }
+    
+    val opponent_squares = list<integer>();
+    for (pos in king_move_tree.attackable_sqs) {
+        if (board_all.board_obstacles.contains(pos)) {
+            // WE DON'T WANT THE KING TO ESCAPE CHESS BY ATTACKING AN OBSTACLE
+            // SINCE IT WILL LIKELY FAIL AND THE KING REMAINS IN CHECK FOR A LONG TIME.
+            log("king_escape_constructor() - Not adding obstacle at " + pos + " as possible escape route.");
+        } else {
+            opponent_squares.add(pos);
+        }
+    }
+
+    return king_escape_data(
+        king_pos = king_pos,
+        mating_team = mating_team,
+        board_all = board_all,
+        empty_squares = empty_squares,
+        opponent_squares = opponent_squares,
+    );
+}
+
+// ---------------------------------------------------
+// Inspectors
+// ---------------------------------------------------
+
+// ---------------------------------------------------
+// Returns an escape square if the king can break free alone.
+// else returns "null".
+// This corresponds to 1) & 2) in the mate rules above. 
+// ---------------------------------------------------
+function king_escape_find_first_without_help(data: king_escape_data, king: with_pos_and_alignment): (integer?, boolean) {
+
+    // King is in check
+    log("king_escape_find_first_without_help() - King is in check at: " + king.pos);
+
+    for (empty_square in data.empty_squares) {
+        if (king_escape_can_go_to_square(data, empty_square, king)) {
+            log("king_escape_find_first_without_help() - King can escape to empty:e: " + empty_square);
+            return (empty_square, false);
+        }
+    }
+    
+    for (opponent_square in data.opponent_squares) {
+        if (king_escape_can_go_to_square(data, opponent_square, king)) {
+            log("king_escape_find_first_without_help() -  King can escape via attack at: " + opponent_square);
+            return (opponent_square, true);
+        }
+    }
+    
+    return (null, false);
+}
+
+// Returns true if "pos" is a square that the king can go to.
+function king_escape_can_go_to_square(data: king_escape_data, target_pos: integer, king: with_pos_and_alignment): boolean {
+    
+    val hypothetical_stat_board_check_data = check_sb_build_hypothetical_king_move(
+        king = king,
+        king_pos_start = king.pos,
+        king_pos_dest = target_pos,
+        checking_team = data.mating_team,
+        board_all = data.board_all
+    );
+
+    return not check_sb_is_check(hypothetical_stat_board_check_data);
+}
+

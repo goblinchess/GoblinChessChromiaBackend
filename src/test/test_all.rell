@@ -335,12 +335,14 @@ function test_full_game() {
         from_position = wrong_orig_pos, // <-- Wrong
         to_position = wrong_to_pos,  // <-- Wrong
         piece_type_str = "BISHOP", // <-- Ok
-        given_is_knighted = false, 
-        checking_piece = null, 
+        given_is_knighted = false);
+
+    var check_args = move_check_arguments(
+        is_check = false, 
         is_checkmate = false, 
         is_stalemate = false);
 
-    var failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, 
+    var failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
         ));
     val expected_wrong_pos: text = "No piece at position " + wrong_orig_pos;
@@ -356,12 +358,9 @@ function test_full_game() {
         from_position = knight_orig_pos, // <-- Ok
         to_position = knight_to_pos, // <-- Ok
         piece_type_str = "BISHOP",  // <-- Wrong
-        given_is_knighted = false, 
-        checking_piece = null, 
-        is_checkmate = false, 
-        is_stalemate = false);
+        given_is_knighted = false); 
 
-    failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, 
+    failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
     val expected_wrong_type: text = "Expected piece to have active type KNIGHT but got BISHOP";
@@ -376,12 +375,9 @@ function test_full_game() {
         from_position = knight_orig_pos, // <-- Ok
         to_position = knight_to_wrong_pos, // <-- Wrong
         piece_type_str = "KNIGHT", // <-- Ok
-        given_is_knighted = false, 
-        checking_piece = null, 
-        is_checkmate = false, 
-        is_stalemate = false);
+        given_is_knighted = false);
 
-    failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, 
+    failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
     log(failed_move.message);
@@ -399,12 +395,9 @@ function test_full_game() {
         from_position = bishop_orig_pos, // <-- Ok
         to_position = bishop_to_pos, // <-- Ok, but occupied 
         piece_type_str = "BISHOP",  // <-- Ok
-        given_is_knighted = false, 
-        checking_piece = null, 
-        is_checkmate = false, 
-        is_stalemate = false);
+        given_is_knighted = false);
 
-    failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, 
+    failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
     val expected_move_on_friend: text = "Illegal move";
@@ -422,12 +415,9 @@ function test_full_game() {
         from_position = knight_orig_pos, // <-- Ok
         to_position = knight_to_pos, // <-- Ok
         piece_type_str = "KNIGHT",  // <-- Ok
-        given_is_knighted = false, 
-        checking_piece = null, 
-        is_checkmate = false, 
-        is_stalemate = false);
+        given_is_knighted = false);
 
-    rell.test.tx(move_peaceful(m_args, null, null)).sign(white_player).run();
+    rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 3: Skip neutral.");
@@ -449,12 +439,9 @@ function test_full_game() {
         from_position = black_move_1_from, 
         to_position = black_move_1_to, 
         piece_type_str = "PAWN", 
-        given_is_knighted = false, 
-        checking_piece = null, 
-        is_checkmate = false, 
-        is_stalemate = false);
+        given_is_knighted = false); 
 
-    rell.test.tx(move_peaceful(m_args, null, null)).sign(black_player).run();
+    rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
 
     log ("Turn 6: Skip neutral.");
@@ -476,12 +463,9 @@ function test_full_game() {
         from_position = 14,
         to_position = 22,
         piece_type_str = "PAWN", 
-        given_is_knighted = false, 
-        checking_piece = null, 
-        is_checkmate = false, 
-        is_stalemate = false);
+        given_is_knighted = false);
 
-    rell.test.tx(move_peaceful(m_args, null, null)).sign(white_player).run();
+    rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 9: Skip neutral.");
@@ -506,12 +490,9 @@ function test_full_game() {
         from_position = black_rook_to_frog,
         to_position = rook_to_wrong_pos, // <-- Wrong, is frog now
         piece_type_str = "ROOK",  // <-- Wrong, is frog now
-        given_is_knighted = false, 
-        checking_piece = null, 
-        is_checkmate = false, 
-        is_stalemate = false);
+        given_is_knighted = false);
     
-    failed_move = assert_fails(move_peaceful_inner(black_player.pub, m_args, null, null, 
+    failed_move = assert_fails(move_peaceful_inner(black_player.pub, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
     val expected_rook_vs_frog = "Expected piece to have active type FROG but got ROOK";
@@ -526,12 +507,9 @@ function test_full_game() {
         from_position = black_rook_to_frog,
         to_position = rook_to_wrong_pos, // <-- Wrong
         piece_type_str = "FROG",  // <-- Ok
-        given_is_knighted = false, 
-        checking_piece = null, 
-        is_checkmate = false, 
-        is_stalemate = false);
+        given_is_knighted = false);
  
-    failed_move = assert_fails(move_peaceful_inner(black_player.pub, m_args, null, null, 
+    failed_move = assert_fails(move_peaceful_inner(black_player.pub, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
     log(failed_move.message);
@@ -551,12 +529,9 @@ function test_full_game() {
         from_position = a5, // <-- Ok
         to_position = a4, // <-- Ok
         piece_type_str = "PAWN",  // <-- Ok
-        given_is_knighted = false, 
-        checking_piece = null, 
-        is_checkmate = false, 
-        is_stalemate = false);
+        given_is_knighted = false);
 
-    rell.test.tx(move_peaceful(m_args, null, null)).sign(black_player).run();
+    rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
     
     log ("Turn 12: Skip neutral.");
@@ -579,12 +554,9 @@ function test_full_game() {
         from_position = b2, // <-- Ok
         to_position = b4, // <-- Ok
         piece_type_str = "PAWN",  // <-- Ok
-        given_is_knighted = false, 
-        checking_piece = null, 
-        is_checkmate = false, 
-        is_stalemate = false);
+        given_is_knighted = false);
 
-    rell.test.tx(move_peaceful(m_args, null, null)).sign(white_player).run();
+    rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 15: Skip neutral.");
@@ -605,10 +577,7 @@ function test_full_game() {
         from_position = a4, 
         to_position = b3, // <-- En passant
         piece_type_str = "PAWN",  
-        given_is_knighted = false, 
-        checking_piece = null, 
-        is_checkmate = false, 
-        is_stalemate = false);
+        given_is_knighted = false);
 
 
     // Attack data, mandatory for attacks.
@@ -619,7 +588,7 @@ function test_full_game() {
         damage_points = 7 
     );
 
-    rell.test.tx(move_attack(m_args, att_args, list<integer>())).sign(black_player).run();
+    rell.test.tx(move_attack(m_args, att_args, list<integer>(), check_args)).sign(black_player).run();
     last_seen_turn += 1;
     
     log ("Turn 18: Skip neutral.");

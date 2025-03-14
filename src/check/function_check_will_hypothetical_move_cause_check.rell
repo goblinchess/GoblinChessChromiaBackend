@@ -1,0 +1,196 @@
+// ------------------------------------------------------------------------------
+// Returns "true" if the moving piece's king GETS into check by this move.
+//
+// 1. Build hypothetical situation
+//    1.a) For unual situation when a SUBJECT lands on a portal entrence, it usually
+//         1.a.1) moves to the destination before we move on.
+//         1.a.2) But! There is one interesting exception:
+//                If there is an opponent (that checks the king) standing on the portal entry,
+//    1.b) If it's a KING that lands on the entrance, we don't go through the portal, since we only care if the entrance
+//         is attacked or not (since the king will stay if it cannot enter the portal).
+// 2. See if king is in check.
+// 3. For (unusual) case where this is a castle move, we ALSO need to verify that
+//    the pass-through squares are free from check.
+//
+// Note1: The reason this strategy works is that we only mock and change one team (the "passive" team),
+//       and only generate [move_tree] from the other team (the "mating" team) i.e.:
+//       a) we only make hypothetical moves on the passive team,
+//       b) the mating team uses its TRUE position, and
+//       c) will fetch [all_valid_moves()] using the heavy implementation
+//          with only the hypothetical board as fake input.
+// ------------------------------------------------------------------------------
+
+// Returns:
+// 1. If this causes check
+// 2. If this is a castle move
+function will_hypothetical_move_cause_check(
+    selected_path: path_base,
+    chr_to_move: with_pos_and_alignment,
+    align_of_mover: alignment,
+    king_orig_pos: integer,
+    mating_team: character_team,
+    board_pos_all: board_positions_all
+): boolean {
+    val pos_start = selected_path.path[0]; 
+    val pos_dest = selected_path.path[selected_path.path.size() - 1];
+    val is_king_move = pos_start == king_orig_pos;
+    
+    // ------------------------
+    // 1. Build hypothetical situation
+    // ------------------------
+    val hypothetical_check_calc_data = whm_build_check_calc_inner(
+        chr_to_move, 
+        align_of_mover, 
+        pos_start, 
+        pos_dest, 
+        is_king_move, 
+        king_orig_pos, 
+        mating_team, 
+        board_pos_all
+    );
+    
+    // ------------------------
+    // 2.Calc initial check
+    // ------------------------
+    var check = check_sb_is_check(hypothetical_check_calc_data);
+    
+    // ------------------------
+    // 3. See if a castling king is passing an attacked square
+    // ------------------------
+    if (is_king_move and not check) {  // Must be a king move for this to be relevant
+        check = whm_check_if_potential_castle_gives_check_inner(
+            selected_path, 
+            chr_to_move, 
+            mating_team, 
+            board_pos_all
+        );
+    }
+
+    return check;
+}
+
+// Returns the calculator data
+function whm_build_check_calc_inner(
+    piece_to_move: with_pos_and_alignment,
+    align_of_mover: alignment,
+    pos_start: integer,
+    pos_dest: integer,
+    is_king_move: boolean,
+    king_orig_pos: integer,
+    mating_team: character_team,
+    board_pos_all: board_positions_all
+): check_stat_board_calculator_data {
+    if (is_king_move) {
+        // 1.b) Ignore portals
+        // Don't go through the portal here, since we don't know if the portal will be used.
+        return check_sb_build_hypothetical_king_move(
+            piece_to_move, pos_start, pos_dest, mating_team, board_pos_all
+        );
+    } else {
+        // 1.a) Use portals
+        var count_enemy_at_pos_as_dead: integer = -1; // Instead of null
+        var actual_dest = pos_dest;
+        
+        val portal = board_is_unblocked_portal_at(board_pos_all, pos_dest, align_of_mover);
+        if (portal != null) {
+            // The subject ends his path on the portal entry, and it MUST use this portal, since it's unblocked.
+            // But! There is one interesting exception:
+            // 
+            // If there is an opponent (that checks the king) standing on the portal entry,
+            // we must first remove that opponent (since it's being killed before the subject travels through the portal).
+            val status_of_portal_entry = board_get_square_status_int(board_pos_all, pos_dest);
+            if (square_status_is_piece(status_of_portal_entry)) {
+                log("Stepped on (own) portal entry at " + pos_dest + " -> " + portal.exit_pos + ", that is ALSO blocked by " + status_of_portal_entry + " piece.");
+                count_enemy_at_pos_as_dead = pos_dest; // The blocking enemy will be killed here (by the subject) BEFORE we step into the portal.
+            } else {
+                log("Stepped on (own) portal entry: "  + pos_dest + " -> "  + portal.exit_pos);
+            }
+            actual_dest = portal.exit_pos;
+        }
+        
+        // Moving a subject
+        return check_sb_build_hypothetical_subject_move(
+            piece_to_move, 
+            pos_start, 
+            actual_dest, 
+            king_orig_pos, 
+            mating_team, 
+            board_pos_all, 
+            count_enemy_at_pos_as_dead
+        );
+    }
+}
+
+// -------------------------------------------------------------------
+// For (unusual) case where this is a castle move, we ALSO need to verify that
+// the pass-through squares are free from check.
+// -------------------------------------------------------------------
+function whm_check_if_potential_castle_gives_check_inner(
+    selected_path: path_base,
+    chr_to_move: with_pos_and_alignment,
+    mating_team: character_team,
+    board_pos_all: board_positions_all
+): boolean {
+    var check = false;  // We only get here we don't have check
+    
+    log("whm_check_if_potential_castle_gives_check_inner() - King move.");
+    when (selected_path.path_type) {
+        path_type.GROUND_CASTLE_MOVE -> {
+            log("whm_check_if_potential_castle_gives_check_inner() - This is a castle move");
+            val mid_positions = path_get_mid_positions(selected_path);
+            check = whm_is_check_on_the_way_to_castle(
+                mid_positions, 
+                chr_to_move, 
+                selected_path.path[0],
+                mating_team, 
+                board_pos_all
+            );
+        }
+        else -> {
+            print("whm_check_if_potential_castle_gives_check_inner() - Normal king move: " + selected_path.path_type);
+        }
+    }
+    
+    return check;
+}
+
+// ----------------------------------------------------------------
+// Even if the king isn't in check at the start nor dest position,
+// it might get into check on the way into the castle.
+// It's not often we castle, so no need to speed up this logic.
+// ----------------------------------------------------------------
+function whm_is_check_on_the_way_to_castle(
+    mid_positions: list<integer>,
+    chr_to_move: with_pos_and_alignment,
+    pos_start: integer,
+    mating_team: character_team,
+    board_positions: board_positions_all
+): boolean {
+    print("whm_is_check_on_the_way_to_castle() - Castling move with " + mid_positions.size() + " mid positions to go.");
+    
+    if (mid_positions.empty()) {
+        require(false, "Error: King should have mid squares when castling. King pos: " + pos_start); 
+        return false;
+    }
+    
+    for (mid_pos in mid_positions) {
+        // ----------------------------------------------------------------
+        // Make a new hypothetical calc for each of these
+        //
+        // NOTE: We don't care about portals here, b/c that would simply be too weird.  
+        //       The "weird" alternative would be to allow king to castle through chess IF
+        //       the attacked square had a portal on it that the king could use.
+        // ----------------------------------------------------------------
+        val hypo_check_calc_data = check_sb_build_hypothetical_king_move(
+            chr_to_move, pos_start, mid_pos, mating_team, board_positions
+        );
+        
+        if (check_sb_is_check(hypo_check_calc_data)) {
+            log("whm_is_check_on_the_way_to_castle() - Found check on: " + mid_pos);
+            return true;
+        }
+    }
+    
+    return false;
+}
+

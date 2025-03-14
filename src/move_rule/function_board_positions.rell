@@ -107,6 +107,28 @@ function board_get_square_status_int(board_positions_all, pos: integer): square_
     }
 }
 
+
+// ----------------
+// Mutators
+// ----------------
+
+function board_place_character_at(
+    board: board_positions_all,
+    from_pos: integer,
+    dest_pos: integer,
+    old_piece: with_pos_and_alignment
+) {
+    // Convert square positions to integers
+    //val from_pos_int = pos_to_int(from_pos);
+    //val dest_pos_int = pos_to_int(dest_pos);
+
+    val new_piece = with_pos_and_alignment(dest_pos, old_piece.alignment);
+
+    board.board_characters.remove(from_pos);
+    board.board_characters[dest_pos] = new_piece;
+}
+
+
 // ----------------
 // Portals 
 // ----------------
@@ -168,3 +190,4 @@ function board_find_unblocked_portals(
         );
 }
 */
+

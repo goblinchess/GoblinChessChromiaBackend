@@ -2,5 +2,6 @@
  TODO: 
  
  1. Use given_can_retaliate
-    
 
+ 2. Finish the game when mate
+    

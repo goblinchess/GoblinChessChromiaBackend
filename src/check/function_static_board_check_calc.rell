@@ -1,0 +1,145 @@
+// -------------------------------------------------------------------
+// "Static Board" is used for check (not check mate) calculations.
+// "Static Board" means that we won't move any pieces, just see if the king is currently in check.
+//
+// Note on Portals:
+// Attacker's portals cannot be used here to check the king!
+// This is somewhat tricky to understand, but there are only two cases:
+//       1. The king is standing on the attacker's portal exit, and is bocking that portal (it cannot be used), or
+//       2. The attacker's portal is unblocked, but since this class only checks for STATIC positions,
+//          so it's only AFTER the portal has been used that the king will be effected by the piece's new position.
+// -------------------------------------------------------------------
+
+
+// Returns true if the king is in check
+function check_sb_is_check(data: check_stat_board_calculator_data): boolean {
+    return data.checking_attackers.size() > 0;
+}
+
+// Returns true if more than one enemy piece checks the king
+function check_sb_is_multi_check(data: check_stat_board_calculator_data): boolean {
+    return data.checking_attackers.size() > 1;
+}
+
+// Get the first checker (assuming we have one)
+function check_sb_get_checker(data: check_stat_board_calculator_data): checking_attacker {
+    require(data.checking_attackers.size() > 0, "No checking attackers found");
+    return data.checking_attackers[0];
+}
+
+// Get all squares in all check paths
+function check_sb_get_all_check_paths(data: check_stat_board_calculator_data): set<integer> {
+    val ret = set<integer>();
+    for (checker in data.checking_attackers) {
+        ret.add_all(checker.all_check_path_squares);
+    }
+    return ret;
+}
+
+// --------------------------------------------------------------------------------------
+// Builder 
+// --------------------------------------------------------------------------------------
+
+function check_sb_constructor(
+    king_pos: integer, 
+    checking_team_move_trees: list<move_tree> // All move trees of the checking team (i.e. not the defending team)
+): check_stat_board_calculator_data {
+
+    val checking_attackers = list<checking_attacker>();
+    val data = check_stat_board_calculator_data(king_pos, checking_attackers);
+
+    for(tree: move_tree in checking_team_move_trees) {
+        check_sb_add_checking_piece_move_tree(data, tree);
+    }
+
+    return data;
+}
+
+
+// --------------------------------------------------------------------------------------
+// Adding one checking piece's (the king's opponent's) [move_tree] to this collection.
+// Loop the [move_tree] of one of the checking piece, and add all RELEVANT paths
+// (The "relevant" squares are when the opposing piece checks the king.
+// We save these in the data.attackers_check_paths collection)
+// --------------------------------------------------------------------------------------
+function check_sb_add_checking_piece_move_tree(data: check_stat_board_calculator_data, checking_piece_moves: move_tree) {
+    val attack_paths = list<path_base>();
+    
+    // Check all attack squares
+    for (pos in checking_piece_moves.attackable_sqs) {
+        if (pos == data.king_pos) {
+            // Found a check, must save this
+            val path = move_tree_build_active_path_from_destination(checking_piece_moves, pos);
+            attack_paths.add(path!!); // Cannot be null
+        }
+    }
+    
+    // Only add the checking_attacker if it indeed makes a check
+    if (attack_paths.size() > 0) {
+        val check_path = attack_paths[0];
+        if (attack_paths.size() > 1) {
+            // Don't understand how a single piece can attack via two routes
+            // There should be no overlapping of the move tree?
+            log("ERROR: Found piece at " + checking_piece_moves.start_pos + " who can check via multiple paths");
+        } else {
+            log("check_add_checking_piece_move_tree() - Found " + checking_piece_moves.start_pos +" who can check via " + path_debug(check_path) + ".");
+        }
+        
+        val new_ca = checking_attacker_build( checking_piece_moves.start_pos, check_path);
+        data.checking_attackers.add(new_ca);
+    }
+}
+
+// --------------------------------------------------------------------------------------
+// Can the subject kill the checker?
+// --------------------------------------------------------------------------------------
+function check_sb_can_subject_kill_checker(data: check_stat_board_calculator_data, subject_attacks: set<integer>, dbg_str: text): boolean {
+    if (check_sb_is_multi_check(data)) {
+        // A single subject can never take out multiple attackers
+        log("check_can_subject_kill_checker() - Too many attackers, no help possible");
+        return false;
+    }
+    
+    val checker = check_sb_get_checker(data);
+    
+    // Can we take out the checker?
+    for (pos in subject_attacks) {
+        if (pos == checker.attacker_pos) {
+            log("check_can_subject_kill_checker() - Yes, the " + dbg_str + " can try to capture the checker at " + checker.attacker_pos);
+            return true;
+        } else {
+            log("check_can_subject_kill_checker() - No, the " + dbg_str + " cannot, by going to " + pos + ", capture the checker at " + checker.attacker_pos);
+        }
+    }
+    return false;  // This escape method failed.
+}
+
+// --------------------------------------------------------------------------------------
+// Can the subject block the checker's path?
+// --------------------------------------------------------------------------------------
+function check_sb_can_subject_block_path(data: check_stat_board_calculator_data, subject_moves: set<integer>, dbg_str: text): boolean {
+    if (check_sb_is_multi_check(data)) {
+        // A single subject can never block multiple attackers
+        log("check_can_subject_block_path() - Too many attackers, no help possible");
+        return false;
+    }
+    
+    val checker = check_sb_get_checker(data);
+
+    // We can only block by going to a "mid-path" position.
+    // (and these are always empty, or else this wouldn't be check).
+    val mid_positions = path_get_mid_positions(checker.check_path);
+    
+    // Can we block any mid-path position?
+    for (pos in subject_moves) {
+        if (mid_positions.contains(pos)) {
+            log("check_can_subject_block_path() - Yes, the " + dbg_str + " can block the checker at " + checker.attacker_pos);
+            return true;
+        } else {
+            log("check_can_subject_block_path() - No, the " + dbg_str + " cannot, by going to " + pos + ", block the checker at  " + checker.attacker_pos);
+        }
+    }
+    return false;  // This escape method failed.
+}
+
+    

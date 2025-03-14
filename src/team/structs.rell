@@ -1,0 +1,10 @@
+
+
+// Hold the color of the team and the pieces that are part of the team.
+struct character_team {
+    align: alignment; 
+
+    // Reason for using a dict is that the team members must have an immutable identity.
+    // On the client we don't have that, but on the server side we can use piece.rowid;
+    mutable members: map<rowid, piece_living_data>; // Using map for team members
+}

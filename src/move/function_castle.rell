@@ -25,3 +25,39 @@ function move_castle_verify_and_return_rook(
     require(rook != null, "No rook at position " + castle_rook_from + ", id:" + game_id);
     return rook;
 }
+
+
+function move_castle_get_king_path(
+    game_id: integer, 
+    from_position: integer, 
+    to_position: integer,
+    is_white: boolean
+): path_base {
+    val king_path: list<integer> = [];
+    king_path.add(from_position); // Start pos
+
+    if (is_white) {
+        if (to_position == 6) {
+            // Short castle
+            king_path.add(5);
+        } if (to_position == 2) {
+            // Long castle
+            king_path.add(3);
+        } else {
+            require(false, "Invalid white castle to position: " + to_position + ", id:" + game_id);
+        }
+    } else {
+        // Must be black
+        if (to_position == 62) {
+            // Short castle
+            king_path.add(61);
+        } if (to_position == 58) {
+            // Long castle
+            king_path.add(59);
+        }
+    }
+
+    king_path.add(to_position); // End pos
+
+    return path_base(king_path, path_type.GROUND_CASTLE_MOVE);
+}

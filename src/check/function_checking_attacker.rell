@@ -1,0 +1,14 @@
+
+
+function checking_attacker_build(pos: integer, check_path: path_base): checking_attacker {
+    val sqrs = set<integer>();
+    for(tmp_pos: integer in check_path.path) {
+        sqrs.add(tmp_pos);
+    }
+
+    return checking_attacker(
+        attacker_pos = pos,
+        check_path = check_path,
+        all_check_path_squares = sqrs
+    );
+}
