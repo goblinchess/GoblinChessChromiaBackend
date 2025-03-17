@@ -97,13 +97,13 @@ function card_pick_validate_single_pick(
         }
         card_pick_type.PIECE_MINE_SQUARE -> {
             require(maybe_piece != null, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a free square at position " + given_pos + "."); 
-            require(maybe_piece.align == my_color, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but opponent piece at position " + given_pos + "."); 
+            require(maybe_piece.vuln.align == my_color, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but opponent piece at position " + given_pos + "."); 
             pick_piece_map[pick_index] = maybe_piece.p;
             return "piece_mine(" + given_pos + "), ";
         }
         card_pick_type.PIECE_MINE_NON_KING_SQUARE -> {
             require(maybe_piece != null, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a free square at position " + given_pos + "."); 
-            require(maybe_piece.align == my_color, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but opponent piece at position " + given_pos + "."); 
+            require(maybe_piece.vuln.align == my_color, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but opponent piece at position " + given_pos + "."); 
             require(maybe_piece.original_type != piece_type.KING, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a king at position " + given_pos + "."); 
             pick_piece_map[pick_index] = maybe_piece.p;
             return "piece_mine_non_king(" + given_pos + "), ";

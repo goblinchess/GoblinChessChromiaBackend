@@ -1,5 +1,6 @@
 // We need to know the owner of the portal.
 struct owned_portal {
+    portal; // Reference to the entity
     entry_pos: integer;
     exit_pos: integer;
     owner_alignment: alignment;

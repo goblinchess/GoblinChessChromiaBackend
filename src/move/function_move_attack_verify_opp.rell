@@ -14,22 +14,30 @@ function move_verify_opponent_piece(
         minimal_game: minimal_game_result, 
         opp_vuln_ctxt: pre_vuln_context, 
         v_path_opp_piece: piece?
-): piece_living_data {
+): (opp_vuln: vulnerable_data, opp_piece: piece_living_data?) {
 
-    var opp: piece_living_data? = piece_get_living_data_from_pos(minimal_game.game, att_args.attacked_position);
-    if (opp == null) {
+    var opp_vuln: vulnerable_data? = piece_get_vulnerable_data_from_pos(minimal_game.game, att_args.attacked_position);
+    if (opp_vuln == null) {
         // If we cannot find the opponent at the attacked position,
         // there MUST be a vulnerable path, or client sent us wrong data.
-        opp = move_verify_opp_vuln_context_inner(game_id, att_args, minimal_game, opp_vuln_ctxt, v_path_opp_piece);
+        return move_verify_opp_vuln_context_inner(game_id, att_args, minimal_game, opp_vuln_ctxt, v_path_opp_piece);
+    } else {
+        // Found the vulnerable.
+
+        // We can attack neutral pieces.
+        require(opp_vuln.align != attacker_align, "Expected opponent piece to NOT have the same alignment as the attacker " + opp_vuln.align + ", id:" + game_id);
+
+        //log("Move A.5: Opponent remaining hp: " + opp.remaining_hit_points + ", defence: " + opp.defence);
+        require(att_args.defender_defense_points == opp_vuln.defence, "Given defense points " + att_args.defender_defense_points + " does not match opponent's defence " + opp_vuln.defence + ", id:" + game_id);
+
+        if (opp_vuln.is_obstacle) {
+            // Don't look for the piece.
+            return (opp_vuln = opp_vuln, opp_piece = null); 
+        } else {
+            var opp: piece_living_data = piece_get_piece_data_from_vuln(opp_vuln);
+            return (opp_vuln = opp_vuln, opp_piece = opp);
+        }
     }
-
-    // We can attack neutral pieces.
-    require(opp.align != attacker_align, "Expected opponent piece to NOT have the same alignment as the attacker " + opp.align + ", id:" + game_id);
-
-    //log("Move A.5: Opponent remaining hp: " + opp.remaining_hit_points + ", defence: " + opp.defence);
-    require(att_args.defender_defense_points == opp.defence, "Given defense points " + att_args.defender_defense_points + " does not match opponent's defence " + opp.defence + ", id:" + game_id);
-
-    return opp;
 }
 
 // ------------------------------------------------------------
@@ -41,7 +49,7 @@ function move_verify_opp_vuln_context_inner(
         minimal_game: minimal_game_result, 
         opp_vuln_ctxt: pre_vuln_context, 
         v_path_opp_piece: piece?
-): piece_living_data {
+): (opp_vuln: vulnerable_data, opp_piece: piece_living_data) {
 
     val opp_destination_pos = pre_vuln_check_if_pos_part_of_vulnerable_path(opp_vuln_ctxt, att_args.attacked_position);
     require(opp_destination_pos != null, "No opponent piece at position " + att_args.attacked_position + ", id:" + game_id);
@@ -56,5 +64,5 @@ function move_verify_opp_vuln_context_inner(
         opp_destination_pos + " to " + v_path_opp_piece.vulnerable.position + ") but client should have noticed this and not allowed this attack.");
         
     log("En passant success on " + att_args.attacked_position + ". Opponent piece found at " + opp_destination_pos + ".");
-    return opp;
+    return (opp_vuln = opp.vuln, opp_piece = opp);
 }

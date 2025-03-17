@@ -1,0 +1,22 @@
+// -------------------------------------
+// Turn Event
+// -------------------------------------
+
+// Creates an event for a specific turn
+// This is used to track important game events that aren't direct results of moves or cards
+function turn_create_event(game: game, turn: turn, event_type: event_type): event {
+    // Create the event entity
+    val new_event = create event(
+        .game = game,
+        .turn = turn,
+        .event_type = event_type
+    );
+    
+    return new_event;
+}
+
+// Helper function to create an event for the current turn
+function turn_create_current_event(game: game, event_type: event_type): event {
+    val current_turn = current_turn@{game}.current_turn;
+    return turn_create_event(game, current_turn, event_type);
+}

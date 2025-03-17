@@ -20,6 +20,7 @@ entity vulnerable {
     key game, position; // No two objects can be in the same position
 
     is_obstacle: boolean; // If true, this vulnerable is an obstacle
+    can_retaliate: boolean; // If true, this vulnerable can retaliate during chaos mode.
 
     mutable color: alignment; // This can change via recruitment or resurrect 
     mutable is_alive: boolean; // We keep dead/removed objects in the DB, to preserve the events. 
@@ -27,7 +28,6 @@ entity vulnerable {
     // For chaos mode we need hit points
     mutable start_hit_points: integer;
     mutable remaining_hit_points: integer;
-    mutable strength: integer;
     mutable defence: integer;
 }
 

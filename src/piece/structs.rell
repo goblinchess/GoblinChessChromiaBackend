@@ -29,13 +29,7 @@ enum square_status {
 // Used inside the game to pass information about a living piece
 struct piece_living_data {
     // From Vulnerable
-    align: alignment; // = Color
-    position: integer;
-
-    start_hit_points: integer;
-    remaining_hit_points: integer;
-    strength: integer;
-    defence: integer;
+    vuln: vulnerable_data;
 
     // From Piece
     is_knighted: boolean;
@@ -43,6 +37,22 @@ struct piece_living_data {
     active_type: piece_type;
 
     p: piece;
+}
+
+// Used inside the game to pass information about a vulnerable object 
+struct vulnerable_data {
+    // From Vulnerable
+    align: alignment; // = Color
+    position: integer;
+
+    is_obstacle: boolean;
+    can_retaliate: boolean;
+
+    start_hit_points: integer;
+    remaining_hit_points: integer;
+    defence: integer;
+
+    v: vulnerable;
 }
 
 // External:
@@ -56,7 +66,6 @@ struct piece_info {
     is_obstacle: boolean;
     start_hit_points: integer;
     remaining_hit_points: integer;
-    strength: integer;
     defence: integer;
 
     // From Piece

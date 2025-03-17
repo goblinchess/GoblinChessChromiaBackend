@@ -1,7 +1,5 @@
 
 
-
-
 // Build a string with some debug stuff
 function move_debug_str(m_args: move_arguments, check_args: move_check_arguments?): text {
 
@@ -23,6 +21,20 @@ function move_debug_str(m_args: move_arguments, check_args: move_check_arguments
     }
     return dbg;
 }
+
+// Sometimes we want to update the position of a vulnerable, 
+// AND update the board at the same time.
+function move_common_change_piece_position(
+    board_positions_all, 
+    v: vulnerable, 
+    wpaa: with_pos_and_alignment,
+    from_position: integer, 
+    to_position: integer
+) {
+    update v (.position = to_position);
+    board_place_character_at(board_positions_all, from_position, to_position, wpaa);
+}
+
 
 // Just check if within the board
 function move_verify_pos(game_id: integer, m_args: move_arguments) {
@@ -50,7 +62,7 @@ function move_verify_basic_move(game_id: integer, m_args: move_arguments, minima
     }
 
     //log("Move A.4: " + active_type + " " + p_type);
-    require(p.align == align, "Expected piece to have alignment " + align + " but got " + p.align + ", id:" + game_id);
+    require(p.vuln.align == align, "Expected piece to have alignment " + align + " but got " + p.vuln.align + ", id:" + game_id);
     require(p.active_type == p_type, "Expected piece to have active type " + p.active_type + " but got " + m_args.piece_type_str + ", id:" + game_id);
     require(m_args.given_is_knighted == p.is_knighted, "KNIGHTED status mismatch, given: " + m_args.given_is_knighted + " but got " + p.is_knighted + ", id:" + game_id);
 
@@ -58,39 +70,26 @@ function move_verify_basic_move(game_id: integer, m_args: move_arguments, minima
 }
 
 // ------------------------------------------------------------
-// Does the on-chain updates for a move.
-// 1. Create the turn record
-// 2. Create move entity
+// Create move entity
 // ------------------------------------------------------------
-function move_turn_and_static_move_creation(
+function move_event_creation(
         m_args: move_arguments, 
         minimal_game: minimal_game_result, 
-        align: alignment, 
+        new_turn: turn,
+        piece,
         is_castle: boolean, 
         is_check: boolean, 
-        p: piece_living_data, 
-        new_turn_type: turn_type
-): (m: move, new_turn: turn) 
+): move
 {
-    // ----------------
-    // 1. Create the turn record
-    // ----------------
-    // Do this FIRST since lots of verification in here.
-    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
-
-    // ----------------
-    // 2. Create move entity
-    // ----------------
-    val m = create move(
+    // Create move entity
+    return create move(
         turn = new_turn, 
-        piece_moved = p.p, 
+        piece_moved = piece, 
         from_position = m_args.from_position, 
         to_position = m_args.to_position,
         is_castle = is_castle,
         is_check = is_check
     );
-
-    return (m = m, new_turn = new_turn);
 }
 
 
@@ -112,6 +111,7 @@ function move_cleanup_after_move(is_enchanted_jump: boolean, opp_vuln_ctxt: pre_
 
 function move_common_check_stale_n_mate(
     minimal_game: minimal_game_result, 
+    board: board_positions_all, // <-- Should been updated with all moves, promotions and deaths
     opp_align: alignment,
     opp_king: piece_living_data,
     our_team: character_team,
@@ -122,17 +122,12 @@ function move_common_check_stale_n_mate(
     var is_checkmate = false;
     var is_stalemate = false;
 
-    // We cannot just use the pre-move board_positions_all (since we've moved a piece).
-    // TODO: Save some DB calls by modifying the old board_positions_all struct?
-    val board_new: list<with_pos_and_alignment> = piece_get_all_vulnerables(minimal_game.game); 
-    val board_positions_all_new = build_board_positions_all(minimal_game.game, board_new, []);
-
     // For check calculation we don't have to use hypothetical moves, since we do the
     // calculation AFTER the move has been saved to the board.
     val check_sb_data = check_sb_build_calculator(
-            opp_king.position, // We're supposed to check the opponent's king
+            opp_king.vuln.position, // We're supposed to check the opponent's king
             our_team, // we are the checking team
-            board_positions_all_new // This isn't a hypothetical move, must use the new board positions
+            board // This isn't a hypothetical move, must use the new board positions
     );
 
     val is_check = check_sb_is_check(check_sb_data);
@@ -152,11 +147,11 @@ function move_common_check_stale_n_mate(
         }
 
         if (should_do_mate_calc) {
-            val king_wpaa = with_pos_and_alignment(opp_king.position, opp_align);
+            val king_wpaa = with_pos_and_alignment(opp_king.vuln.position, opp_align);
             val check_mate_data = check_mate_calc_data_constructor(
                     king_wpaa, // We're supposed to check the opponent's king
                     our_team, // We are the mating team
-                    board_positions_all_new,
+                    board,
                     check_sb_data
             );
             is_checkmate = check_mate_can_escape(check_mate_data, opp_team);
@@ -184,7 +179,7 @@ function move_common_check_stale_n_mate(
         is_stalemate = move_common_calc_stalemate(
             opp_team, // kings_team
             our_team, // mating_team
-            board_positions_all_new
+            board
         );
 
         if (is_stalemate) {
@@ -236,7 +231,7 @@ function move_common_calc_stalemate(
     // b) When we get to the king it gets harder, we must use the [king_escape_data]
     // Note that for stalemate there is no subject that can help the king, so the king must find a good square alone
     val king = team_get_king(kings_team)!!;
-    val king_wpaa = with_pos_and_alignment(king.position, king.align);
+    val king_wpaa = with_pos_and_alignment(king.vuln.position, king.vuln.align);
     
     val king_escape_data = king_escape_builder(king_wpaa, mating_team, board_all);
     val (escape_pos, is_attack) = king_escape_find_first_without_help(king_escape_data, king_wpaa);
@@ -244,7 +239,7 @@ function move_common_calc_stalemate(
     if (escape_pos != null) {
         return false; // Not stalemate, since the king can escape
     } else {
-        log("move_common_calc_stalemate() - Stalemate detected! King at " + king.position + " has no moves and is not in check.");
+        log("move_common_calc_stalemate() - Stalemate detected! King at " + king.vuln.position + " has no moves and is not in check.");
         return true;
     }
 }
@@ -267,8 +262,8 @@ function inner_single_subject_can_act(board_all: board_positions_all, subject: p
             subject.active_type,  // We wanna know how it moves, not what it is.
             is_enchanted_jump,
             subject.is_knighted,
-            subject.position, 
-            subject.align,
+            subject.vuln.position, 
+            subject.vuln.align,
             v_ctxt 
     );
     // Ignore castle, since this never a king.
@@ -282,4 +277,108 @@ function inner_single_subject_can_act(board_all: board_positions_all, subject: p
     }
     
     return false;
+}
+
+
+// -----------------------------------------------------------------------------------
+// Portals
+// -----------------------------------------------------------------------------------
+
+
+// -----------------------------------------------------------------------
+// Look for unblocked portals owned by given align. There are two cases we handle here:
+// 1. (Simple) Lead moved to an unblocked portal entry.
+// 2. (Trickier) A piece has been standing on an entry of a portal that just got unblocked.
+//
+// Both (1) and (2) should go through the portal.
+// -----------------------------------------------------------------------
+function move_common_use_all_unblocked_portals(
+    game,
+    curr_turn: turn, 
+    board_positions_all,
+    opp_team: character_team,
+    my_align: alignment // Player can only use OWNED portals
+): list<portal_event> {
+    val hist_portals = list<portal_event>();
+    
+    // Find all unblocked portals owned by this alignment
+    val portals = board_find_unblocked_portals_owned_by(board_positions_all, my_align);
+
+    for (portal in portals) {
+
+        // Check if there's a character at the entry
+        val piece = board_get_at(board_positions_all, portal.entry_pos);
+        if (piece != null and piece.alignment == my_align) {
+            // Character is ours, use the portal
+            val hist_portal = move_common_use_portal_depending_on_piece_type(
+                        game,
+                        curr_turn,
+                        board_positions_all,
+                        opp_team,
+                        my_align,
+                        piece,
+                        portal
+            );
+                    
+            if (hist_portal != null) {
+                hist_portals.add(hist_portal);
+            }
+        }
+    }
+    
+    return hist_portals;
+}
+
+// -----------------------------------------------------------------------
+// We are supposed to use the given portal, but there is one exception:
+// If the character is a king, we should only use the portal if the destination isn't attacked.
+// -----------------------------------------------------------------------
+function move_common_use_portal_depending_on_piece_type(
+    game,
+    curr_turn: turn, 
+    board_positions_all,
+    opp_team: character_team,
+    my_align: alignment,
+    piece_wpaa: with_pos_and_alignment,
+    portal: owned_portal
+): portal_event? {
+    // Get the piece living data
+    val piece_data = piece_get_living_data_from_pos(game, piece_wpaa.pos);
+    require(piece_data != null, "Error: Could not find piece at position " + piece_wpaa.pos);
+    
+    var use_portal = true;
+
+    // Check if it's a king
+    if (piece_data.original_type == piece_type.KING) {
+        val king_wpaa = piece_wpaa;
+
+        // Can only move through the portal if there is no foe attacking the exit
+        val check_calc_data = check_sb_build_hypothetical_king_move(
+            king_wpaa,
+            king_wpaa.pos,
+            portal.exit_pos,
+            opp_team,
+            board_positions_all
+        );
+        
+        if (check_sb_is_check(check_calc_data)) {
+            log("move_common_use_portal_depending_on_piece_type() - Found an unblocked portal with the king on the entry, but CANNOT enter because exit is attacked: " + portal.entry_pos + " -> " + portal.exit_pos);
+            use_portal = false;
+        } else {
+            // Move the king through the portal
+            log("move_common_use_portal_depending_on_piece_type() - Found an unblocked portal with the king on the entry: " + portal.entry_pos + " -> " + portal.exit_pos);
+        }
+    } else {
+        // For non-king pieces, just move through the portal
+        log("move_common_use_portal_depending_on_piece_type() - Found an unblocked portal with a (non-king) friend on the entry: " + portal.entry_pos + " -> " + portal.exit_pos);
+    }
+
+    if (use_portal) {
+        // Move the piece through the portal
+        move_common_change_piece_position(board_positions_all, piece_data.p.vulnerable, piece_wpaa, portal.entry_pos, portal.exit_pos);
+        
+        return move_portal_create_event(game, curr_turn, portal, piece_data.p);
+    } else {
+        return null;
+    }
 }

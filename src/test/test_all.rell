@@ -323,6 +323,17 @@ function test_full_game() {
     // --------------------
     // Failed White moves
     // --------------------
+    // 1: r  kn b  q  k  b  kn r // <- Lower case for black
+    // 2: p  p  p  p  p  p  p  p 
+    // 3: .  .  .  .  .  .  .  .
+    // 4: .  .  .  .  .  .  .  .
+    // 5: .  .  .  .  .  .  .  .
+    // 6: .  .  .  .  .  .  .  .
+    // 7: P  P  P  P  P  P  P  P // <- Upper case for white
+    // 8: R  Kn B  Q  K  B  Kn R
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
     // First we try a few invalid moves, to make sure the validation works.
 
     log("Turn 2: Move Fail A. No piece at position");
@@ -425,11 +436,22 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ BLack Move 1 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 1: r  kn b  q  k  b  kn r
+    // 2: p  p  p  p  p  p  p  p
+    // 3: .  .  .  .  .  .  .  .
+    // 4: .  .  .  .  .  .  .  .
+    // 5: .  .  .  .  .  .  .  .
+    // 6: .  .  Kn .  .  .  .  .
+    // 7: P  P  P  P  P  P  P  P
+    // 8: R  .  B  Q  K  B  Kn R
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
     log ("Turn 4: Black skips spell");
     rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
-    log ("Turn 5: Black moves pawn b7->b5");
+    log ("Turn 5: Black moves pawn a7->a5");
     val black_move_1_from = 48; // a7
     val black_move_1_to = 32; // a5 = Pawn double move 
 
@@ -449,6 +471,17 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 2 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 1: r  kn b  q  k  b  kn r
+    // 2: .  p  p  p  p  p  p  p
+    // 3: .  .  .  .  .  .  .  .
+    // 4: p  .  .  .  .  .  .  .
+    // 5: .  .  .  .  .  .  .  .
+    // 6: .  .  Kn .  .  .  .  .
+    // 7: P  P  P  P  P  P  P  P
+    // 8: R  .  B  Q  K  B  Kn R
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
 
     log("Turn 7: White plays Knighted.");
     val card_picks_knighted = [10]; // Turns c2 pawn into knight
@@ -473,6 +506,17 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ BLack Move 2 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 1: r  kn b  q  k  b  kn r
+    // 2: .  p  p  p  p  p  p  p
+    // 3: .  .  .  .  .  .  .  .
+    // 4: p  .  .  .  .  .  .  .
+    // 5: .  .  .  .  .  .  .  .
+    // 6: .  .  Kn .  .  .  P  .
+    // 7: P  P  P  P  P  P  .  P
+    // 8: R  .  B  Q  K  B  Kn R
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
     log ("Turn 10: Black skips spell");
     rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
@@ -539,6 +583,17 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 3 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 1: r  kn b  q  k  b  kn r
+    // 2: .  p  p  p  p  p  p  p
+    // 3: .  .  .  .  .  .  .  .
+    // 4: .  .  .  .  .  .  .  .
+    // 5: P  .  .  .  .  .  .  .
+    // 6: .  .  Kn .  .  .  P  .
+    // 7: P  P  P  P  P  P  .  P
+    // 8: R  .  B  Q  K  B  Kn R
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
 
     log("Turn 13: White skips spell.");
     rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
@@ -564,6 +619,18 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ BLack Move 3 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 1: r  kn b  q  k  b  kn r
+    // 2: .  p  p  p  p  p  p  p
+    // 3: .  .  .  .  .  .  .  .
+    // 4: .  .  .  .  .  .  .  .
+    // 5: p  P  .  .  .  .  .  .
+    // 6: .  .  Kn .  .  .  P  .
+    // 7: P  .  P  P  P  P  .  P
+    // 8: R  .  B  Q  K  B  Kn R
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
     log ("Turn 16: Black skips spell");
     rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
@@ -594,6 +661,19 @@ function test_full_game() {
     log ("Turn 18: Skip neutral.");
     rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
+
+    // +++++++++++++++++++++++++++++++++++++++++ White Move 4 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 1: r  kn b  q  k  b  kn r
+    // 2: .  p  p  p  p  p  p  p
+    // 3: .  .  .  .  .  .  .  .
+    // 4: .  .  .  .  .  .  .  .
+    // 5: .  x  .  .  .  .  .  . // <- Pawn on a5 is captured
+    // 6: .  p  Kn .  .  .  P  .
+    // 7: P  .  P  P  P  P  .  P
+    // 8: R  .  B  Q  K  B  Kn R
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
 
 }
 

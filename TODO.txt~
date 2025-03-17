@@ -2,5 +2,11 @@
  TODO: 
  
  1. Use given_can_retaliate
-    
 
+ 2. Finish the game when mate
+    
+ 3. Move pieces through tunnels. <- Done
+
+ 4. Promote on final rank.
+
+ 5. Forgot that defender could be an obstacle.

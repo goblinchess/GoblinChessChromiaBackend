@@ -1,13 +1,16 @@
 
 // ------------------------------------------------------------
-// Here we calculate and verify the battle result
+// Here we calculate the [battle_result] and 
+// verify it against the data the client sent us.
+// NOTE:
+// No updates here, we're still in verification mode.
 // ------------------------------------------------------------
 function move_calc_and_verify_battle_result(
     game_id: integer,
     m_args: move_arguments,
     att_args: move_attack_arguments,
     p: piece_living_data,
-    opp: piece_living_data,
+    opp_vuln: vulnerable_data,
     rnd_numbers: list<integer>, // <- Damn important that the correct count is sent here.
 
     is_chaos_mode: boolean,
@@ -27,14 +30,14 @@ function move_calc_and_verify_battle_result(
         battle_res = calculate_chaos_attack_result(
 
             // Defender
-            def_hp = opp.remaining_hit_points,
+            def_hp = opp_vuln.remaining_hit_points,
             def_strength = die_set_get_default_chaotic(), // Currently always the same.
-            def_defense = opp.defence,
+            def_defense = opp_vuln.defence,
 
             // Attacker
-            att_hp = p.remaining_hit_points,
+            att_hp = p.vuln.remaining_hit_points,
             att_strength = die_set_get_default_chaotic(), // Currently always the same.
-            att_defense = p.defence,
+            att_defense = p.vuln.defence,
 
             chaos_args = chaos_args,
 
@@ -51,8 +54,8 @@ function move_calc_and_verify_battle_result(
     } else {
         // This is the real battle calculation.
         battle_res = calculate_classic_attack_result(
-            def_hp = opp.remaining_hit_points,
-            def_defense = opp.defence
+            def_hp = opp_vuln.remaining_hit_points,
+            def_defense = opp_vuln.defence
         );
 
         // a) No luck
@@ -98,6 +101,9 @@ function move_calc_and_verify_battle_result(
 
             if (is_chaos_mode) {
                 // Main attack = hit is the only case that can cause a retaliation (but not in classic mode).
+                require(chaos_args!!.defender_can_retaliate == opp_vuln.can_retaliate, 
+                    "Client gave can_retaliate: " + chaos_args!!.defender_can_retaliate + " but node has: " + opp_vuln.can_retaliate );
+                
                 require(ret_args != null, 
                     "Chaos mode, and main attack is hit, so retaliation arguments cannot be null, id:" + game_id);
 

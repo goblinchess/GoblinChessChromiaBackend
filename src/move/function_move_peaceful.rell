@@ -141,7 +141,7 @@ function move_peaceful_inner(
             selected_path,
             p_wpaa,
             align,
-            our_king.position,
+            our_king.vuln.position,
             opp_team,
             board_positions_all
     );
@@ -158,25 +158,36 @@ function move_peaceful_inner(
     if (minimal_game.is_white) { 
         new_turn_type = turn_type.WHITE_MOVE;
     }
-    // B.1 (Really simple for peaceful moves)
-    update p.p.vulnerable (.position = m_args.to_position);
 
-    // B.2 Verify if we just won via checkmate?
-    val (is_check, is_checkmate, is_stalemate) = move_common_check_stale_n_mate(minimal_game, opp_align, opp_king, our_team, opp_team, check_args);
+    // ----------------
+    // 1. Create the turn record
+    // ----------------
+    // B.1 Do this FIRST since lots of verification in here.
+    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
 
-    // B.3 Do the updates
-    val m_res = move_turn_and_static_move_creation(m_args, minimal_game, align, is_castle, is_check, p, new_turn_type); 
-    val m = m_res.m;
-    val new_turn = m_res.new_turn;
+    // B.2 (Really simple for peaceful moves)
+    move_common_change_piece_position(board_positions_all, p.p.vulnerable, p_wpaa, m_args.from_position, m_args.to_position);
 
-    // B.4 Castle needs to move the rook too
+    // B.3 Castle needs to move the rook too
     if (is_castle) {
         val v_rook = rook!!.vulnerable;
         update v_rook(.position = castle_rook_to!!);
     }
 
+    // B.4 Use all unblocked portals
+    move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, opp_team, align);
+
+    // B.5 Promotions
+    // TODO
+
+    // B.6 Verify if we just won via checkmate?
+    val (is_check, is_checkmate, is_stalemate) = move_common_check_stale_n_mate(minimal_game, board_positions_all, opp_align, opp_king, our_team, opp_team, check_args);
+
+    // B.7 Create move event
+    val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_check); 
+
     // ----------------
-    // B.5 Is it over?
+    // B.8 Is it over?
     // ----------------
     if (is_checkmate or is_stalemate) {
         log("Game Over");
@@ -192,6 +203,7 @@ function move_peaceful_inner(
         }
 
     } else {
+
         // Cleanup
         move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, align);
 

@@ -61,6 +61,35 @@ function piece_get_all_vulnerables(game: game): list<with_pos_and_alignment> {
     return res;
 }
 
+// Get data for a vulnerable object, if exists.
+// We do this for performance reasons, 
+// since every single field access could else generate a new SELECT.
+function piece_get_vulnerable_data_from_pos(g: game, given_pos: integer) :vulnerable_data? {
+
+    val res = (v: vulnerable)@? {
+        g == v.game,
+        v.is_alive == true,
+        v.position == given_pos,
+    } (v.color, v.is_obstacle, v.can_retaliate, v.start_hit_points, v.remaining_hit_points, v.defence, found_vulnerable = v);
+
+    if (res != null) {
+
+        return vulnerable_data(
+            align = res.color, 
+            position = given_pos, 
+            is_obstacle = res.is_obstacle,
+            can_retaliate = res.can_retaliate,
+            start_hit_points = res.start_hit_points,
+            remaining_hit_points = res.remaining_hit_points,
+            defence = res.defence,
+            v = res.found_vulnerable
+        );
+
+    } else {
+        return null;
+    }
+}
+
 // Get data for a living piece, if exists.
 // We do this for performance reasons, 
 // since every single field access could else generate a new SELECT.
@@ -71,17 +100,24 @@ function piece_get_living_data_from_pos(g: game, given_pos: integer) :piece_livi
         v == pi.vulnerable,
         v.is_alive == true,
         v.position == given_pos,
-    } (v.color, v.start_hit_points, v.remaining_hit_points, v.strength, v.defence, pi.is_knighted, pi.original_type, pi.active_type, found_piece = pi);
+    } (v.color, v.is_obstacle, v.can_retaliate, v.start_hit_points, v.remaining_hit_points, v.defence, pi.is_knighted, 
+        pi.original_type, pi.active_type, found_vulnerable = v, found_piece = pi);
 
     if (res != null) {
 
-        return piece_living_data(
-            align = res.color,
+        val vln = vulnerable_data(
+            align = res.color, 
             position = given_pos, 
+            is_obstacle = res.is_obstacle,
+            can_retaliate = res.can_retaliate,
             start_hit_points = res.start_hit_points,
             remaining_hit_points = res.remaining_hit_points,
-            strength = res.strength,
             defence = res.defence,
+            v = res.found_vulnerable
+        );
+
+        return piece_living_data(
+            vuln = vln,
             is_knighted = res.is_knighted,
             original_type = res.original_type,
             active_type = res.active_type,
@@ -91,6 +127,21 @@ function piece_get_living_data_from_pos(g: game, given_pos: integer) :piece_livi
     } else {
         return null;
     }
+}
+
+// Builds a [piece_living_data] from the given [vulnerable_data].
+// Will explode if no piece is found for this object
+function piece_get_piece_data_from_vuln(v: vulnerable_data): piece_living_data {
+    val res = (pi: piece)@ { pi.vulnerable == v.v } 
+    (pi.is_knighted, pi.original_type, pi.active_type, found_vulnerable = v, found_piece = pi);
+
+    return piece_living_data(
+            vuln = v,
+            is_knighted = res.is_knighted,
+            original_type = res.original_type,
+            active_type = res.active_type,
+            p = res.found_piece
+    );
 }
 
 // Get data for all living pieces of a given color.
@@ -104,17 +155,24 @@ function piece_get_living_data_from_align(g: game, given_align: alignment) :list
         v == pi.vulnerable,
         v.is_alive == true,
         v.color == given_align
-    } (v.position, v.start_hit_points, v.remaining_hit_points, v.strength, v.defence, pi.is_knighted, pi.original_type, pi.active_type, found_piece = pi);
+    } (v.position, v.is_obstacle, v.can_retaliate, v.start_hit_points, v.remaining_hit_points, v.defence, pi.is_knighted, 
+        pi.original_type, pi.active_type, found_vulnerable = v, found_piece = pi);
 
     for (res in results) {
 
-        val pld = piece_living_data(
+        val vln = vulnerable_data(
             align = given_align, 
             position = res.position, 
+            is_obstacle = res.is_obstacle,
+            can_retaliate = res.can_retaliate,
             start_hit_points = res.start_hit_points,
             remaining_hit_points = res.remaining_hit_points,
-            strength = res.strength,
             defence = res.defence,
+            v = res.found_vulnerable
+        );
+
+        val pld = piece_living_data(
+            vuln = vln,
             is_knighted = res.is_knighted,
             original_type = res.original_type,
             active_type = res.active_type,
@@ -127,6 +185,7 @@ function piece_get_living_data_from_align(g: game, given_align: alignment) :list
     return ret;
 }
 
+
 // ------------------------------------------------------------
 // Constructors
 // ------------------------------------------------------------
@@ -137,11 +196,11 @@ function obstacle_create(game: game, pos: integer): vulnerable {
         .start_position = pos,
         .position = pos,
         .is_obstacle = true,
+        .can_retaliate = false,
         .color = alignment.NEUTRAL,
         .is_alive = true, // Not exactly "alive" but at the board.
         .start_hit_points = 10,
         .remaining_hit_points = 10,
-        .strength = 0, // Doesn't matter since cannot attack
         .defence = 3 // Default 
     );
 }
@@ -152,17 +211,21 @@ function piece_create(g: game, owner: player_game, pos: integer, align: alignmen
     if (p_type == piece_type.KING) { 
         hp = 10; // Only the king has more hit points.
     }
+    var can_retaliate = true;
+    if (p_type == piece_type.ROOK) {
+        can_retaliate = false; // Rooks cannot retaliate, for the simple reason we didn't find a good animation for that.
+    }
 
     val v = create vulnerable (
         .game = g,
         .start_position = pos,
         .position = pos,
         .is_obstacle = false,
+        .can_retaliate = can_retaliate,
         .color = align,
         .is_alive = true, 
         .start_hit_points = hp,
         .remaining_hit_points = hp,
-        .strength = 7,  // This exact mode, in chaos mode it's 2D6.
         .defence = 3 
     );
 

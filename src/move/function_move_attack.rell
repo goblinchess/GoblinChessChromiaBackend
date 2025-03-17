@@ -81,7 +81,7 @@ function move_attack_inner(
     val opp_vuln_ctxt: pre_vuln_context = res_v_path.v_ctxt;
     val v_path_opp_piece: piece? = res_v_path.moved_piece;
 
-    val opp: piece_living_data = move_verify_opponent_piece(game_id, align, att_args, minimal_game, opp_vuln_ctxt, v_path_opp_piece);
+    val (opp_vuln: vulnerable_data, opp: piece_living_data?) = move_verify_opponent_piece(game_id, align, att_args, minimal_game, opp_vuln_ctxt, v_path_opp_piece);
   
     // ----------------
     // A.6 Battle calculation
@@ -95,7 +95,7 @@ function move_attack_inner(
         m_args = m_args,
         att_args = att_args,
         p = p,
-        opp = opp,
+        opp_vuln = opp_vuln,
         rnd_numbers = rnd_numbers,
         is_chaos_mode = is_chaos_mode,
         chaos_args = chaos_args,
@@ -164,7 +164,7 @@ function move_attack_inner(
             selected_path,
             p_wpaa,
             align,
-            our_king.position,
+            our_king.vuln.position,
             opp_team,
             board_positions_all
     );
@@ -185,23 +185,34 @@ function move_attack_inner(
     // ----------------
     // Update piece position
     // ----------------
-    // B.1 Same as for peaceful move
-    update p.p.vulnerable (.position = m_args.to_position);
+
+    // B.1 Do this FIRST since lots of verification in here.
+    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
 
     // B.2 Update hp and is_alive for both attacker and defender
-    move_battle_update_health(battle_res, is_chaos_mode, p, opp);
+    // NOTE: Must be done BEFORE we move the attacker, since we require both combatants to stay on original positions.
+    val attacker_still_alive = move_battle_update_health(battle_res, is_chaos_mode, p, opp_vuln, board_positions_all);
 
-    // B.3 Verify if we just won via checkmate?
-    val (is_check, is_checkmate, is_stalemate) = move_common_check_stale_n_mate(minimal_game, opp_align, opp_king, our_team, opp_team, check_args);
+    if (attacker_still_alive) {
+        // B.3 Same as for peaceful move
+        move_common_change_piece_position(board_positions_all, p.p.vulnerable, p_wpaa, m_args.from_position, m_args.to_position);
+    }
 
-    // B.4 Turn and static move
+    // B.4 Use all unblocked portals
+    move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, opp_team, align);
+
+    // B.5 Promotions
+    // TODO
+
+    // B.6 Verify if we just won via checkmate?
+    val (is_check, is_checkmate, is_stalemate) = move_common_check_stale_n_mate(minimal_game, board_positions_all, opp_align, opp_king, our_team, opp_team, check_args);
+
+    // B.7 Turn and static move
     val is_castle = false; // Must be false for attacks
-    val m_res = move_turn_and_static_move_creation(m_args, minimal_game, align, is_castle, is_check, p, new_turn_type); 
-    val m = m_res.m;
-    val new_turn = m_res.new_turn;
+    val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_check); 
 
     // ----------------
-    // B.5. Create attack_move entity
+    // B.8. Create attack_move entity
     // ----------------
 
     val am = create attack_move(
@@ -214,7 +225,7 @@ function move_attack_inner(
 
     if (is_chaos_mode) {
 
-        // B.5.chaos.1. Create chaos_mode_args entity
+        // B.8.chaos.1. Create chaos_mode_args entity
         require(chaos_args != null, "Internal error: Chaos mode args is null, id:" + game_id); // Already checked above.
         create chaos_mode_args(
             attack_move = am,
@@ -225,7 +236,7 @@ function move_attack_inner(
 
         when (battle_res.result) {
             battle_result_type.HIT -> {
-                // B.5.chaos.2. Create retaliation entity
+                // B.8.chaos.2. Create retaliation entity
                 require(ret_args != null, "Internal error: Retaliation args is null, id:" + game_id); // Already checked above.
                 val retaliation_move = create retaliation(
                     attack_move = am,
@@ -237,13 +248,13 @@ function move_attack_inner(
         }
 
         // ----------------
-        // B.5.chaos.3. Save the rnd results
+        // B.8.chaos.3. Save the rnd results
         // ----------------
         turn_player_rnd_nr_create(new_turn, battle_res.rnd_results);
     }
 
     // ----------------
-    // B.6 Is it over?
+    // B.9 Is it over?
     // ----------------
     if (is_checkmate or is_stalemate) {
         log("Game Over");

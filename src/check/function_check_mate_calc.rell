@@ -49,8 +49,8 @@ function check_mate_can_escape(
 ): boolean {
     val maybe_king = team_get_king(kings_team);
     val king = maybe_king!!;
-    val kings_align = king.align;
-    val king_wpaa = with_pos_and_alignment(king.position, kings_align);
+    val kings_align = king.vuln.align;
+    val king_wpaa = with_pos_and_alignment(king.vuln.position, kings_align);
     
     // Begin check mate calculation (do the cheapest checks first)
     val (escape_pos, is_attack) = king_escape_find_first_without_help(data.king_escape_data, king_wpaa);
@@ -67,7 +67,7 @@ function check_mate_can_escape(
     // create a safe square for the king (expensive?)
     for (p in team_get_subjects_list(kings_team)) {
         val dbg_k = if (p.is_knighted) "K" else "";
-        val dbg_str = "(" + p.active_type + " " + dbg_k + ", pos: " + p.position + ")";
+        val dbg_str = "(" + p.active_type + " " + dbg_k + ", pos: " + p.vuln.position + ")";
 
         val is_enchanted_jump = false;  // <-- Magic Jumps shouldn't be relevant here.
         val (subject_mt, subject_mt_jump) = rules_get_all_valid_moves(
@@ -75,8 +75,8 @@ function check_mate_can_escape(
             p.active_type,  // We wanna know how it moves, not what it is.
             is_enchanted_jump,
             p.is_knighted,
-            p.position, 
-            p.align,
+            p.vuln.position, 
+            p.vuln.align,
             pre_vuln_context(null) // We don't care about "en passant" here since it won't effect check mate.
         );
         // Ignore castle, since this never a king.

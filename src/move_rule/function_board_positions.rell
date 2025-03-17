@@ -112,6 +112,7 @@ function board_get_square_status_int(board_positions_all, pos: integer): square_
 // Mutators
 // ----------------
 
+// Moving a piece from one position to another
 function board_place_character_at(
     board: board_positions_all,
     from_pos: integer,
@@ -122,12 +123,30 @@ function board_place_character_at(
     //val from_pos_int = pos_to_int(from_pos);
     //val dest_pos_int = pos_to_int(dest_pos);
 
+    // We MUST remove anything on the dest_pos before we do this.
+    require(board_is_empty(board, dest_pos), "Destination position is not empty: " + dest_pos);
+
     val new_piece = with_pos_and_alignment(dest_pos, old_piece.alignment);
 
     board.board_characters.remove(from_pos);
     board.board_characters[dest_pos] = new_piece;
 }
 
+// Whatever is on the given position, remove it.
+function board_remove_at(
+    board: board_positions_all,
+    pos: integer
+) {
+    require(not board_is_empty(board, pos), "Destination position is not empty: " + pos);
+
+    if (board.board_characters.contains(pos)) {
+        board.board_characters.remove(pos);
+    } else if (board.board_obstacles.contains(pos)) {
+        board.board_obstacles.remove(pos);
+    } else {
+        require(false, "Internal error: we already checked the board.");
+    }
+}
 
 // ----------------
 // Portals 
@@ -172,22 +191,27 @@ function board_find_my_portal_from_entry(
     return null;
 }
 
-
+// --------------------------------------
 // Returns all portals where:
 // b) the portal is owned by me
 // c) the exit isn't blocked.
-/* 
-// ONLY NEEDED BY THE CLIENT WHEN DECIDING IF A PORTAL SHOULD BE USED.
-// WE ONLY VERIFY THIS ON THE NODE.
-function board_find_unblocked_portals(
+// --------------------------------------
+function board_find_unblocked_portals_owned_by(
     board_positions_all, 
     my_align: alignment
 ): list<owned_portal> {
-    return board_positions_all.portals.get_all()
-        .filter(portal -> 
-            portal.owner_align == my_align and 
-            is_empty(board_positions_all, portal.exit_pos)
-        );
+    val result = list<owned_portal>();
+    
+    for (portal in board_positions_all.portals) {
+        if (is_portal_owned_by(portal, my_align)) {
+            // It's ours
+            if(board_is_empty(board_positions_all, portal.exit_pos)) {
+                // Exit is unblocked
+                result.add(portal); 
+            }
+        }
+    }
+    
+    return result;
 }
-*/
 
