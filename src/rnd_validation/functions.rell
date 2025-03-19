@@ -1,0 +1,166 @@
+
+
+
+
+// -------------------------------------
+// Rnd Result
+// -------------------------------------
+
+// Save the rnd_results for a turn.
+function rnd_validation_create_player_rnd_nr(
+    t: turn,
+    rnd_results: list<rnd_result>,
+) {
+
+    var idx: integer = 0;
+    for (rnd_result in rnd_results) {
+        create rnd_nr_from_player(
+            turn = t, 
+            idx = idx, 
+            result = rnd_result.result, 
+            type = rnd_result.type, 
+            min = rnd_result.min, 
+            max = rnd_result.max
+        );
+        idx++;
+    }
+}
+
+
+// ------------------------------------------------------------------
+// Find all random numbers that the player used during the game and validate them.
+// If something is wrong we return an error message and save the error!
+//
+// We do this after the game, b/c in the end of the game the client will send us 
+// the seed (s)he used (before that we don't have the seed).
+// ------------------------------------------------------------------
+function rnd_validation_of_player(
+    pg: player_game,
+    org_seed: integer, // Client's seed, unique for each game/player
+    game_id: integer // Just for debugging
+): text? {
+
+    log("rnd_validation_of_player() - Begin, game_id " + game_id);
+
+    var curr_seed = org_seed;
+
+    // --------------------------
+    // 1. Verify the 5 cards
+    // --------------------------
+    // We know that the first random numbers generated for each player 
+    // is the 5 cards. But a game can end before the player played all cards, 
+    // so we only need to verify the cards played.
+
+    val x: random_results = generate_random_numbers(curr_seed, 5, 9);
+    curr_seed = x.new_seed;
+
+    val card_map = map<integer, card_type>();
+    for (idx in range(0, 5)) {
+        val rnd_val = x.results[idx];
+        val card_type = card_get_type_from_index(rnd_val);
+        card_map[idx] = card_type;
+    }
+
+    val cards = card_get_all_played(pg);
+    for(card_hist in cards) {
+        val calculated_type = card_map[card_hist.draw_order_nr];
+        if (calculated_type != card_hist.card_type) {
+            val err_msg = "The nr " + card_hist.draw_order_nr + 
+                " drawn should have been a " + calculated_type + " but client played type: " + card_hist.card_type;
+            log(err_msg);
+
+            // Save the error
+            create rnd_validation_err(
+                player_game = pg,
+                turn = card_hist.turn,
+                error_msg = err_msg
+            );
+
+            return err_msg; // No need to go on, one error is enough
+        }
+    }
+
+    log("rnd_validation_of_player() - Cards validated, game_id " + game_id);
+
+
+    // --------------------------
+    // 2. Find all saved rnd numbers for the player
+    // --------------------------
+    val res_list = (r: rnd_nr_from_player, t: turn) @* {
+        t.created_by == pg,
+        r.turn == t
+    } (r.idx, r.result, r.type, r.min, r.max, playa_rnd_nr = r, turn = t, turn_nr = t.number); 
+
+    // --------------------------
+    // 3. Validate the rnd_results
+    // --------------------------
+    var idx: integer = 0;
+    for(res in res_list) {
+    //for(rnd_result in rnd_results) {
+        val r = random_generate_number(res.min, res.max, curr_seed);
+        curr_seed = r.curr_seed;
+        if(r.result != res.result) {
+            // This could be either a hacker or a bug.
+            // If it's a bug, it will be pretty hard to find unless we have a detailed error message.
+            val err_msg = "Invalid random number at turn " + res.turn_nr +" (index "+ idx + "), our number: "+ r.result +", client number: " + res.result + 
+                " (min: " + res.min + ", max: " + res.max + "), type: " + res.type + " for game: " + game_id;
+            log(err_msg);
+
+            // Save the error
+            create rnd_validation_err(
+                player_game = pg,
+                turn = res.turn,
+                error_msg = err_msg
+            );
+
+            return err_msg; // No need to go on, one error is enough!
+        }
+
+        idx++;
+    }
+
+    log("rnd_validation_of_player() - Everything successfully validated, game_id " + game_id);
+    return null; // No errors
+}
+
+// ----------------------------------
+// If we already have some rnd results, 
+// we want to remove these numbers from the original rnd_numbers list
+// ----------------------------------
+function rnd_validation_new_rnd_data_list(
+    rnd_results: list<rnd_result>, 
+    org_rnd_numbers: list<rnd_data>
+): list<rnd_data> {
+    var o = rnd_results.size();
+    return org_rnd_numbers.sub(o); // Remove the "o" first posts
+}
+
+// --------------------------------------------------------------
+// Returns a random position in the given list holding positions.
+// 
+// Also: 
+// 1. Put the random number in the given [rnd_result] list. 
+// 2. Remove the picked position from the list.
+// --------------------------------------------------------------
+/*
+function random_from_position_list(
+    pos_list: list<integer>, 
+    org_seed: integer,
+    rnd_results: list<rnd_result>
+): (pos:integer, curr_seed:integer) {
+
+    // Use random
+    val to_number = pos_list.size() - 1;
+    val (result, curr_seed) = random_generate_number(0, to_number, org_seed);
+    val idx = result;
+
+    // Find the position 
+    val pos_rand = pos_list[idx];
+    // Remove it from the list
+    pos_list.remove(idx);
+    // Add the [rnd_result]
+    rnd_results.add(rnd_result(result = result, min = 0, max = to_number));    
+
+    return (pos = pos_rand, curr_seed = curr_seed);
+}
+*/

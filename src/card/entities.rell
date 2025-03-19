@@ -32,7 +32,7 @@ entity card {
     index played_by: player_game;
     turn: turn; // The turn the card was played
     card_type: card_type;
-    order_number: integer; // The order number when the card was drawn.
+    draw_order_nr: integer; // The order number when the card was drawn.
 }
 
 // -------------------------------------

@@ -130,7 +130,7 @@ operation move_attack(
     // 2. chaos mode normal attack: 2 die rolls or sometimes 3 die rolls if miss, 
     // 3. chaos mode retaliation: 4 die rolls.
     // ----------------------
-    rnd_numbers: list<integer>,  
+    rnd_numbers: list<rnd_data>,  
 
     // ----------------------
     // Only if the client wants

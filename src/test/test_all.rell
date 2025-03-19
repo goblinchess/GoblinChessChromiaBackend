@@ -6,6 +6,20 @@ import ^^.piece.*;
 import ^^.move.*;
 import ^^.turn.*;
 
+// Helper function to quickly turn "random" integers into rnd_data.
+function build_d6_rnd_data(rnds: list<integer>): list<rnd_data> {
+    val res_list: list<rnd_data> = [];
+    for(rnd in rnds) {
+        val rnd_data = rnd_data(
+            result = rnd,
+            min = 1,
+            max = 6
+        );
+        res_list.add(rnd_data);
+    }
+    return res_list;
+}
+
 function test_move_encode_decode() {
     val positions = [7, 16, 62];
     val enc_path = move_encode_int_pos_list(positions);
@@ -18,15 +32,44 @@ function test_move_encode_decode() {
 // Random
 // ----------------------------------
 
+// Just to print out various numbers to see if they are random.
+function test_d10() {
+    var curr_seed = 1234567890;
+    val x: random_results = generate_random_numbers(curr_seed, 50, 9);
+    //curr_seed = x.new_seed;
+
+    var msg = "";
+    for (res in x.results) {
+        msg += res + ", ";
+    }
+
+    log("test_d10(): " + msg);
+}
+
+function test_d6() {
+    var my_seed = 1234567890;
+    //curr_seed = x.new_seed;
+
+    var msg = "";
+    for (i in range(0, 50)) {
+        var (result: integer, curr_seed: integer) = random_generate_number(1, 6, my_seed);
+        my_seed = curr_seed;
+        msg += result + ", ";
+    }
+
+    log("test_d6(): " + msg);
+}
+
 function test_random_new_numbers_list() {
     val rnd_results: list<rnd_result> = [
-        rnd_result(result = 1, min = 1, max = 6),
-        rnd_result(result = 2, min = 1, max = 6),
-        rnd_result(result = 3, min = 1, max = 6)
+        rnd_result(result = 1, type = rnd_nr_type.DICE_ROLL, min = 1, max = 6),
+        rnd_result(result = 2, type = rnd_nr_type.DICE_ROLL, min = 1, max = 6),
+        rnd_result(result = 3, type = rnd_nr_type.DICE_ROLL, min = 1, max = 6)
     ];
-    val rnd_numbers: list<integer> = [1, 2, 3, 4, 5, 6];
-    val new_rnd_numbers = random_new_numbers_list(rnd_results, rnd_numbers);
-    assert_equals(new_rnd_numbers, [4, 5, 6]);
+    val rnd_numbers: list<rnd_data> = build_d6_rnd_data([1, 2, 3, 4, 5, 6]);
+    val new_rnd_numbers = rnd_validation_new_rnd_data_list(rnd_results, rnd_numbers);
+    val expected_new_rnd_numbers = build_d6_rnd_data([4, 5, 6]);
+    assert_equals(new_rnd_numbers, expected_new_rnd_numbers);
 }
 
 // ----------------------------------
@@ -55,11 +98,13 @@ function test_battle_strong_defence() {
     // ----------------
     log("Test 1: rnd = 1+3, expect Hit with 4 damage, retaliation Miss");
     // ----------------
+    var rnd_datas = build_d6_rnd_data([1, 3, 2]); // NOTE: one extra due to "miss" calculation
     var br = calculate_chaos_attack_result(
         def_hp, def_strength, def_defense,
         att_hp, att_strength, att_defense,
         chaos_args,
-        [1, 3, 2] // NOTE: one extra due to "miss" calculation
+        rnd_datas 
+         
     );
 
     // Attack failed
@@ -72,11 +117,12 @@ function test_battle_strong_defence() {
     // ----------------
     log("Test 2: rnd = 2,3,2,2 expect hit with 5 damage.");
     // ----------------
+    rnd_datas = build_d6_rnd_data([2,3,2,2]);
     br = calculate_chaos_attack_result(
         def_hp, def_strength, def_defense,
         att_hp, att_strength, att_defense,
         chaos_args,
-        [2,3,2,2]
+        rnd_datas 
     );
     // Attack success
     assert_equals(br.result, battle_result_type.HIT);
@@ -88,11 +134,12 @@ function test_battle_strong_defence() {
     // ----------------
     log("Test 3: rnd = 2,6,5,6 expect Hit with 8 damage, retaliation hit");
     // ----------------
+    rnd_datas = build_d6_rnd_data([2,6,5,6]);
     br = calculate_chaos_attack_result(
         def_hp, def_strength, def_defense,
         att_hp, att_strength, att_defense,
         chaos_args,
-        [2,6,5,6]
+        rnd_datas
     );
     // Attack success
     assert_equals(br.result, battle_result_type.HIT);
@@ -103,11 +150,13 @@ function test_battle_strong_defence() {
     // ----------------
     log("Test 4: rnd = 3,6,6,6 expect Hit with 9 damage, retaliation kill");
     // ----------------
+
+    rnd_datas = build_d6_rnd_data([3,6,6,6]);
     br = calculate_chaos_attack_result(
         def_hp, def_strength, def_defense,
         att_hp, att_strength, att_defense,
         chaos_args,
-        [3,6,6,6]
+        rnd_datas 
     );
     // Attack success
     assert_equals(br.result, battle_result_type.HIT);
@@ -289,7 +338,7 @@ function test_full_game() {
 
     log("Turn 1: Card Fail A. No picks for FROG");
     val card_picks_none: list<integer> = []; // No picks
-    var failed_card = assert_fails(play_card_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_none, list<integer>(),
+    var failed_card = assert_fails(play_card_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_none, list<rnd_data>(),
         * // Note, this star is what makes it work.
     ));
     val expected_no_pick_msg: text = "Expected 1 picks for card FROG but got 0";
@@ -297,7 +346,7 @@ function test_full_game() {
 
     log("Turn 1: Card Fail B. Out of board pick for FROG");
     val card_picks_out_of_board = [64]; // Out of board
-    failed_card = assert_fails(play_card_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_out_of_board, list<integer>(),
+    failed_card = assert_fails(play_card_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_out_of_board, list<rnd_data>(),
         * // Note, this star is what makes it work.
     ));
     val expected_out_of_board_pick: text = "Pick at pos 0 is out of board.";
@@ -305,7 +354,7 @@ function test_full_game() {
 
     log("Turn 1: Card Fail C. Free square pick for FROG");
     val card_picks_free = [18]; // = c3, free square
-    failed_card = assert_fails(play_card_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_free, list<integer>(),
+    failed_card = assert_fails(play_card_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_free, list<rnd_data>(),
         * // Note, this star is what makes it work.
     ));
     val expected_must_be_piece_msg: text = "Expected pick at pos 0 to be type PIECE_NON_KING_SQUARE but found a free square at position 18.";
@@ -317,7 +366,7 @@ function test_full_game() {
 
     log("Turn 1: White playes a card");
     val black_rook_to_frog = 56; // a8, Turns black rook into frog
-    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "FROG", 1, [black_rook_to_frog], list<integer>())).sign(white_player).run();
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "FROG", 1, [black_rook_to_frog], list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
 
     // --------------------
@@ -485,7 +534,7 @@ function test_full_game() {
 
     log("Turn 7: White plays Knighted.");
     val card_picks_knighted = [10]; // Turns c2 pawn into knight
-    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "KNIGHTED", 2, card_picks_knighted, list<integer>())).sign(white_player).run();
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "KNIGHTED", 2, card_picks_knighted, list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
 
     log("Turn 8: White makes a valid move Pawn g2 -> g3");
@@ -655,7 +704,7 @@ function test_full_game() {
         damage_points = 7 
     );
 
-    rell.test.tx(move_attack(m_args, att_args, list<integer>(), check_args)).sign(black_player).run();
+    rell.test.tx(move_attack(m_args, att_args, list<rnd_data>(), check_args)).sign(black_player).run();
     last_seen_turn += 1;
     
     log ("Turn 18: Skip neutral.");

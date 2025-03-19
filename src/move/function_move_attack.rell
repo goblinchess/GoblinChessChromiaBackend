@@ -1,4 +1,8 @@
 
+
+// --------------------------------------------------------------
+// The player's client reports an attack.
+// --------------------------------------------------------------
 function move_attack_inner(
     caller_pubkey: pubkey,
     m_args: move_arguments,
@@ -18,7 +22,7 @@ function move_attack_inner(
     // 2. chaos mode normal attack: 2 die rolls or sometimes 3 die rolls if miss, 
     // 3. chaos mode retaliation: 4 die rolls.
     // ----------------------
-    rnd_numbers: list<integer>, 
+    rnd_numbers: list<rnd_data>, 
 
     check_args: move_check_arguments? = null,
 
@@ -250,7 +254,7 @@ function move_attack_inner(
         // ----------------
         // B.8.chaos.3. Save the rnd results
         // ----------------
-        turn_player_rnd_nr_create(new_turn, battle_res.rnd_results);
+        rnd_validation_create_player_rnd_nr(new_turn, battle_res.rnd_results);
     }
 
     // ----------------

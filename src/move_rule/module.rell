@@ -1,3 +1,4 @@
 import ^.piece.*;
 import ^.move.*;
+import ^.rnd_validation.*;
 import ^.*;

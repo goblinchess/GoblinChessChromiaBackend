@@ -1,0 +1,38 @@
+// -------------------------------------
+// Rnd Result
+// -------------------------------------
+
+enum rnd_nr_type {
+    DICE_ROLL, // The roll of a die (during chaos attack)
+    CARD_PORTAL, // Need random for exit
+    CARD_RESURRECT // Need random for resurrect square
+}
+
+// In the end of every turn we store the random numbers 
+// that was sent to us from the player.
+entity rnd_nr_from_player {
+    index turn: turn;
+    idx: integer; // Index of the random number inside the turn
+    key turn, idx;
+    result: integer;
+    type: rnd_nr_type;
+    min: integer;
+    max: integer;
+}
+
+
+// We keep track of when this fails.
+// It might not be hacks but bugs.
+entity rnd_validation_err {
+    key player_game; // Unique, there's max one error per player/game. 
+    turn; // We don't reference the [player_rnd_nr] since the error might be caused by a card.
+    error_msg: text; // Used for debugging by dev team.
+}
+
+/*
+// We keep track of when this fails.
+// It might not be hacks but bugs.
+entity player_rnd_nr_err {
+    key player_rnd_nr;
+    error_msg: text;
+}*/

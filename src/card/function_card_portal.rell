@@ -1,0 +1,36 @@
+
+// Returns the "other" side from, i.e. if "pos" 
+// 1. is on the "white" side, we return "black" 
+// 2. "black" -> "white"
+function card_portal_get_other_side(pos_int: integer): alignment {
+
+    val pos: square_pos = translate_integer_pos_to_square_pos(pos_int);
+
+    if (pos.y < 4) {
+        // If the chosen piece is on white side, we want to find the exit on the black side.
+        return alignment.BLACK;
+    } else if (pos.y > 3) {
+        // If the chosen piece is on black side, we want to find the exit on the white side.
+        return alignment.WHITE;
+    } else {
+        require(false, "card_portal_get_other_side() - How did we get neutral? " + pos_int);
+        return alignment.NEUTRAL;
+    }
+}
+
+// Finds a random free square anywhere on either side of the board (either black/white side).
+function card_portal_verify_random_free_square_anywhere_on_half(
+    board_positions_all, 
+    align: alignment,
+    portal_exit_pos: integer,
+    rnd_data
+    ): rnd_result {
+    if (align == alignment.WHITE) {
+        return board_verify_empty_square_white_side(board_positions_all, portal_exit_pos, rnd_data);
+    } else if (align == alignment.BLACK) {
+        return board_verify_empty_square_black_side(board_positions_all, portal_exit_pos, rnd_data);
+    } else {
+        require(false, "find_random_free_square_anywhere_on_half() - How did we get neutral? " + align);
+        return rnd_result(result = -1, type = rnd_nr_type.CARD_PORTAL, min = 0, max = 0); // Never reached
+    }
+}

@@ -82,27 +82,7 @@ entity event {
     event_type: event_type;
 }
 
-// -------------------------------------
-// Rnd Result
-// -------------------------------------
 
-// In the end of every turn we stor the random numbers 
-// (that was sent to us by the client).
-entity player_rnd_nr {
-    index turn: turn;
-    idx: integer; // Index of the random number inside the turn
-    key turn, idx;
-    result: integer;
-    min: integer;
-    max: integer;
-}
-
-// We keep track of when this fails.
-// It might not be hacks but bugs.
-entity player_rnd_nr_err {
-    key player_rnd_nr;
-    error_msg: text;
-}
 
 
 

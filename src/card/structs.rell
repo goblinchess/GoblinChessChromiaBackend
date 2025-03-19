@@ -1,0 +1,7 @@
+
+struct card_history {
+    card_type: card_type;
+    draw_order_nr: integer; // What order the card was "drawn" (at the beginning of the game)
+    turn_nr: integer; // What turn the card was played
+    turn; // The entity
+}

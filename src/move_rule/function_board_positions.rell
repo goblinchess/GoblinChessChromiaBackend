@@ -215,3 +215,93 @@ function board_find_unblocked_portals_owned_by(
     return result;
 }
 
+// ------------------------
+// Searches any of the 0-3 ranks
+// ------------------------
+
+// We that the squeare we'll be looking for is on white's side.
+function board_verify_empty_square_white_side(
+    board_positions_all,
+    portal_exit_pos: integer,
+    rnd_data
+): rnd_result
+{
+    return board_verify_side( board_positions_all, 0, portal_exit_pos, rnd_data);
+}
+
+// ------------------------
+// Searches any of the 4-7 ranks
+// ------------------------
+// We that the squeare we'll be looking for is on black's side.
+function board_verify_empty_square_black_side(
+    board_positions_all, 
+    portal_exit_pos: integer,
+    rnd_data
+): rnd_result
+{
+    return board_verify_side(board_positions_all, 4, portal_exit_pos, rnd_data);
+}
+
+// Will verify if the given random number indeed corresponds to the given portal exit pos.
+function board_verify_side(
+    board_positions_all,
+    add_to_y: integer, // Determine the Y offset based on the side
+    portal_exit_pos: integer,
+    rnd_data
+): rnd_result {
+
+    // ------------------------
+    // 1. Build the list of empty positions
+    // ------------------------
+    val empty_positions = list<integer>();
+
+    // Loop through ranks and add empty positions
+    for (y_temp in range(0, 4)) {
+        val y_real = y_temp + add_to_y;
+        add_all_empty_at_rank_y(board_positions_all, y_real, empty_positions);
+    }
+    // ------------------------
+    // 2. Validation
+    // ------------------------
+
+    // Sanity check: Must be at least one empty position on each side of the board.
+    // Yes, theoretically, this can happen. If we put multiple walls on one side, AND
+    // move opponents pieces to this side to fill it up completely. 
+    // But that would lead to stalemate, so it's not going to.
+    // Also, the client wouldn't be able to cast this spell if this was the case.
+    val total_empty_positions = empty_positions.size();
+    require(total_empty_positions > 0, "board_search_side() - Impossible for one side to be full.");
+
+    val empty_pos_max_indx = total_empty_positions - 1;
+    require(rnd_data.min == 0, "For portal the MIN should be 0, client gave: " + rnd_data.min);
+    require(rnd_data.max == empty_pos_max_indx, "For portal the node calculates MAX to be " + empty_pos_max_indx + 
+        ", but client gave: " + rnd_data.max);
+    require(0 <= rnd_data.result and rnd_data.result <= empty_pos_max_indx, "Client gave: " + rnd_data.result + 
+        " which is out of bounds (MIN: 0, MAX: " + empty_pos_max_indx + ")");
+
+    // Let's validate that the given random number indeed corresponds to the given position in our list.
+    val calculated_exit_pos = empty_positions[rnd_data.result];
+    require(calculated_exit_pos == portal_exit_pos, "The calculated exit position " + calculated_exit_pos + 
+        " does not match the given exit position "+ portal_exit_pos +".");
+            
+    return rnd_result(
+        result = rnd_data.result, 
+        type = rnd_nr_type.CARD_PORTAL, // <-- Only use case 
+        min = rnd_data.min, 
+        max = rnd_data.max 
+    );
+}
+
+function add_all_empty_at_rank_y(
+    board_positions_all, 
+    y: integer, // The rank we are looking at 
+    empty_positions: list<integer> // Where we put all found empty positions
+) {
+    for (x in range(0, 8)) {
+        val pos_sq = square_pos(x, y);
+        val pos: integer = pos_to_int(pos_sq);
+        if (board_is_empty(board_positions_all, pos)) {
+            empty_positions.add(pos);
+        }
+    }
+}

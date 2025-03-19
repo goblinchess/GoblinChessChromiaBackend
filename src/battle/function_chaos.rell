@@ -14,7 +14,7 @@ function calculate_chaos_attack_result(
     att_defense: integer,
 
     chaos_args: move_chaos_mode_arguments,
-    rnd_numbers: list<integer>
+    rnd_numbers: list<rnd_data>
 ): battle_result {
 
     val can_retaliate = chaos_args.defender_can_retaliate;
@@ -46,7 +46,8 @@ function calculate_chaos_attack_result(
     
     val d_health_left = d_curr_hp - att_res;
     
-    log("calculate_chaos_attack_result() - Attack res " + die_set_debug(att_strength) + " = (Attack Damage: " + attack_damage + " - Defense: " + def_defense + ") = Calculated damage:  " + att_res + ". Def Hp: " + d_curr_hp);
+    log("calculate_chaos_attack_result() - Attack res " + die_set_debug(att_strength) + " = (Attack Damage: " + attack_damage + " - Defense: " + 
+        def_defense + ") = Calculated damage:  " + att_res + ". Def Hp: " + d_curr_hp);
     
     // Calc main battle result type
     if (att_res > 0) {
@@ -72,7 +73,7 @@ function calculate_chaos_attack_result(
         if (can_retaliate and not flash_attack) {
             // Retaliation 
 
-            val new_rnd_numbers = random_new_numbers_list(rnd_results, rnd_numbers);
+            val new_rnd_numbers = rnd_validation_new_rnd_data_list(rnd_results, rnd_numbers);
             val retaliation_res = die_set_roll(def_strength, new_rnd_numbers);
             retaliation_die_res_set = retaliation_res[0];
             rnd_results.add_all(retaliation_res[1]); // Don't forget to save the rnds

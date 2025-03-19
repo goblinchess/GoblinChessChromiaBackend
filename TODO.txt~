@@ -1,12 +1,27 @@
 
  TODO: 
  
- 1. Use given_can_retaliate
 
  2. Finish the game when mate
     
- 3. Move pieces through tunnels. <- Done
+ 3. Promote on final rank.
 
- 4. Promote on final rank.
+ 4. Use Luck
 
- 5. Forgot that defender could be an obstacle.
+ 5. Test: portal
+
+
+DONE:
+1) Move pieces through tunnels in the end of the turn. 
+2) Defender could be an obstacle, so we need to use vulnerable_data.
+3) Re-use the board_positions_all during the move, to avoid fetching the board many
+times. 
+
+
+INFO  2025-03-17 12:49:11.489 - [main] Rell Operation 'move:move_attack' failed: Internal error: we already checked the board.
+        at move_rule:board_remove_at(move_rule/function_board_positions.rell:147)
+        at move:move_battle_death_of_vulnerable(move/function_move_battle_update.rell:66)
+        at move:move_battle_update_health(move/function_move_battle_update.rell:16)
+        at move:move_attack_inner(move/function_move_attack.rell:194)
+        at move:move_attack(move/operations.rell:157)
+FAILED: test.test_all:test_full_game (6.225s)

@@ -16,9 +16,9 @@ function die_set_get_default_chaotic(): die_set {
 // Main function of this module.
 //
 // Returns:
-// (die_result_set, random_box)
+// (die_result_set, list<rnd_result>)
 // -----------------------------------------------------
-function die_set_roll(given_dice: die_set, rnd_numbers: list<integer>): (die_result_set, list<rnd_result>) {
+function die_set_roll(given_dice: die_set, rnd_numbers: list<rnd_data>): (die_result_set, list<rnd_result>) {
     var rnd_results = list<rnd_result>();
 
     var rnd_offset = 0;

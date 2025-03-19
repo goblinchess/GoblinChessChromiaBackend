@@ -23,10 +23,11 @@ struct minimal_game_result {
     is_white: boolean;
 }
 
+/*
 struct random_box {
     base_seed: integer; // The seed we began with (should be same for the entire game)
     current_seed: integer; // The seed we are currently using
-}
+}*/
 
 // The result of N random numbers with the same max value.
 struct random_results {
@@ -35,22 +36,3 @@ struct random_results {
     new_seed: integer; // Use this to generate more random numbers later
 }
 
-// ---------------------------------------------------
-// During an ongoing game we must save the results
-// with some context.
-// After the game we will validate all random numbers in order,
-// using the seed from the client.
-// ---------------------------------------------------
-struct rnd_result {
-    result: integer; // The result coming from the client
-    min: integer; // The minimum possible value (e.g. 1 for D6)
-    max: integer; // The maximum possible value (e.g. 6 for D6)
-}
-
-struct rnd_result_full {
-    result: integer; // The result coming from the client
-    min: integer; // The minimum possible value 
-    max: integer; // The maximum possible value 
-    turn_nr: integer; // The turn when the rnd number was generated
-    player_rnd_nr: player_rnd_nr; // Convenient to have the ref to the record here.
-}

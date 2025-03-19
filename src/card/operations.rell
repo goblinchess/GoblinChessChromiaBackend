@@ -46,9 +46,9 @@ operation play_card(
     game_id: integer, 
     last_seen_turn: integer, // What turn the client last saw.
     card_type_str: text, 
-    card_order_number: integer, // The order number when the card was drawn/generated.
+    card_order_number: integer, // The order number when the card was drawn/generated, starting from 0.
     card_picks: list<integer>, // The squares picked by the player when playing the card.
-    rnd_numbers: list<integer> // If any randomness was used playing this card, the numbers generated goes in here.
+    rnd_numbers: list<rnd_data> // If any randomness was used playing this card, the numbers generated goes in here.
 ) {
     // -----------    
     // A. Verication
@@ -79,7 +79,7 @@ function play_card_inner(
     card_type_str: text, 
     card_order_number: integer, // The order number when the card was drawn/generated.
     card_picks: list<integer>, // The squares picked by the player when playing the card.
-    rnd_numbers: list<integer> // If any randomness was used playing this card, the numbers generated goes in here.
+    rnd_numbers: list<rnd_data> // If any randomness was used playing this card, the numbers generated goes in here.
 ) {
     // -----------    
     // A. Verication
@@ -121,6 +121,8 @@ function play_card_inner(
     // -----------    
     // B. Updates 
     // -----------    
+    // We must replicate the random number used on the client side.
+    val rnd_list = list<rnd_result>();
 
     // B.1. Create the turn record
     // Do this FIRST since lots of verification in here.
@@ -179,15 +181,42 @@ function play_card_inner(
             create_wall(minimal_game.game, new_card, pick_piece_map, card_picks);
         }
         PORTAL -> {
+            // Portal needs a random number
+
+            // We need the full board
+            val board: list<with_pos_and_alignment> = piece_get_all_vulnerables(minimal_game.game); 
+            val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, my_color);
+            val board_positions_all = build_board_positions_all(minimal_game.game, board, portals);
+
+            val portal_entry_pos = card_picks[0];
+            val portal_exit_pos = card_picks[1]; // Strictly not a pick, but we do it this way.
+
+            require(rnd_numbers.size() == 1, "Portal needs one random number used when the exit is calculated.");
+            val rnd_data = rnd_numbers[0];
+
+            // Verify if the given portal exit is a suitable empty square on the board
+            // And if so, save the random number that corresponds to it.
+            val rnd_res = card_portal_verify_random_free_square_anywhere_on_half(
+                board_positions_all,
+                my_color,
+                portal_exit_pos,
+                rnd_data
+            );
+
             create_portal(
                 minimal_game.player_game, 
                 new_card, 
                 pick_piece_map, // <-- First pick should be a piece
-                card_picks[0],  // <-- Position of the portal
-                card_picks[1] // Strictly not a pick, but we do it this way.
+                portal_entry_pos ,  // <-- Position of the portal
+                portal_exit_pos 
             );
+
+            val rnd_results: list<rnd_result> = [rnd_res]; // Only one element
+            rnd_validation_create_player_rnd_nr(new_turn, rnd_results);
         }
         RESURRECT -> {
+
+            // Note: the random number is used when the actual resurrection happens.
             create_potential_resurrect(minimal_game.player_game, new_card);
         }
         DOUBLE_MOVE -> {
