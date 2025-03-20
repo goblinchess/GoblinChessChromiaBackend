@@ -1,10 +1,15 @@
 
+// ------------------------------------------------
+// Here we can verify a random number, found anywhere on
+// black or white side of the board. 
+// ------------------------------------------------
+
 // ------------------------
 // Searches any of the 0-3 ranks
 // ------------------------
 
 // We that the squeare we'll be looking for is on white's side.
-function board_verify_rnd_empty_square_white_side(
+function board_find_empty_on_white_side(
     board_positions_all,
     portal_exit_pos: integer,
     rnd_data
@@ -17,7 +22,7 @@ function board_verify_rnd_empty_square_white_side(
 // Searches any of the 4-7 ranks
 // ------------------------
 // We that the squeare we'll be looking for is on black's side.
-function board_verify_rnd_empty_square_black_side(
+function board_find_empty_on_black_side(
     board_positions_all, 
     portal_exit_pos: integer,
     rnd_data
@@ -45,7 +50,7 @@ function board_verify_side(
     // Loop through ranks and add empty positions
     for (y_temp in range(0, 4)) {
         val y_real = y_temp + add_to_y;
-        add_all_empty_at_rank_y(board_positions_all, y_real, empty_positions);
+        board_empty_add_all_at_rank_y(board_positions_all, y_real, empty_positions);
     }
     // ------------------------
     // 2. Validation
@@ -79,16 +84,4 @@ function board_verify_side(
     );
 }
 
-function add_all_empty_at_rank_y(
-    board_positions_all, 
-    y: integer, // The rank we are looking at 
-    empty_positions: list<integer> // Where we put all found empty positions
-) {
-    for (x in range(0, 8)) {
-        val pos_sq = square_pos(x, y);
-        val pos: integer = pos_to_int(pos_sq);
-        if (board_is_empty(board_positions_all, pos)) {
-            empty_positions.add(pos);
-        }
-    }
-}
+

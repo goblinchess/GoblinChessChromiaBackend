@@ -1,0 +1,18 @@
+
+
+// -------------------------------------
+// Add all empty positions on the given rank.
+// -------------------------------------
+function board_empty_add_all_at_rank_y(
+    board_positions_all, 
+    y: integer, // The rank we are looking at 
+    empty_positions: list<integer> // Where we put all found empty positions
+) {
+    for (x in range(0, 8)) {
+        val pos_sq = square_pos(x, y);
+        val pos: integer = pos_to_int(pos_sq);
+        if (board_is_empty(board_positions_all, pos)) {
+            empty_positions.add(pos);
+        }
+    }
+}

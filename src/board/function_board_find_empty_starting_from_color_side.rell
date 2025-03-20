@@ -1,0 +1,164 @@
+
+// ------------------------------------------------
+// Here we can verify a random number that results into
+// a postion, but where the position must be as close to the 
+// starting rank of the color (black or white) as possible.
+// ------------------------------------------------
+
+// ------------------------
+// Start with the position the client gave us, 
+// and verify the random numbers as far as possible.
+// Starting from white side (bottom rows first).
+// ------------------------
+function board_find_empty_starting_from_white_side(
+    board_positions_all,
+    given_pos: integer,
+    rnd_data // We only need one random number
+): rnd_result {
+    var y = 0;
+    while (y < 8) {
+        val result = internal_search_rank_random(board_positions_all, given_pos, y, rnd_data);
+        if (result != null) {
+            return result;
+        }
+        
+        y += 1;
+    }
+    
+    require(false, "board_find_empty_starting_from_white_side() - we should never be in a situation where ALL squares are occupied?!");
+    return rnd_result( // Never reached
+        result = -1,
+        type = rnd_nr_type.CARD_RESURRECT,
+        min = 0,
+        max = 0 
+    );
+}
+
+// ------------------------
+// Start with the position the client gave us, 
+// and verify the random numbers as far as possible.
+// Starting from black side (top rows first)
+// ------------------------
+function board_find_empty_starting_from_black_side(
+    board_positions_all,
+    given_pos: integer,
+    rnd_data // We only need one random number
+): rnd_result {
+    var y = 7;
+    
+    var i = 0;
+    while (y >= 0) {
+        val result = internal_search_rank_random(board_positions_all, given_pos, y, rnd_data);
+        if (result != null) {
+            return result;
+        }
+        
+        y -= 1;
+    }
+    
+
+    require(false, "board_find_empty_starting_from_black_side() - we should never be in a situation where ALL squares are occupied?!");
+    return rnd_result( // Never reached
+        result = -1,
+        type = rnd_nr_type.CARD_RESURRECT,
+        min = 0,
+        max = 0 
+    );
+}
+
+
+// -------------------------------------
+// Returns a [rnd_result] if we should consume the random number here, else null.
+// 1. Check if the rank holds any empty positions.
+// 2. If so, verify the random number corresponds to the given position.
+// -------------------------------------
+function internal_search_rank_random(
+    board_positions_all,
+    given_pos: integer,
+    y: integer,
+    rnd_data
+): rnd_result? {
+    // -------------------------------------
+    // 1. Check if the row holds any empty positions.
+    // -------------------------------------
+    val empty_positions = list<integer>();
+    board_empty_add_all_at_rank_y(board_positions_all, y, empty_positions);
+
+    if (empty_positions.size() > 0) {
+        // -------------------------------------
+        // 2. If so, verify the random number corresponds to the given position.
+        // -------------------------------------
+        // Discussion: if there is only one empty position, should we consume the random number?
+
+        require(rnd_data.min == 0, "internal_search_rank_random() - min should be 0, was " + rnd_data.min);
+        val calculated_max = empty_positions.size() - 1;
+        require(rnd_data.max == calculated_max, "internal_search_rank_random() - Given max was " + rnd_data.max + 
+            " but calculated max is " + calculated_max);
+
+        val calculated_pos = empty_positions[rnd_data.result];
+        require(calculated_pos == given_pos, "internal_search_rank_random() - Given pos was " + given_pos + 
+            " but we didn't find it at index: " + rnd_data.result + " (found " + calculated_pos + ").");
+
+        return rnd_result(
+            result = rnd_data.result,
+            type = rnd_nr_type.CARD_RESURRECT,
+            min = rnd_data.min,
+            max = rnd_data.max 
+        );
+    } else {
+        return null; // Try next rank
+    }
+}
+
+// TODO: Remove, this was the old way of doing things.
+/*
+// Finds a random x position for the given y coordinate
+function find_random_x_pos(
+    board_positions_all,
+    y: integer,
+    x_list: list<integer>,
+    given_pos: integer,
+    rnd_data_list: list<rnd_data>
+): (square_pos?, integer) {
+    val (x, new_seed) = find_random_from_list(x_list, current_seed);
+    
+    if (x == null) {
+        return (null, new_seed);
+    }
+    
+    val pos = square_pos(x = x, y = y);
+    if (board_is_empty(board_positions_all, pos_to_int(pos))) {
+        return (pos, new_seed);
+    }
+    
+    return (null, new_seed);
+}
+*/
+
+/*
+// Selects a random element from the list and removes it
+function find_random_from_list(
+    items: list<integer>,
+    given_pos: integer,
+    rnd_data_list: list<rnd_data>
+): (integer?, integer) {
+    if (items.size() == 0) {
+        return (null, );
+    }
+    
+    // Get a random index in the list
+    val (result, new_seed) = random_generate_number(
+        current_seed,
+        0,  // min (inclusive)
+        items.size() - 1  // max (inclusive)
+    );
+    
+    // Get the value at that index
+    val value = items[result];
+    
+    // Remove the item at that index
+    items.remove(result);
+    
+    return (value, new_seed);
+}
+*/
