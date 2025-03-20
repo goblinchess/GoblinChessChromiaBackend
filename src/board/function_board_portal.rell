@@ -1,0 +1,66 @@
+// ----------------
+// Portals 
+// ----------------
+
+// Returns a portal if:
+// a) the given pos is a portal entry,
+// b) the portal is owned by me
+// c) the exit isn't blocked.
+function board_portal_is_unblocked_at(
+    board_positions_all, 
+    pos: integer, 
+    align: alignment
+): owned_portal? {
+    val portal = board_portal_find_my_from_entry(board_positions_all, pos, align);
+    if (portal != null) {
+        // NOT SO FAST. We can only use it if the exit is empty.
+        if (board_is_empty(board_positions_all, portal.exit_pos)) {
+            return portal;
+        } else { 
+            return null;
+        }
+    } else {
+        return null;
+    }
+}
+
+
+// Do we have a portal owned by "my_align" that has "pos" as its entry point?
+function board_portal_find_my_from_entry(
+    board_positions_all, 
+    pos: integer, 
+    align: alignment
+) {
+    for (portal: owned_portal in board_positions_all.portals) {
+        if (is_portal_owned_by(portal, align)) {
+            if (portal.entry_pos == pos) {
+                return portal;
+            }
+        }
+    }
+    return null;
+}
+
+// --------------------------------------
+// Returns all portals where:
+// b) the portal is owned by me
+// c) the exit isn't blocked.
+// --------------------------------------
+function board_portal_find_unblocked_owned_by(
+    board_positions_all, 
+    my_align: alignment
+): list<owned_portal> {
+    val result = list<owned_portal>();
+    
+    for (portal in board_positions_all.portals) {
+        if (is_portal_owned_by(portal, my_align)) {
+            // It's ours
+            if(board_is_empty(board_positions_all, portal.exit_pos)) {
+                // Exit is unblocked
+                result.add(portal); 
+            }
+        }
+    }
+    
+    return result;
+}

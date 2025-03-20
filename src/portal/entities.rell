@@ -1,0 +1,14 @@
+// -------------------------------------
+// Portal
+// -------------------------------------
+
+// Represents a portal, with an entry and exit square.
+// A portal is always created by a card.
+// So it COULD potentially belong to the card module, 
+// but after it has been created the portal is like a part of the board.
+entity portal {
+    key card: card; // The card that generated this portal
+    index owned_by: player_game; // <- The way to find this entity
+    entry_position: integer; // 0-63, location of the portal on the board
+    exit_position: integer; // 0-63, location of the portal exit on the board
+}

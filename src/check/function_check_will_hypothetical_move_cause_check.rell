@@ -91,7 +91,7 @@ function whm_build_check_calc_inner(
         var count_enemy_at_pos_as_dead: integer = -1; // Instead of null
         var actual_dest = pos_dest;
         
-        val portal = board_is_unblocked_portal_at(board_pos_all, pos_dest, align_of_mover);
+        val portal = board_portal_is_unblocked_at(board_pos_all, pos_dest, align_of_mover);
         if (portal != null) {
             // The subject ends his path on the portal entry, and it MUST use this portal, since it's unblocked.
             // But! There is one interesting exception:

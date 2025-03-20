@@ -6,7 +6,11 @@
 // ----------------------------------
 // Returns: one random integer (=the result) and the new seed
 // ----------------------------------
-function random_generate_number(from: integer, to: integer, org_seed: integer): (result: integer, curr_seed:integer) {
+function random_generate_number(
+    org_seed: integer, // Seed we should use
+    from: integer, // The lowest number we can get
+    to: integer // The highest number we can get
+): (result: integer, curr_seed:integer) {
     val max_starting_from_zero = to - from; // Max starting from zero. Example D6: 5
     val count = 1;
     val results = generate_random_numbers(org_seed, count, max_starting_from_zero);

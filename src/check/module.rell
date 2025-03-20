@@ -2,4 +2,6 @@ import ^.turn.*;
 import ^.piece.*;
 import ^.team.*;
 import ^.move_rule.*;
+import ^.board.*;
+import ^.portal.*;
 import ^.*;

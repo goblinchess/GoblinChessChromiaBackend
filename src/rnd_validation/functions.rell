@@ -97,7 +97,7 @@ function rnd_validation_of_player(
     var idx: integer = 0;
     for(res in res_list) {
     //for(rnd_result in rnd_results) {
-        val r = random_generate_number(res.min, res.max, curr_seed);
+        val r = random_generate_number(curr_seed, res.min, res.max);
         curr_seed = r.curr_seed;
         if(r.result != res.result) {
             // This could be either a hacker or a bug.

@@ -186,7 +186,7 @@ function play_card_inner(
             // We need the full board
             val board: list<with_pos_and_alignment> = piece_get_all_vulnerables(minimal_game.game); 
             val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, my_color);
-            val board_positions_all = build_board_positions_all(minimal_game.game, board, portals);
+            val board_positions_all = board_positions_all_constructor(minimal_game.game, board, portals);
 
             val portal_entry_pos = card_picks[0];
             val portal_exit_pos = card_picks[1]; // Strictly not a pick, but we do it this way.

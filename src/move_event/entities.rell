@@ -1,0 +1,20 @@
+// -------------------------------------
+// Events
+// -------------------------------------
+// Events are mostly here to make sure the game can be replayed.
+
+// When a piece travels through a portal
+// This happens AFTER the regular move. 
+entity portal_event {
+    key event: event; // Event is the "base type" for all events
+    portal: portal;
+    piece: piece; // Piece that traveled through the portal
+}
+
+// Only relevant for magic jumps, where the player 
+// wanted to go through with the magic jump.
+entity jump_event {
+    key event: event; // Event is the "base type" for all events
+    piece: piece; // Piece that jumped
+    move: move; // The move that was enhanced by the jump
+}

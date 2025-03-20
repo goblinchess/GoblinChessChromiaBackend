@@ -1,0 +1,153 @@
+// All these "board_" functions work with the BOARD_POSITIONS_ALL struct.
+// TODO: Could have made a namespace for this.
+
+// ----------------
+// Constructor
+// ----------------
+
+// Returns a BOARD_POSITIONS_ALL struct.
+function board_positions_all_constructor(
+    game: game, 
+    board: list<with_pos_and_alignment>, 
+    portal_list: list<owned_portal>
+): board_positions_all {
+
+    // 1. Split the board into pieces and obstacles.
+    val pieces = map<integer, with_pos_and_alignment>();
+    val obstacles = map<integer, with_pos_and_alignment>();
+
+    for (v in board) {
+        if (v.alignment == alignment.NEUTRAL) {
+            obstacles[v.pos] = v;
+        } else {
+            pieces[v.pos] = v;
+        }
+    }
+
+    // 2. Return the struct
+    return board_positions_all(
+        board_characters = pieces, 
+        board_obstacles = obstacles,
+        portals = portal_list
+    );
+}
+
+// ----------------
+// Yes/No queries
+// ----------------
+
+function board_is_empty(board_positions_all, pos: integer): boolean {
+    require(piece_is_pos_on_board(pos), "Illegal position: " + pos);
+    
+    if (board_positions_all.board_characters.contains(pos)) {
+        return false;
+    }
+    if (board_positions_all.board_obstacles.contains(pos)) {
+        return false;
+    }
+    return true;
+}
+
+function board_is_free_at(board_positions_all, pos: square_pos): boolean {
+    return board_get_square_status(board_positions_all, pos) == square_status.FREE;
+}
+
+
+function board_is_white_piece_at(board_positions_all, pos: square_pos): boolean {
+    return board_get_square_status(board_positions_all, pos) == square_status.WHITE_PIECE;
+}
+
+function board_is_black_piece_at(board_positions_all, pos: square_pos): boolean {
+    return board_get_square_status(board_positions_all, pos) == square_status.BLACK_PIECE;
+}
+
+function board_is_attackable_black_or_neutral_at(board_positions_all, pos: square_pos): boolean {
+    val stat = board_get_square_status(board_positions_all, pos);
+    return stat == square_status.BLACK_PIECE or 
+           stat == square_status.NEUTRAL_PIECE or 
+           stat == square_status.OBSTACLE;
+}
+
+function board_is_attackable_white_or_neutral_at(board_positions_all, pos: square_pos): boolean {
+    val stat = board_get_square_status(board_positions_all, pos);
+    return stat == square_status.WHITE_PIECE or 
+           stat == square_status.NEUTRAL_PIECE or 
+           stat == square_status.OBSTACLE;
+}
+
+// ----------------
+// Getters
+// ----------------
+function board_get_at(board_positions_all, pos: integer): with_pos_and_alignment? {
+    require(piece_is_pos_on_board(pos), "Out of board " + pos);
+
+    if (board_positions_all.board_characters.contains(pos)) {
+        return board_positions_all.board_characters[pos];
+    } else if (board_positions_all.board_obstacles.contains(pos)){
+        return board_positions_all.board_obstacles[pos];
+    } else {
+        return null;
+    }
+}
+
+function board_get_square_status(board_positions_all, pos: square_pos): square_status {
+    val pos_int = pos_to_int(pos);
+    return board_get_square_status_int(board_positions_all, pos_int);
+}
+
+function board_get_square_status_int(board_positions_all, pos: integer): square_status {
+    if (piece_is_pos_out_of_board(pos)) {
+        return square_status.OUT_OF_BOARD;
+    }
+    
+    if (board_positions_all.board_characters.contains(pos)) {
+        val found = board_positions_all.board_characters[pos];
+        return align_piece_to_square_status(found.alignment); // BLACK, WHITE or NEUTRAL
+    } else if (board_positions_all.board_obstacles.contains(pos)){
+        return square_status.OBSTACLE; // Easy
+    } else {
+        return square_status.FREE; // Easy
+    }
+}
+
+
+// ----------------
+// Mutators
+// ----------------
+
+// Moving a piece from one position to another
+function board_place_character_at(
+    board: board_positions_all,
+    from_pos: integer,
+    dest_pos: integer,
+    old_piece: with_pos_and_alignment
+) {
+    // Convert square positions to integers
+    //val from_pos_int = pos_to_int(from_pos);
+    //val dest_pos_int = pos_to_int(dest_pos);
+
+    // We MUST remove anything on the dest_pos before we do this.
+    require(board_is_empty(board, dest_pos), "Destination position is not empty: " + dest_pos);
+
+    val new_piece = with_pos_and_alignment(dest_pos, old_piece.alignment);
+
+    board.board_characters.remove(from_pos);
+    board.board_characters[dest_pos] = new_piece;
+}
+
+// Whatever is on the given position, remove it.
+function board_remove_at(
+    board: board_positions_all,
+    pos: integer
+) {
+    require(not board_is_empty(board, pos), "Destination position is not empty: " + pos);
+
+    if (board.board_characters.contains(pos)) {
+        board.board_characters.remove(pos);
+    } else if (board.board_obstacles.contains(pos)) {
+        board.board_obstacles.remove(pos);
+    } else {
+        require(false, "Internal error: we already checked the board.");
+    }
+}
+

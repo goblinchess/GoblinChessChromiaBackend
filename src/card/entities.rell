@@ -92,20 +92,3 @@ entity active_enchantment {
     index enchanted_piece: piece; // <- The way to find this entity
 }
 
-// -------------------------------------
-// Events
-// -------------------------------------
-
-// When the actual resurrection happens
-entity resurrect_event {
-    key event: event; // Event is the "base type" for all events
-    card: card;
-    piece: piece; // Piece that was resurrected
-}
-
-entity remove_enchantment_event {
-    key event: event; // Event is the "base type" for all events
-    card: card;
-    piece: piece; // The piece that is no longer enchanted
-}
-

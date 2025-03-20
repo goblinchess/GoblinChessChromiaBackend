@@ -302,7 +302,7 @@ function move_common_use_all_unblocked_portals(
     val hist_portals = list<portal_event>();
     
     // Find all unblocked portals owned by this alignment
-    val portals = board_find_unblocked_portals_owned_by(board_positions_all, my_align);
+    val portals = board_portal_find_unblocked_owned_by(board_positions_all, my_align);
 
     for (portal in portals) {
 
@@ -377,7 +377,7 @@ function move_common_use_portal_depending_on_piece_type(
         // Move the piece through the portal
         move_common_change_piece_position(board_positions_all, piece_data.p.vulnerable, piece_wpaa, portal.entry_pos, portal.exit_pos);
         
-        return move_portal_create_event(game, curr_turn, portal, piece_data.p);
+        return move_event_portal_create(game, curr_turn, portal, piece_data.p);
     } else {
         return null;
     }

@@ -1,23 +1,6 @@
-// We need to know the owner of the portal.
-struct owned_portal {
-    portal; // Reference to the entity
-    entry_pos: integer;
-    exit_pos: integer;
-    owner_alignment: alignment;
-}
 
-struct board_positions_all {
 
-    // List of all squares on the board that have characters on them.
-    board_characters: map<integer, with_pos_and_alignment> = map<integer, with_pos_and_alignment>();
 
-    // List of all squares on the board that have obstacles on them.
-    board_obstacles: map<integer, with_pos_and_alignment> = map<integer, with_pos_and_alignment>();
-
-    // List of all portals on the board owned by the current player.
-    // TODO: use all portals if we implement check/mate calculations.
-    portals: list<owned_portal> = []; // Keeps track of portals. Portals never go away.
-}
 
 // We use this struct while calculating if we can attack a vulnerable path from previous turn.
 // (= en passant).

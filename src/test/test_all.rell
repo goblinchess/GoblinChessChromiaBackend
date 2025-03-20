@@ -43,7 +43,7 @@ function test_d10() {
         msg += res + ", ";
     }
 
-    log("test_d10(): " + msg);
+    log("test_d10(): new_seed: " + x.new_seed + " d10: " + msg);
 }
 
 function test_d6() {
@@ -52,12 +52,12 @@ function test_d6() {
 
     var msg = "";
     for (i in range(0, 50)) {
-        var (result: integer, curr_seed: integer) = random_generate_number(1, 6, my_seed);
+        var (result: integer, curr_seed: integer) = random_generate_number(my_seed, 1, 6);
         my_seed = curr_seed;
         msg += result + ", ";
     }
 
-    log("test_d6(): " + msg);
+    log("test_d6(): new_seed: " + my_seed + " d6: " + msg);
 }
 
 function test_random_new_numbers_list() {

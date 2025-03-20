@@ -1,7 +1,9 @@
 import ^.turn.*;
 import ^.piece.*;
 import ^.move_rule.*;
+import ^.move_event.*;
 import ^.dice.*;
 import ^.battle.*;
 import ^.check.*;
+import ^.portal.*;
 import ^.*;

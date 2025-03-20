@@ -1,0 +1,29 @@
+
+// -------------------------------------
+// Events
+// -------------------------------------
+
+// Events are mostly here to make sure the game can be replayed.
+
+// When a switch card is played
+entity switch_event {
+    key event: event; // Event is the "base type" for all events
+    card: card;
+    piece1: piece;
+    piece2: piece;
+    piece1_pos: integer; // Where piece1 was standing
+    piece2_pos: integer; // Where piece2 was standing
+}
+
+// When the actual resurrection happens
+entity resurrect_event {
+    key event: event; // Event is the "base type" for all events
+    card: card;
+    piece: piece; // Piece that was resurrected
+}
+
+entity remove_enchantment_event {
+    key event: event; // Event is the "base type" for all events
+    card: card;
+    piece: piece; // The piece that is no longer enchanted
+}

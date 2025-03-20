@@ -26,9 +26,9 @@ function card_portal_verify_random_free_square_anywhere_on_half(
     rnd_data
     ): rnd_result {
     if (align == alignment.WHITE) {
-        return board_verify_empty_square_white_side(board_positions_all, portal_exit_pos, rnd_data);
+        return board_verify_rnd_empty_square_white_side(board_positions_all, portal_exit_pos, rnd_data);
     } else if (align == alignment.BLACK) {
-        return board_verify_empty_square_black_side(board_positions_all, portal_exit_pos, rnd_data);
+        return board_verify_rnd_empty_square_black_side(board_positions_all, portal_exit_pos, rnd_data);
     } else {
         require(false, "find_random_free_square_anywhere_on_half() - How did we get neutral? " + align);
         return rnd_result(result = -1, type = rnd_nr_type.CARD_PORTAL, min = 0, max = 0); // Never reached

@@ -1,8 +1,10 @@
-
-
 // ----------------
 // Portals
 // ----------------
+
+function is_portal_owned_by(portal: owned_portal, align: alignment): boolean {
+    return portal.owner_alignment == align; // Trivial
+}
 
 // Return a list of all portals owned by the player.
 //
@@ -18,12 +20,12 @@ function move_get_all_portals(player_game: player_game, player_align: alignment)
 
     val res = list<owned_portal>();
     for (p in ps) {
-        res.add(owned_portal(
+        val tmp = owned_portal(
             portal = p.prtl,
             entry_pos = p.entry_position,
             exit_pos = p.exit_position, 
-            player_align)
-        );
+            owner_alignment = player_align);
+        res.add(tmp);
     }
     return res;
 }
@@ -41,18 +43,4 @@ function move_setup_portal(owned_by: player_game, card: card, entry_pos: integer
         .entry_position = entry_pos,
         .exit_position = exit_pos
     );
-}
-
-// ----------------
-// Events
-// ----------------
-
-function move_portal_create_event(game, turn, owned_portal, piece): portal_event {
-
-    // New event
-    val new_event = turn_create_event(game, turn, event_type.PORTAL_EVENT);
-
-    // New portal event
-    return create portal_event(new_event, owned_portal.portal, piece);
-
 }

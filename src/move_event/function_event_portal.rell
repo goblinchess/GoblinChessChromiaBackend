@@ -1,0 +1,18 @@
+
+
+
+
+// ----------------
+// Events
+// ----------------
+
+
+
+function move_event_portal_create(game, turn, owned_portal, piece): portal_event {
+
+    // New event
+    val new_event = turn_create_event(game, turn, event_type.PORTAL_EVENT);
+
+    // New portal event
+    return create portal_event(new_event, owned_portal.portal, piece);
+}

@@ -1,0 +1,4 @@
+import ^.portal.*;
+import ^.move.*;
+import ^.piece.*; // Align
+import ^.*;

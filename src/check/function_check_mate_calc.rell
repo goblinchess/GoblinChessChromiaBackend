@@ -128,7 +128,7 @@ function check_mate_can_subject_save_king(
     val moves_with_portals = set<integer>();
     val moves_n_attacks = move_tree_moves_n_attacks(mt);  // Doesn't matter if some opponent is blocking the entry, we assume it will be killed
     for (pos in moves_n_attacks) {
-        val portal = board_is_unblocked_portal_at(data.board_all, pos, align_of_mover);
+        val portal = board_portal_is_unblocked_at(data.board_all, pos, align_of_mover);
         if (portal != null) {
             // We MUST use this portal
             print("check_mate_can_subject_save_king() - Subject has (own) portal entry at " + pos + " -> " + portal.exit_pos + ".");

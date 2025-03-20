@@ -1,0 +1,15 @@
+
+
+// Holds all the positions on the board.
+struct board_positions_all {
+
+    // List of all squares on the board that have characters on them.
+    board_characters: map<integer, with_pos_and_alignment> = map<integer, with_pos_and_alignment>();
+
+    // List of all squares on the board that have obstacles on them.
+    board_obstacles: map<integer, with_pos_and_alignment> = map<integer, with_pos_and_alignment>();
+
+    // List of all portals on the board owned by the current player.
+    // TODO: use all portals if we implement check/mate calculations.
+    portals: list<owned_portal> = []; // Keeps track of portals. Portals never go away.
+}

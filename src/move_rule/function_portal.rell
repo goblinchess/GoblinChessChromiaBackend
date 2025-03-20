@@ -1,8 +1,0 @@
-
-
-
-function is_portal_owned_by(portal: owned_portal, align: alignment): boolean {
-    return portal.owner_alignment == align; // Trivial
-}
-
-
