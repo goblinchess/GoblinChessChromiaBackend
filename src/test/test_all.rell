@@ -72,6 +72,37 @@ function test_random_new_numbers_list() {
     assert_equals(new_rnd_numbers, expected_new_rnd_numbers);
 }
 
+// ------------------------------------------
+// This test corresponds to the RandomBoxOnlineTest on the server.
+// You have to manually make sure the number are the same.
+// 
+// Here we are duplicating the code from module 
+// rnd_validation.rnd_validation_of_player().
+// ------------------------------------------
+function test_same_as_on_crient_side() {
+    val org_seed = 123172398125;
+
+    // Generate hand
+    val x: random_results = generate_random_numbers(org_seed, 5, 9);
+    var curr_seed = x.new_seed;
+
+    for (idx in range(0, 5)) {
+        val rnd_val = x.results[idx];
+        val card_type = card_get_type_from_index(rnd_val);
+        log(idx + ": rnd_num: " + rnd_val + " card_type: " + card_type);
+    }
+
+    // Playing Portal
+    var r = random_generate_number(curr_seed, 0, 31); // Half of the board, all empty squares
+    curr_seed = r.curr_seed;
+    log("Portal: rand result: " + r.result);
+
+    // Playing Portal
+    r = random_generate_number(curr_seed, 0, 7); // First row 
+    curr_seed = r.curr_seed;
+    log("Resurrect: rand result: " + r.result);
+}
+
 // ----------------------------------
 // Battle 
 // ----------------------------------

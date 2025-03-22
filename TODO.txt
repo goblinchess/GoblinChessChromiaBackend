@@ -15,4 +15,7 @@
  7. Make Random on client side.
 
 
+Finish 7 and test new Resurrect.
 
+DONE:
+Changed Resurrect random function to only generate one random number.
