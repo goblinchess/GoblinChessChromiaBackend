@@ -71,14 +71,14 @@ function move_peaceful_inner(
     // ----------------
 
     //log("A.6.1");
-    val board: list<with_pos_and_alignment> = piece_get_all_vulnerables(minimal_game.game); 
+    val board: list<with_pos_and_alignment> = vuln_get_all_as_wpaa(minimal_game.game); 
     val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, align);
     val board_positions_all = board_positions_all_constructor(minimal_game.game, board, portals);
 
 
     // Complex verification (still easier than check mate).
     var is_castle = false;
-    var rook: piece? = null;
+    var rook: alive? = null;
     var m_tree: move_tree? = null;
     var selected_path: path_base? = null;
 
@@ -166,12 +166,12 @@ function move_peaceful_inner(
     val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
 
     // B.2 (Really simple for peaceful moves)
-    move_common_change_piece_position(board_positions_all, p.p.vulnerable, p_wpaa, m_args.from_position, m_args.to_position);
+    move_common_change_piece_position(board_positions_all, p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position);
 
     // B.3 Castle needs to move the rook too
     if (is_castle) {
-        val v_rook = rook!!.vulnerable;
-        update v_rook(.position = castle_rook_to!!);
+        val a_rook = rook!!;
+        update a_rook(.position = castle_rook_to!!);
     }
 
     // B.4 Use all unblocked portals

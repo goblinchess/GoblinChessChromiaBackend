@@ -1,0 +1,41 @@
+
+
+
+// Creates just the enchanment event (without any other changes of the enchanted piece)
+function card_event_create_enchantment(
+    g: game, 
+    t: turn,
+    new_card: card, 
+    picked_piece: piece
+) {
+
+    // New event
+    val new_event = turn_create_event(g, t, event_type.ENCHANTMENT_APPLIED);
+
+    create enchantment_event (
+        .event = new_event,
+        .card = new_card, 
+        .piece = picked_piece
+    );
+
+}
+
+// Called when an enchantment times out
+function card_event_create_remove_enchantment(
+    g: game, 
+    t: turn,
+    card: card, 
+    piece: piece
+) {
+
+    // New event
+    val new_event = turn_create_event(g, t, event_type.ENCHANTMENT_REMOVED);
+
+    create remove_enchantment_event (
+        .event = new_event,
+        .card = card, 
+        .piece = piece
+    );
+
+    log("card_event_create_remove_enchantment() - Card: " + card.card_type + ".");
+}

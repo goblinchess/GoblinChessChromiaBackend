@@ -1,10 +1,13 @@
 
  TODO: 
- 
+
+-------------
+
 
  2. Finish the game when mate
     
  3. Promote on final rank.
+    (Remember to transfer enchantments, call card_enchantment_can_be_transferred() ).
 
  4. Use Luck
 
@@ -12,10 +15,7 @@
 
  6. Resurrection -> save random number.
 
- 7. Make Random on client side.
+ 7. test new Resurrect.
 
 
-Finish 7 and test new Resurrect.
 
-DONE:
-Changed Resurrect random function to only generate one random number.

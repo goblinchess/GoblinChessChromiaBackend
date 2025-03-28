@@ -120,14 +120,17 @@ function board_place_character_at(
     board: board_positions_all,
     from_pos: integer,
     dest_pos: integer,
-    old_piece: with_pos_and_alignment
+    old_piece: with_pos_and_alignment,
+    attack_allowed: boolean
 ) {
     // Convert square positions to integers
     //val from_pos_int = pos_to_int(from_pos);
     //val dest_pos_int = pos_to_int(dest_pos);
 
-    // We MUST remove anything on the dest_pos before we do this.
-    require(board_is_empty(board, dest_pos), "Destination position is not empty: " + dest_pos);
+    if (not attack_allowed) {
+        // We MUST remove anything on the dest_pos before we do this.
+        require(board_is_empty(board, dest_pos), "Destination position is not empty: " + dest_pos);
+    }
 
     val new_piece = with_pos_and_alignment(dest_pos, old_piece.alignment);
 

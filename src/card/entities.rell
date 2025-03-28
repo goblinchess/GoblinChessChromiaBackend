@@ -84,11 +84,78 @@ entity potential_resurrect {
     index owned_by: player_game; // <- The way to find this entity
 }
 
-// Some enchantments (like Knighted) stay for the entire game.
-// Other enchantments (like Frog) only last for a few turns.
-entity active_enchantment {
+
+// -------------------------------------
+// Some enchantments (like Frog, Stone) only last for a few turns,
+// that's when we need a [active_replacement_enchantment] entity,
+// to remember how long the enchantment should last 
+// and to remember the original piece.
+// 
+// Removal of Enchantments
+//-----------
+// Note that the player can often enchant opponent's pieces,
+// but we always want to remove an enchantment in the beginning of
+// the OWNER's turn.
+// Motivation:
+//   If player A cast STONE on B's piece it could try to 
+//   kill the piece as soon as it becomes normal 
+//   (stone is a sort of protection). B won't have a chance to escape.
+//   This would make STONE a too powerful spell, so we keep the STONE.
+//
+// Multi-Enchanted Pieces
+//-----------
+// "Frog" and "Turn To Stone" has a duration of 3 turns. We have to consider the
+// case of multiple enchantments on the same piece:
+// a) what happens to existing enchantments, and
+// b) how multi-enchantments should be reverted?
+//
+// For a) the rule is that only FROG and STONE replaces the piece in full,
+// temporaily removing other enchantments. 
+// 
+// For b) the rule is that only one enchantment at a time can be counted down,
+// the others are on "pause" but will resume effect after the current one in gone. 
+// (The reason for this is that it's easier to implement, since we can 
+// pick up the original piece from limbo no matter how many levels of
+// enchantments there is.).
+//
+// Complex Exapmle Test sequence:
+// -------------------------------------
+//
+// Turn: 1
+//(1). I enchant my rook with KNIGHTED. 
+//     I move it h8->g6 to verify that it can move as a knight.
+//(2). (Opp does something irrelevant)
+//
+// Turn: 2
+//(3). I enchant my rook with POTION. This is now a prowerful piece!
+//(4). The opponent enchant my rook with FROG, now the KNIGHTED and POTION enchantement is removed 
+//     (since the frog wasn't enchanted, only the original piece).
+//
+// Turn: 3
+//(5). (I wait for the FROG to wear off.)
+//(6). (Opp does something irrelevant)
+//
+// Turn: 4
+//(7). (I wait for the FROG to wear off.)
+//(8). Before my piece is comes back, the opponent casts TURN TO STONE on the frog. 
+//     The FROG countdown is now "paused" until the STONE has timed out.
+//
+// Turn: 5-7
+//(Nothing special, I wait for the STONE to wear off.)
+//
+// Turn: 8
+//(15). My rook is no longer STONE, but it still has the FROG.
+//      I move it g6->f5 to verify it can move as a frog.
+//(16). (Opp does something irrelevant)
+//
+// Turn: 9
+//(17). The rook comes back, still KNIGHTED and with the POTION hitpoints.
+//      I move it to f5->h5 to verify it can move as a rook.
+// -------------------------------------
+entity active_replacement_enchantment {
     key card: card; // The card that generated this active enchantment
     played_by: player_game;
-    index enchanted_piece: piece; // <- The way to find this entity
+    index enchanted_piece: piece; // <- Points to the original piece (now in limbo)
+    index replaced_with: vulnerable; // <- Points to the "alive" replacement object.
+    mutable remaining_turns: integer; // How many turns the piece must remain enchanted
 }
-

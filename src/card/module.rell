@@ -1,5 +1,6 @@
 import ^.turn.*;
 import ^.piece.*;
 import ^.move.*;
+import ^.card_events.*;
 import ^.rnd_validation.*;
 import ^.board.*;

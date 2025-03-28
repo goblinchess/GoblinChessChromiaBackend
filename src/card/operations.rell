@@ -1,3 +1,4 @@
+
 // -------------------------------------
 // Card
 // -------------------------------------
@@ -6,37 +7,15 @@ operation skip_card(
     game_id: integer, 
     last_seen_turn: integer // What turn the client last saw.
 ) {
-    // -----------    
-    // A. Verication
-    // -----------    
-    log("Skip Card Beign, game: " + game_id + " last turn: " + last_seen_turn );
-
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
     
-    // 1. Check player entity
-    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
-    require (minimal_game != null, "Player is not in a game");
-
-    // A.2. Is game is out of sync? 
-    val curr_turn = minimal_game.curr_turn_nr;
-    require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
-    
-    // -----------    
-    // B. Updates 
-    // -----------    
-    var new_turn_type = turn_type.BLACK_CARD_SKIPPED;
-    if (minimal_game.is_white) { 
-        new_turn_type = turn_type.WHITE_CARD_SKIPPED;
-    }
-
-    // B.1. Create the turn record
-    // Lots of verification in here.
-    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
-
-    log("/Skip Card End, game: " + game_id + ", new turn type: " + new_turn_type);
+    card_skip_inner(
+        caller_pubkey,
+        game_id,
+        last_seen_turn
+    );
 }
-
  
 // -------------------------------------
 // Play a card during a player's card turn
@@ -50,15 +29,10 @@ operation play_card(
     card_picks: list<integer>, // The squares picked by the player when playing the card.
     rnd_numbers: list<rnd_data> // If any randomness was used playing this card, the numbers generated goes in here.
 ) {
-    // -----------    
-    // A. Verication
-    // -----------    
-    log("Play Card Beign, game: " + game_id + ", last turn: " + last_seen_turn + ", type: " + card_type_str + ", order number: " + card_order_number );
-
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
 
-    play_card_inner(
+    card_play_inner(
         caller_pubkey, 
         game_id, 
         last_seen_turn, 
@@ -69,259 +43,3 @@ operation play_card(
     );
 }
 
-// -------------------------------------
-// A function is easier to test. 
-// -------------------------------------
-function play_card_inner(
-    caller_pubkey: pubkey,
-    game_id: integer, 
-    last_seen_turn: integer, // What turn the client last saw.
-    card_type_str: text, 
-    card_order_number: integer, // The order number when the card was drawn/generated.
-    card_picks: list<integer>, // The squares picked by the player when playing the card.
-    rnd_numbers: list<rnd_data> // If any randomness was used playing this card, the numbers generated goes in here.
-) {
-    // -----------    
-    // A. Verication
-    // -----------    
-
-    // A.1. Check player entity
-    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
-    require (minimal_game != null, "Player is not in a game");
-
-    var new_turn_type = turn_type.BLACK_CARD;
-    var my_color = alignment.BLACK;
-    if (minimal_game.is_white) { 
-        new_turn_type = turn_type.WHITE_CARD;
-        my_color = alignment.WHITE;
-    }
-    
-    // Yeah, but is it the CORRECT game?
-    val found_game_rowid = minimal_game.game.rowid.to_integer();
-    require (found_game_rowid == game_id, "Player things the game is " + game_id + " but is currently in game " + found_game_rowid);
-
-    // A.2. Is game is out of sync? 
-    val curr_turn = minimal_game.curr_turn_nr;
-    require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
-    
-    // A.3. Check card type
-    val card_type: card_type = card_type.value(card_type_str);
-
-    // A.4. Check if correct number of picks are sent for this card
-    val expected_pick_types: list<card_pick_type> = card_pick_get_by_card_type(card_type); 
-    val pick_piece_map = map<integer, piece>(); // Save the pieces we found on the board for the pick.
-    val pick_summary = card_pick_are_valid(minimal_game.game, card_type, card_type_str, expected_pick_types, card_picks, my_color, pick_piece_map);
-
-    // A.5. Check if player has cards left
-    val cards_left = minimal_game.player_game.cards_left;
-    require(cards_left > 0, "Player has no cards left");
-    
-    log("Card passed verification, game: " + game_id +", type: " + card_type_str + " order number: " + card_order_number + " picks: " + pick_summary);
-
-    // -----------    
-    // B. Updates 
-    // -----------    
-    // We must replicate the random number used on the client side.
-    val rnd_list = list<rnd_result>();
-
-    // B.1. Create the turn record
-    // Do this FIRST since lots of verification in here.
-    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
-
-    // B.2. We create the card when it's played
-    val new_card =create card(minimal_game.player_game, new_turn, card_type, card_order_number);
-
-    // B.3. Count down the cards left
-    update minimal_game.player_game (.cards_left = cards_left - 1);
-
-    // B.4. Create the picks
-    for (i: integer in range(expected_pick_types.size())) {
-        val expected_p_type: card_pick_type = expected_pick_types[i];
-        val given_pos: integer = card_picks[i];
-
-        val is_piece = pick_piece_map.contains(given_pos);
-        val card_pick = create card_pick(
-            .picked_square = given_pos, 
-            .card = new_card, 
-            .order_number = i, 
-            .is_piece = is_piece
-        );
-
-        if (is_piece) {
-            val piece = pick_piece_map[given_pos];
-            // To connect the card pick to the piece that was picked.
-            create card_pick_piece(card_pick, piece);
-        }
-    }
-
-    // -----------    
-    // B.5. Implement the effect of the card
-    // -----------    
-    // Card pick verification should have been done already.
-    when (card_type) {
-        FROG -> {
-            create_frog(minimal_game.player_game, new_card, pick_piece_map[0]);
-        }
-        TURN_TO_STONE -> {
-            create_stone(minimal_game.player_game, new_card, pick_piece_map[0]);
-        }
-        POTION -> {
-            create_potion(minimal_game.player_game, new_card, pick_piece_map[0]);
-        }
-        KNIGHTED -> {
-            create_knighted(minimal_game.player_game, new_card, pick_piece_map[0]);
-        }
-        JUMP -> {
-            create_jump(minimal_game.player_game, new_card, pick_piece_map[0]);
-        }
-        SWITCH_PLACE -> {
-            create_switch_place(my_color, new_card, pick_piece_map[0], pick_piece_map[1]);
-        }
-        WALL -> {
-            create_wall(minimal_game.game, new_card, pick_piece_map, card_picks);
-        }
-        PORTAL -> {
-            // Portal needs a random number
-
-            // We need the full board
-            val board: list<with_pos_and_alignment> = piece_get_all_vulnerables(minimal_game.game); 
-            val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, my_color);
-            val board_positions_all = board_positions_all_constructor(minimal_game.game, board, portals);
-
-            val portal_entry_pos = card_picks[0];
-            val portal_exit_pos = card_picks[1]; // Strictly not a pick, but we do it this way.
-
-            require(rnd_numbers.size() == 1, "Portal needs one random number used when the exit is calculated.");
-            val rnd_data = rnd_numbers[0];
-
-            // Verify if the given portal exit is a suitable empty square on the board
-            // And if so, save the random number that corresponds to it.
-            val rnd_res = card_portal_verify_random_free_square_anywhere_on_half(
-                board_positions_all,
-                my_color,
-                portal_exit_pos,
-                rnd_data
-            );
-
-            create_portal(
-                minimal_game.player_game, 
-                new_card, 
-                pick_piece_map, // <-- First pick should be a piece
-                portal_entry_pos ,  // <-- Position of the portal
-                portal_exit_pos 
-            );
-
-            val rnd_results: list<rnd_result> = [rnd_res]; // Only one element
-            rnd_validation_create_player_rnd_nr(new_turn, rnd_results);
-        }
-        RESURRECT -> {
-
-            // Note: the random number is used when the actual resurrection happens.
-            create_potential_resurrect(minimal_game.player_game, new_card);
-        }
-        DOUBLE_MOVE -> {
-            create_double_move(minimal_game.player_game, new_card);
-        }
-    }
-
-    // 6. Move to next turn
-    log("/Play Card End, game: " + game_id + ", new turn type: " + new_turn_type + ", type: " + card_type_str + ", order number: " + card_order_number + ", picks: " + pick_summary);
-}
-
-// -------------------------------------
-// Create Card Functions 
-// (Only used from the operation above)
-// -------------------------------------
-
-// 1. FROG
-function create_frog(played_by: player_game, new_card: card, picked_piece: piece) {
-    create_active_enchantment(played_by, new_card, picked_piece);
-    piece_set_frog(picked_piece); // Piece function
-}
-
-// 2. TURN_TO_STONE
-function create_stone(played_by: player_game, new_card: card, picked_piece: piece) {
-    create_active_enchantment(played_by, new_card, picked_piece);
-    piece_set_stone(picked_piece); // Piece function
-}
-
-// 3. POTION
-function create_potion(played_by: player_game, new_card: card, picked_piece: piece) {
-    create_active_enchantment(played_by, new_card, picked_piece);
-    piece_set_potion(picked_piece); // Piece function
-}
-
-// 4. KNIGHTED
-function create_knighted(played_by: player_game, new_card: card, picked_piece: piece) {
-    create_active_enchantment(played_by, new_card, picked_piece);
-    piece_set_knighted(picked_piece); // Piece function
-}
-
-// 5. JUMP
-// This is a bit special, since the spell is over the same turn.
-// This game chose to handle this as if the move turn is enhanced by the JUMP card,
-// meaning we must remeber the played card when it's time to move.
-function create_jump(played_by: player_game, new_card: card, picked_piece: piece) {
-    move_set_jump(played_by, new_card, picked_piece); // Move function
-}
-
-// 6. SWITCH_PLACE
-function create_switch_place(align: alignment, new_card: card, picked_piece1: piece, picked_piece2: piece) {
-    piece_switch_place(align, picked_piece1, picked_piece2); // Piece function
-}
-
-// 7. WALL
-function create_wall(game: game, new_card: card, pick_piece_map: map<integer, piece>, card_picks: list<integer>) {
-
-    val sq1 = card_picks[0];
-    val sq2 = card_picks[1];
-    val sq3 = card_picks[2];
-
-    // Validation
-    // Must create a wall on empty squares
-    require(not pick_piece_map.contains(0), "Wall position " + sq1 + " is occupied by a piece");
-    require(not pick_piece_map.contains(1), "Wall position " + sq2 + " is occupied by a piece");
-    require(not pick_piece_map.contains(2), "Wall position " + sq3 + " is occupied by a piece");
-
-    piece_setup_wall(game, sq1, sq2, sq3); // Piece function
-}
-
-// 8. PORTAL
-// We ONLY have to create the portal here, the piece will travel through it on the next turn.
-function create_portal(owned_by: player_game, new_card: card, pick_piece_map: map<integer, piece>, sq1: integer, sq2: integer) {
-
-    // Validation
-    // Must create a portal on a square with a piece on it.
-    require(pick_piece_map.contains(0), "Portal entry " + sq1 + " is not occupied by a piece");
-
-    move_setup_portal( owned_by, new_card, sq1, sq2);
-}
-
-// 9. RESURRECT
-// Create potential resurrect (Not the actual resurrection, that happens later)
-function create_potential_resurrect(player_game: player_game, new_card: card) {
-    create potential_resurrect (
-        .card = new_card, 
-        .owned_by = player_game
-    );
-}
-
-// 10. DOUBLE_MOVE 
-function create_double_move(player_game: player_game, new_card: card) {
-    create active_double_move(
-        .card = new_card, 
-        .owned_by = player_game
-    );
-}
-
-
-// Creates just the enchanment, without any other changes of the enchanted piece.
-function create_active_enchantment( played_by: player_game, new_card: card, picked_piece: piece) {
-
-    create active_enchantment (
-        .card = new_card, 
-        .played_by = played_by,
-        .enchanted_piece = picked_piece
-    );
-
-}

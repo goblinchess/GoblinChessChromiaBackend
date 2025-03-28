@@ -72,6 +72,7 @@ enum event_type {
     // Spell events
     DOUBLE_MOVE_TAKES_EFFECT, // Not when the card is played
     // Enchantment events
+    ENCHANTMENT_APPLIED, // When an enchantment is applied to a piece
     ENCHANTMENT_REMOVED // When an enchantment is removed from a piece
 }
 

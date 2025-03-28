@@ -1,0 +1,173 @@
+
+
+// ------------------------------------------------------------
+// Public functions
+// ------------------------------------------------------------
+
+// Only use case:
+// During PAWN promotion some enchantments can be transferred to the queen.
+function card_enchantment_can_be_transferred(card_type) {
+
+    when (card_type) {
+        FROG -> {
+            log("card_enchantment_can_be_transferred() - ERROR: How did this happen? Frogs should stay frogs until the spell is over, i.e. no promotion possible.");
+            return false; // Actually an error. Frogs should stay frogs until the spell is over, i.e. no promotion
+        }
+        TURN_TO_STONE -> {
+            log("card_enchantment_can_be_transferred() - ERROR: How did this happen? Stones should stay stones until the spell is over, i.e. no promotion possible.");
+            return false; // No use for this yet.
+        }
+        KNIGHTED -> {
+            return true; 
+        }
+        POTION -> {
+            return true; 
+        }
+        JUMP -> {
+            return false; // It's just for one turn
+        }
+        else -> {
+            require(false, "card_enchantment_can_be_transferred() - ERROR: unknown enchantment card type: " + card_type);
+            return false; 
+        }
+    }
+}
+
+
+// 1. FROG
+function card_enchantment_create_frog(g: game, t: turn, played_by: player_game, new_card: card, picked_piece: piece_living_data) {
+    card_event_create_enchantment(g, t, new_card, picked_piece.p); 
+    val replacement_with = piece_set_frog(picked_piece); // Piece function
+    val start_duration = 3 * 2; // We need the double amount since duration is reducend by both players
+    card_create_replacement_enchantment_internal(played_by, new_card, picked_piece, replacement_with, start_duration);
+}
+
+// 2. TURN_TO_STONE
+function card_enchantment_create_stone(g: game, t: turn, played_by: player_game, new_card: card, picked_piece: piece_living_data) {
+    card_event_create_enchantment(g, t, new_card, picked_piece.p); 
+    val replacement_with: vulnerable = piece_set_stone(picked_piece);
+    val start_duration = 3 * 2; // We need the double amount since duration is reducend by both players
+    card_create_replacement_enchantment_internal(played_by, new_card, picked_piece, replacement_with, start_duration);
+}
+
+// 3. POTION
+function card_enchantment_create_potion(g: game, t: turn, new_card: card, picked_piece: piece_living_data) {
+    card_event_create_enchantment(g, t, new_card, picked_piece.p); 
+    piece_set_potion(picked_piece.p); // Piece function
+}
+
+
+// 4. KNIGHTED
+function card_enchantment_create_knighted(g: game, t: turn, new_card: card, picked_piece: piece_living_data) {
+    card_event_create_enchantment(g, t, new_card, picked_piece.p); 
+    piece_set_knighted(picked_piece.p); // Piece function
+}
+
+// ------------------------------------------------------------
+// Helper functions
+// ------------------------------------------------------------
+
+// Creates just the enchanment, without any other changes of the enchanted piece.
+function card_create_replacement_enchantment_internal( 
+    played_by: player_game, 
+    new_card: card, 
+    picked_piece: piece_living_data, 
+    replacement_piece: vulnerable, 
+    remaining_turns: integer
+) {
+
+    create active_replacement_enchantment (
+        .card = new_card, 
+        .played_by = played_by,
+        .enchanted_piece = picked_piece.p,
+        .replaced_with = replacement_piece,
+        .remaining_turns = remaining_turns
+    );
+
+}
+
+// ------------------------------------------------------------
+// See description in entities.rell
+// Summary: we only reduce the count on the LIVING objecs
+// (any object in Limbo won't be affected).
+// ------------------------------------------------------------
+function card_enchantment_count_down_all_durations(
+    g: game // Counting down all no matter of the owner.
+) {
+
+    // We don't care about the enchanted piece, since it's ALWAYS in limbo.
+    // What we want to verify is what replacement objects that are alive.
+    val are_results = (are: active_replacement_enchantment, v: vulnerable, a: alive) @* {
+        a.game == g, 
+        a.vulnerable == v,
+        are.replaced_with == v
+    } (are.remaining_turns, are.replaced_with, a.owned_by, are = are);
+
+    // Reduce all found enchantments by 1.
+    for (are_res in are_results) { 
+        update are_res.are (.remaining_turns -= 1);
+    }
+}
+
+// ------------------------------------------------------------
+// See description in entities.rell
+// Summary: we want to remove all enchantments that have timed out
+//    for the given owner. 
+// ------------------------------------------------------------
+function card_enchantment_revert_timed_out(g: game, owner: player_game, new_turn: turn) {
+
+
+    // --------------------
+    // 1. Find all enchantments that have timed out.
+    // --------------------
+    val ae_time_outs = (are: active_replacement_enchantment, v: vulnerable, a: alive, c: card, p: piece)@* {
+            a.owned_by == owner, 
+            a.vulnerable == v,
+            are.replaced_with == v,
+            are.card == c, 
+            are.enchanted_piece == p,
+            are.remaining_turns <= 0 // Meaning it has timed out.
+        } (are.remaining_turns, replacement_alive = a, card_type = c.card_type, are.enchanted_piece, are = are, card = c);
+
+    for (ae_time_out in ae_time_outs) {
+
+        val orig_card = ae_time_out.card;
+        val time_out_card_type = ae_time_out.card_type;
+        val replacement_alive = ae_time_out.replacement_alive;
+        val enchanted_piece = ae_time_out.enchanted_piece;
+
+        // --------------------
+        // 2. Remove the timed out enchantment
+        // --------------------
+        delete ae_time_out.are; 
+
+        // ----------------------------------------------------------
+        // 3. Bring back the original piece
+        // Note:
+        // We might have multiple enchantments on the same piece,
+        // but it won't be a problem, since bring back the most recent
+        // one from limbo. That will refer to another one in limbo and so on.
+        // ----------------------------------------------------------
+
+        when (time_out_card_type) {
+
+            FROG -> {
+                piece_bring_back_original_piece(g, owner, replacement_alive, enchanted_piece.vulnerable);
+            }
+            TURN_TO_STONE -> {
+                piece_bring_back_original_piece(g, owner, replacement_alive, enchanted_piece.vulnerable);
+            }
+            // Jumps are reverted as part of the move. Not stored in the [active_replacement_enchantment] entity.
+            //JUMP -> {
+            //    piece_remove_jump(time_out_piece);
+            //}
+            else -> {
+                //There's nothing else that should time out.
+                log("card_enchantment_revert_timed_out() - ERROR: why did this type time out? " + time_out_card_type);
+            }
+        }
+
+        // 4. Create the event
+        card_event_create_remove_enchantment(g, new_turn, orig_card, enchanted_piece);
+    }
+}

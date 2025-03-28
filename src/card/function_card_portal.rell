@@ -8,9 +8,11 @@ function card_portal_get_other_side(pos_int: integer): alignment {
 
     if (pos.y < 4) {
         // If the chosen piece is on white side, we want to find the exit on the black side.
+        //log("card_portal_get_other_side() - pos.y = " + pos.y + ", returning BLACK");
         return alignment.BLACK;
     } else if (pos.y > 3) {
         // If the chosen piece is on black side, we want to find the exit on the white side.
+        //log("card_portal_get_other_side() - pos.y = " + pos.y + ", returning WHITE");
         return alignment.WHITE;
     } else {
         require(false, "card_portal_get_other_side() - How did we get neutral? " + pos_int);

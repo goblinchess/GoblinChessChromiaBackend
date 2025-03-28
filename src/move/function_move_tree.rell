@@ -58,8 +58,8 @@ function move_tree_get_pos_status(mt: move_tree, pos: integer): integer {
         log("  move_tree_get_pos_status() - Found " + pos + " in harmless");
         return 1;
     }
-    
-    log("  move_tree_get_pos_status() - Didn't find " + pos + " anywhere in the tree");
+ 
+    log("  move_tree_get_pos_status() - Didn't find " + pos + " anywhere in the tree. Tree: " + move_tree_debug(mt) + "");
     return 0; // Not found
 }
 
@@ -245,6 +245,24 @@ function move_tree_remove_attacks_and_make_moves_harmless(mt: move_tree): move_t
     );
 }
 
+// ---------------
+// Debug
+// ---------------
+
+// Print the entire trees
+function move_tree_debug(mt: move_tree): text {
+    var str = "(Attack moves: ";
+    for (pos_a in mt.attackable_sqs) {
+        str += pos_a + ", ";
+    }
+    str += ". Peaceful moves: ";
+    for (pos_p in mt.moves_all) {
+        str += pos_p + ", ";
+    }
+    str += ")";
+
+    return str;
+}
 
 
 

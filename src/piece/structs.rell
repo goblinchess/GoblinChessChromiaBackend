@@ -36,14 +36,16 @@ struct piece_living_data {
     original_type: piece_type;
     active_type: piece_type;
 
+    // Keys
     p: piece;
 }
 
 // Used inside the game to pass information about a vulnerable object 
+// We want to get as much as possible in one SELECT (to avoid further SELECTs later).
 struct vulnerable_data {
     // From Vulnerable
     align: alignment; // = Color
-    position: integer;
+    position: integer; // Acutally from "alive" but we don't want a separate struct for that.
 
     is_obstacle: boolean;
     can_retaliate: boolean;
@@ -52,7 +54,11 @@ struct vulnerable_data {
     remaining_hit_points: integer;
     defence: integer;
 
+    // Keys
     v: vulnerable;
+    a: alive;
+    g: game;
+    owned_by: player_game;
 }
 
 // External:

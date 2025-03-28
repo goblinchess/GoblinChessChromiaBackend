@@ -53,7 +53,8 @@ function check_sb_build_hypothetical_king_move(
         board_all_clone,
         king_pos_start,
         king_pos_dest,
-        king // Will be replaced since this object is immutable.
+        king, // Will be replaced since this object is immutable.
+        true // This might be an attack
     );
     
     // ------------------------
@@ -110,7 +111,8 @@ function check_sb_build_hypothetical_subject_move(
         board_all_clone,
         pos_start,
         pos_dest,
-        chr_to_move // Will be replaced since this object is immutable.
+        chr_to_move, // Will be replaced since this object is immutable.
+        true // This might be an attack
     );
 
     // ------------------------

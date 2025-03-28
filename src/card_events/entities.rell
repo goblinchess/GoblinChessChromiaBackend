@@ -7,8 +7,8 @@
 
 // When a switch card is played
 entity switch_event {
-    key event: event; // Event is the "base type" for all events
-    card: card;
+    key event; // Event is the "base type" for all events
+    card;
     piece1: piece;
     piece2: piece;
     piece1_pos: integer; // Where piece1 was standing
@@ -17,13 +17,20 @@ entity switch_event {
 
 // When the actual resurrection happens
 entity resurrect_event {
-    key event: event; // Event is the "base type" for all events
-    card: card;
-    piece: piece; // Piece that was resurrected
+    key event; // Event is the "base type" for all events
+    card;
+    piece; // Piece that was resurrected
+}
+
+// Some enchantments (like Knighted) stay for the entire game.
+entity enchantment_event {
+    key event; // Event is the "base type" for all events
+    card; // The card that generated this active enchantment
+    piece; // The piece that is enchanted
 }
 
 entity remove_enchantment_event {
-    key event: event; // Event is the "base type" for all events
-    card: card;
-    piece: piece; // The piece that is no longer enchanted
+    key event; // Event is the "base type" for all events
+    card;
+    piece; // The piece that is no longer enchanted
 }

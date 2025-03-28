@@ -5,42 +5,16 @@ operation skip_move(
     game_id: integer,
     last_seen_turn: integer // What turn the client last saw.
 ) {
-    // -----------    
-    // A. Verication
-    // -----------    
-    log("Skip Move Begin: game_id: " + game_id + " last turn: " + last_seen_turn);
-
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
 
-    // ----------------
-    // A.1. Check player entity
-    // ----------------
-    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
-    require (minimal_game != null, "Player is not in a game, id:" + game_id);
-
-    // ----------------
-    // A.2. Is game is out of sync? 
-    // ----------------
-    val curr_turn = minimal_game.curr_turn_nr;
-    require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
-
-    // ----------------------------------------------    
-    // B. Updates 
-    // ----------------------------------------------    
-    var new_turn_type = turn_type.BLACK_MOVE_SKIPPED;
-    if (minimal_game.is_white) { 
-        new_turn_type = turn_type.WHITE_MOVE_SKIPPED;
-    }
-
-    // ----------------
-    // B.1. Create the turn record
-    // ----------------
-    // lots of verification in here.
-    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
-    log("/Skip Move End: game_id: " + game_id + " new turn type: " + new_turn_type);
+    // We do it this way so we can test failure cases.
+    move_skip_inner(
+        caller_pubkey,
+        game_id,
+        last_seen_turn
+    );
 }
-
 
 
 // Skip the neutral move
@@ -49,42 +23,16 @@ operation skip_neutral(
     game_id: integer,
     last_seen_turn: integer // What turn the client last saw.
 ) {
-    // -----------    
-    // A. Verication
-    // -----------    
-    log("Skip Neutral Begin: game_id: " + game_id + " last_turn: " + last_seen_turn);
-
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
 
-    // ----------------
-    // A.1. Check player entity
-    // ----------------
-    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
-    require (minimal_game != null, "Player is not in a game, id:" + game_id);
-
-    // ----------------
-    // A.2. Is game is out of sync? 
-    // ----------------
-    val curr_turn = minimal_game.curr_turn_nr;
-    require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
-
-    // ----------------------------------------------    
-    // B. Updates 
-    // ----------------------------------------------    
-    var new_turn_type = turn_type.NEUTRAL_MOVE_2_SKIPPED;
-    if (minimal_game.is_white) { 
-        new_turn_type = turn_type.NEUTRAL_MOVE_1_SKIPPED;
-    }
-
-    // ----------------
-    // B.1. Create the turn record
-    // ----------------
-    // lots of verification in here.
-    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
-    log("/Skip Neutral End: game_id: " + game_id + " new turn type: " + new_turn_type);
+    // We do it this way so we can test failure cases.
+    move_neutral_skip_inner(
+        caller_pubkey,
+        game_id,
+        last_seen_turn
+    );
 }
-
 
 // Move a piece to a empty square.
 operation move_peaceful(

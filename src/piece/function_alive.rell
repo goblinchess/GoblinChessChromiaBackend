@@ -1,0 +1,81 @@
+
+// ------------------------------------------------------------
+// General Alive Functions
+// ------------------------------------------------------------
+// Call this when you only care if the object is alive and about
+// its position. 
+
+
+// Get the alive object occupying a given position, or null if none.
+function alive_get_via_game_and_position(g: game, pos: integer): alive? {
+    return (a: alive)@? {
+        a.game == g, 
+        a.position == pos
+    } (a);
+}
+
+// Try to find the alive object via the vulnerable object.
+// If you cannot find it, then we assume that object has 
+// died or got into limbo.
+function alive_get_via_vuln(v: vulnerable): alive? {
+    return (a: alive)@? {
+        a.vulnerable == v
+    } (a);
+}
+
+// ------------------------------------------------------------
+// Mutators
+// ------------------------------------------------------------
+
+// Remove an object from the alive collection, put it in limbo.
+function alive_move_to_limbo(obj: vulnerable_data) {
+    // 1. Put in LIMBO
+    create limbo (
+        .vulnerable = obj.v,
+        .game = obj.g,
+        .owned_by = obj.owned_by
+    );
+
+    // 2. Remove from ALIVE
+    delete obj.a;
+}
+
+// Remove an object from the limbo collection, put it in alive.
+function alive_move_from_limbo(
+    g: game, 
+    owned_by: player_game, 
+    v_in_limbo: vulnerable, 
+    pos: integer // Must be sent, since limbo does not have a position (and the vuln probably moved since the enchanment)
+) {
+    // 1. Select from LIMBO
+    val limbo_piece: limbo = (l: limbo)@ {l.vulnerable == v_in_limbo} (l);
+
+    // 2. Put in ALIVE
+    create alive (
+        .vulnerable = limbo_piece.vulnerable,
+        .position = pos, 
+        .game = g,
+        .owned_by = owned_by
+    );
+
+    // 3. Remove from LIMBO
+    delete limbo_piece;
+}
+
+
+// CARD: SWITCH_PLACE
+function alive_switch_place(align: alignment, piece1: alive, piece2: alive) {
+    // Validation
+    require(piece1.position != piece2.position, "Cannot switch place with itself");
+
+    val pos1 = piece1.position;
+    val pos2 = piece2.position;
+
+    require(piece1.vulnerable.color == align, "Piece1 at " + pos1 + " is not owned by the player");
+    require(piece2.vulnerable.color == align, "Piece2 at " + pos2 + " is not owned by the player");
+
+
+    update piece1 (.position = 1000); // Ugly, but must do this to avoid unique constraint.
+    update piece2 (.position = pos1);
+    update piece1 (.position = pos2);
+}

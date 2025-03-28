@@ -127,7 +127,7 @@ function test_battle_strong_defence() {
     val att_strength = die_set_get_default_chaotic();
 
     // ----------------
-    log("Test 1: rnd = 1+3, expect Hit with 4 damage, retaliation Miss");
+    log("Test 8= rnd = 1+3, expect Hit with 4 damage, retaliation Miss");
     // ----------------
     var rnd_datas = build_d6_rnd_data([1, 3, 2]); // NOTE: one extra due to "miss" calculation
     var br = calculate_chaos_attack_result(
@@ -163,7 +163,7 @@ function test_battle_strong_defence() {
     assert_equals(br.attacker_lost_hp, 0);
 
     // ----------------
-    log("Test 3: rnd = 2,6,5,6 expect Hit with 8 damage, retaliation hit");
+    log("Test 6= rnd = 2,6,5,6 expect Hit with 8 damage, retaliation hit");
     // ----------------
     rnd_datas = build_d6_rnd_data([2,6,5,6]);
     br = calculate_chaos_attack_result(
@@ -179,7 +179,7 @@ function test_battle_strong_defence() {
     assert_equals(br.attacker_lost_hp, 3); // 11 - 1 +(-7) = 3
 
     // ----------------
-    log("Test 4: rnd = 3,6,6,6 expect Hit with 9 damage, retaliation kill");
+    log("Test 5= rnd = 3,6,6,6 expect Hit with 9 damage, retaliation kill");
     // ----------------
 
     rnd_datas = build_d6_rnd_data([3,6,6,6]);
@@ -327,6 +327,10 @@ function test_full_game() {
     val found_game: in_game_result? = in_game(rell.test.keypairs.alice.pub);
     assert_not_null(found_game);
     val the_game = found_game;
+
+    // If we need the game entity 
+    val g: game = (g: game) @ {g.rowid == rowid(the_game.game_rowid) };
+
     val alice_white = the_game.is_white;
     var alice_color = "black";
     var white_player = rell.test.keypairs.charlie;
@@ -362,40 +366,61 @@ function test_full_game() {
     var last_seen_turn = 0;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 1 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= r  kn b  q  k  b  kn r  
+    // 7= p  p  p  p  p  p  p  p  // <- Lower case for black
+    // 6= .  .  .  .  .  .  .  .
+    // 5= .  .  .  .  .  .  .  .
+    // 4= .  .  .  .  .  .  .  .
+    // 3= .  .  .  .  .  .  .  .
+    // 2= P  P  P  P  P  P  P  P // <- Upper case for white
+    // 1= R  Kn B  Q  K  B  Kn R
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
     // --------------------
     // Failed White Cards
     // --------------------
     // First we try a few invalid cards, to make sure the validation works.
 
-    log("Turn 1: Card Fail A. No picks for FROG");
+    log("Turn 8= Card Fail A. No picks for FROG");
     val card_picks_none: list<integer> = []; // No picks
-    var failed_card = assert_fails(play_card_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_none, list<rnd_data>(),
+    var failed_card = assert_fails(card_play_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_none, list<rnd_data>(),
         * // Note, this star is what makes it work.
     ));
     val expected_no_pick_msg: text = "Expected 1 picks for card FROG but got 0";
     assert_true(failed_card.message.starts_with(expected_no_pick_msg));
 
-    log("Turn 1: Card Fail B. Out of board pick for FROG");
+    log("Turn 8= Card Fail B. Out of board pick for FROG");
     val card_picks_out_of_board = [64]; // Out of board
-    failed_card = assert_fails(play_card_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_out_of_board, list<rnd_data>(),
+    failed_card = assert_fails(card_play_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_out_of_board, list<rnd_data>(),
         * // Note, this star is what makes it work.
     ));
+
+
+    // --------------------
+    // NOTE: Cannot test this since we might creat an [remove_enchantment_event] before this test.
+    //       and it seems like the "assert_fails()" cannot handle DB writes before the failed require().
+    // --------------------
+    /*
     val expected_out_of_board_pick: text = "Pick at pos 0 is out of board.";
+    log("Err:" + failed_card.message);
     assert_true(failed_card.message.starts_with(expected_out_of_board_pick));
 
-    log("Turn 1: Card Fail C. Free square pick for FROG");
+    log("Turn 8= Card Fail C. Free square pick for FROG");
     val card_picks_free = [18]; // = c3, free square
-    failed_card = assert_fails(play_card_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_free, list<rnd_data>(),
+    failed_card = assert_fails(card_play_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_free, list<rnd_data>(),
         * // Note, this star is what makes it work.
     ));
     val expected_must_be_piece_msg: text = "Expected pick at pos 0 to be type PIECE_NON_KING_SQUARE but found a free square at position 18.";
     assert_true(failed_card.message.starts_with(expected_must_be_piece_msg));
+    */
 
     // --------------------
     // /Failed White Cards
     // --------------------
 
-    log("Turn 1: White playes a card");
+    log("Turn 8= White playes a card");
     val black_rook_to_frog = 56; // a8, Turns black rook into frog
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "FROG", 1, [black_rook_to_frog], list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
@@ -403,20 +428,20 @@ function test_full_game() {
     // --------------------
     // Failed White moves
     // --------------------
-    // 1: r  kn b  q  k  b  kn r // <- Lower case for black
-    // 2: p  p  p  p  p  p  p  p 
-    // 3: .  .  .  .  .  .  .  .
-    // 4: .  .  .  .  .  .  .  .
-    // 5: .  .  .  .  .  .  .  .
-    // 6: .  .  .  .  .  .  .  .
-    // 7: P  P  P  P  P  P  P  P // <- Upper case for white
-    // 8: R  Kn B  Q  K  B  Kn R
+    // 8= f  kn b  q  k  b  kn r  // <- Rook at a8 is now a frog
+    // 7= p  p  p  p  p  p  p  p  
+    // 6= .  .  .  .  .  .  .  .
+    // 5= .  .  .  .  .  .  .  .
+    // 4= .  .  .  .  .  .  .  .
+    // 3= .  .  .  .  .  .  .  .
+    // 2= P  P  P  P  P  P  P  P 
+    // 1= R  Kn B  Q  K  B  Kn R
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
     // First we try a few invalid moves, to make sure the validation works.
 
-    log("Turn 2: Move Fail A. No piece at position");
+    log("Turn 2= Move Fail A. No piece at position");
     val wrong_orig_pos = 22; // Nothing on this position
     val wrong_to_pos = 23; 
 
@@ -439,9 +464,9 @@ function test_full_game() {
     val expected_wrong_pos: text = "No piece at position " + wrong_orig_pos;
     assert_true(failed_move.message.starts_with(expected_wrong_pos));
 
-    log("Turn 2: Move Fail B. Wrong piece_type at position");
+    log("Turn 2= Move Fail B. Wrong piece_type at position");
     val knight_orig_pos = 1; // b1 (correct)
-    val knight_to_pos = 16;  // a3 (Valid move)
+    val knight_to_pos = 18;  // c3 (Valid move)
 
     m_args = move_arguments(
         game_id = the_game.game_rowid, 
@@ -457,7 +482,7 @@ function test_full_game() {
     val expected_wrong_type: text = "Expected piece to have active type KNIGHT but got BISHOP";
     assert_true(failed_move.message.starts_with(expected_wrong_type));
 
-    log("Turn 2: Move Fail C. Invalid move pattern");
+    log("Turn 2= Move Fail C. Invalid move pattern");
     val knight_to_wrong_pos = 17;  // b3 (Invalid move)
 
     m_args = move_arguments(
@@ -476,7 +501,7 @@ function test_full_game() {
     assert_true(failed_move.message.starts_with(expected_wrong_move));
 
 
-    log("Turn 2: Move Fail D. Bishop cannot move to own piece!");
+    log("Turn 2= Move Fail D. Bishop cannot move to own piece!");
     val bishop_orig_pos = 2; // c1 (correct)
     val bishop_to_pos = 9; // Vaild move pattern, but pawn here, cannot move this way
 
@@ -498,7 +523,7 @@ function test_full_game() {
     // /Failed White moves
     // --------------------
 
-    log("Turn 2: White makes a valid move Kn b1->a3");
+    log("Turn 2= White makes a valid move Kn b1->c3");
 
     m_args = move_arguments(
         game_id = the_game.game_rowid, 
@@ -511,27 +536,27 @@ function test_full_game() {
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
 
-    log ("Turn 3: Skip neutral.");
+    log ("Turn 6= Skip neutral.");
     rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ BLack Move 1 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 1: r  kn b  q  k  b  kn r
-    // 2: p  p  p  p  p  p  p  p
-    // 3: .  .  .  .  .  .  .  .
-    // 4: .  .  .  .  .  .  .  .
-    // 5: .  .  .  .  .  .  .  .
-    // 6: .  .  Kn .  .  .  .  .
-    // 7: P  P  P  P  P  P  P  P
-    // 8: R  .  B  Q  K  B  Kn R
+    // 8= f  kn b  q  k  b  kn r
+    // 7= p  p  p  p  p  p  p  p
+    // 6= .  .  .  .  .  .  .  .
+    // 5= .  .  .  .  .  .  .  .
+    // 4= .  .  .  .  .  .  .  .
+    // 3= .  .  Kn .  .  .  .  .
+    // 2= P  P  P  P  P  P  P  P
+    // 1= R  .  B  Q  K  B  Kn R
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
-    log ("Turn 4: Black skips spell");
+    log ("Turn 5= Black skips spell");
     rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
-    log ("Turn 5: Black moves pawn a7->a5");
+    log ("Turn4= Black moves pawn a7->a5");
     val black_move_1_from = 48; // a7
     val black_move_1_to = 32; // a5 = Pawn double move 
 
@@ -546,29 +571,29 @@ function test_full_game() {
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
 
-    log ("Turn 6: Skip neutral.");
+    log ("Turn 3= Skip neutral.");
     rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 2 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 1: r  kn b  q  k  b  kn r
-    // 2: .  p  p  p  p  p  p  p
-    // 3: .  .  .  .  .  .  .  .
-    // 4: p  .  .  .  .  .  .  .
-    // 5: .  .  .  .  .  .  .  .
-    // 6: .  .  Kn .  .  .  .  .
-    // 7: P  P  P  P  P  P  P  P
-    // 8: R  .  B  Q  K  B  Kn R
+    // 8= f  kn b  q  k  b  kn r
+    // 7= .  p  p  p  p  p  p  p
+    // 6= .  .  .  .  .  .  .  .
+    // 5= p  .  .  .  .  .  .  .
+    // 4= .  .  .  .  .  .  .  .
+    // 3= .  .  Kn .  .  .  .  .
+    // 2= P  P  P  P  P  P  P  P
+    // 1= R  .  B  Q  K  B  Kn R
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
 
-    log("Turn 7: White plays Knighted.");
+    log("Turn 2= White plays Knighted.");
     val card_picks_knighted = [10]; // Turns c2 pawn into knight
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "KNIGHTED", 2, card_picks_knighted, list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
 
-    log("Turn 8: White makes a valid move Pawn g2 -> g3");
+    log("Turn 1= White makes a valid move Pawn g2 -> g3");
 
     m_args = move_arguments(
         game_id = the_game.game_rowid, 
@@ -586,14 +611,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ BLack Move 2 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 1: r  kn b  q  k  b  kn r
-    // 2: .  p  p  p  p  p  p  p
-    // 3: .  .  .  .  .  .  .  .
-    // 4: p  .  .  .  .  .  .  .
-    // 5: .  .  .  .  .  .  .  .
-    // 6: .  .  Kn .  .  .  P  .
-    // 7: P  P  P  P  P  P  .  P
-    // 8: R  .  B  Q  K  B  Kn R
+    // 8= f  kn b  q  k  b  kn r
+    // 7= .  p  p  p  p  p  p  p
+    // 6= .  .  .  .  .  .  .  .
+    // 5= p  .  .  .  .  .  .  .
+    // 4= .  .  .  .  .  .  .  .
+    // 3= .  .  Kn .  .  .  P  .
+    // 2= P  P  P  P  P  P  .  P
+    // 1= R  .  B  Q  K  B  Kn R
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -605,6 +630,7 @@ function test_full_game() {
     // Failed Blakc moves
     // --------------------
     // First we try to move the rook link usually, but its ACTIVE TYPE is a frog, so shouldn't work.
+    // It's only been a frog 2 turns, to the enchantment has not yet timed out.
     log ("Turn 11: Failed Black Rook (=actually a Frog) moves a8->a6");
     val rook_to_wrong_pos = 40;  // a6 (Cannot move two steps since is frog)
 
@@ -612,14 +638,15 @@ function test_full_game() {
         game_id = the_game.game_rowid, 
         last_seen_turn = last_seen_turn, 
         from_position = black_rook_to_frog,
-        to_position = rook_to_wrong_pos, // <-- Wrong, is frog now
-        piece_type_str = "ROOK",  // <-- Wrong, is frog now
+        to_position = rook_to_wrong_pos, // <-- Wrong, still a frog 
+        piece_type_str = "ROOK",  // <-- Wrong, still a frog 
         given_is_knighted = false);
     
     failed_move = assert_fails(move_peaceful_inner(black_player.pub, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
     val expected_rook_vs_frog = "Expected piece to have active type FROG but got ROOK";
+    log("Err:" + failed_move.message);
     assert_true(failed_move.message.starts_with(expected_rook_vs_frog));
 
     // If we call the frog a FROG, can it move as a rook?
@@ -663,14 +690,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 3 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 1: r  kn b  q  k  b  kn r
-    // 2: .  p  p  p  p  p  p  p
-    // 3: .  .  .  .  .  .  .  .
-    // 4: .  .  .  .  .  .  .  .
-    // 5: P  .  .  .  .  .  .  .
-    // 6: .  .  Kn .  .  .  P  .
-    // 7: P  P  P  P  P  P  .  P
-    // 8: R  .  B  Q  K  B  Kn R
+    // 8= f  kn b  q  k  b  kn r
+    // 7= .  p  p  p  p  p  p  p
+    // 6= .  .  .  .  .  .  .  .
+    // 5= .  .  .  .  .  .  .  .
+    // 4= P  .  .  .  .  .  .  .
+    // 3= .  .  Kn .  .  .  P  .
+    // 2= P  P  P  P  P  P  .  P
+    // 1= R  .  B  Q  K  B  Kn R
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -699,14 +726,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ BLack Move 3 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 1: r  kn b  q  k  b  kn r
-    // 2: .  p  p  p  p  p  p  p
-    // 3: .  .  .  .  .  .  .  .
-    // 4: .  .  .  .  .  .  .  .
-    // 5: p  P  .  .  .  .  .  .
-    // 6: .  .  Kn .  .  .  P  .
-    // 7: P  .  P  P  P  P  .  P
-    // 8: R  .  B  Q  K  B  Kn R
+    // 8= f  kn b  q  k  b  kn r
+    // 7= .  p  p  p  p  p  p  p
+    // 6= .  .  .  .  .  .  .  .
+    // 5= .  .  .  .  .  .  .  .
+    // 4= p  P  .  .  .  .  .  .
+    // 3= .  .  Kn .  .  .  P  .
+    // 2= P  .  P  P  P  P  .  P
+    // 1= R  .  B  Q  K  B  Kn R
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -743,14 +770,115 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 4 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 1: r  kn b  q  k  b  kn r
-    // 2: .  p  p  p  p  p  p  p
-    // 3: .  .  .  .  .  .  .  .
-    // 4: .  .  .  .  .  .  .  .
-    // 5: .  x  .  .  .  .  .  . // <- Pawn on a5 is captured
-    // 6: .  p  Kn .  .  .  P  .
-    // 7: P  .  P  P  P  P  .  P
-    // 8: R  .  B  Q  K  B  Kn R
+    // 8= f  kn b  q  k  b  kn r
+    // 7= .  p  p  p  p  p  p  p
+    // 6= .  .  .  .  .  .  .  .
+    // 5= .  .  .  .  .  .  .  .
+    // 4= .  x  .  .  .  .  .  . // <- Pawn on a5 is captured
+    // 3= .  p  Kn .  .  .  P  .
+    // 2= P  .  P  P  P  P  .  P
+    // 1= R  .  B  Q  K  B  Kn R
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    log("Turn 19: White playes Portal at a2->f6");
+
+    // Bit tricky to figure out what the random number should be to put the exit at f6.
+    val a2 = 8;
+    val f6 = 45;
+    val min_portal_empty_squares = 0;
+    val total_empty_squares_on_black_side = 17; // One extra since one pawn crossed to other side
+    val max_portal_empty_squares = total_empty_squares_on_black_side - 1;
+    val portal_rnd_result = 13; // f6. Start counting from rank 5. 0->7 (=8 steps). Rank 4. 8-> 13 (6 steps)
+    val portal_rnd_data = rnd_data(
+        result = portal_rnd_result, 
+        min = min_portal_empty_squares, 
+        max = max_portal_empty_squares
+    );
+    val rnds: list<rnd_data> = [portal_rnd_data];
+
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "PORTAL", 2, [a2, f6], rnds)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    log ("Turn 20: White must skip move (due to portal).");
+    rell.test.tx(skip_move(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    log ("Turn 21: Skip neutral.");
+    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    // +++++++++++++++++++++++++++++++++++++++++ Black Move 4 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= r  kn b  q  k  b  kn r  // <-- Frog -> Rook (enchantment removed)
+    // 7= .  p  p  p  p  p  p  p
+    // 6= .  .  .  .  .  P  .  . // <--- Pawn moved through new portal a2->f6
+    // 5= .  .  .  .  .  .  .  .
+    // 4= .  .  .  .  .  .  .  . 
+    // 3= .  p  Kn .  .  .  P  .
+    // 2= x  .  P  P  P  P  .  P // <--- Pawn moved through new portal a2->f6
+    // 1= R  .  B  Q  K  B  Kn R
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    // Let's check if the Pawn at a2 moved? 
+    val what_a2: piece_living_data? = piece_get_living_data_from_pos(g, 8);
+    if (what_a2 != null) {
+        log("what at a2: " + what_a2.active_type);
+    } else {
+        log("what at a2: null");
+    }
+
+    // Let's check if there popped up a Pawn at g3? 
+    val what_f6: piece_living_data? = piece_get_living_data_from_pos(g, 45);
+    if (what_f6 != null) {
+        log("what at f6: " + what_f6.active_type);
+    } else {
+        log("what at f6: null");
+    }
+
+    log("Turn 22: Black playes Resurrect");
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "RESURRECT", 5, [], list<rnd_data>())).sign(black_player).run();
+    last_seen_turn += 1;
+
+    // The A8 rook was turned into a FROG turn 1, but this enchantment should have been removed by now.
+    log ("Turn 23: Black captuers rook a8->a1");
+    val a8 = 56;
+    val a1 = 0;
+
+    m_args = move_arguments(
+        game_id = the_game.game_rowid, 
+        last_seen_turn = last_seen_turn, 
+        from_position = a8, 
+        to_position = a1, 
+        piece_type_str = "ROOK",  
+        given_is_knighted = false);
+
+    // Attack data, mandatory for attacks.
+    att_args = move_attack_arguments (
+        attacked_position = a1, 
+        attack_result_type_str = "KILL", 
+        defender_defense_points = 3, 
+        damage_points = 7 
+    );
+
+    rell.test.tx(move_attack(m_args, att_args, list<rnd_data>(), check_args)).sign(black_player).run();
+    last_seen_turn += 1;
+
+    log ("Turn 24: Skip neutral.");
+    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    last_seen_turn += 1;
+
+    // +++++++++++++++++++++++++++++++++++++++++ White Move 5 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= .  kn b  q  k  b  kn r
+    // 7= .  p  p  p  p  p  p  p
+    // 6= .  .  .  .  .  P  .  .
+    // 5= .  .  .  .  .  .  .  .
+    // 4= .  .  .  .  .  .  .  . 
+    // 3= .  p  Kn .  .  .  P  .
+    // 2= .  .  P  P  P  P  .  P 
+    // 1= r  .  B  Q  K  B  Kn R  // <--- Rook a8 x a1
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------

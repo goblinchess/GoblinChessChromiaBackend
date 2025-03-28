@@ -23,7 +23,7 @@ function knight_all_valid_moves(
 
 function knight_all_potential_moves(pos: integer): list<square_pos> {
     val moves = list<square_pos>();
-    log ("Knight all potential moves: " + pos);
+    //log ("Knight all potential moves: " + pos);
     val curr_pos = translate_integer_pos_to_square_pos(pos);
     
     // Forward moves
@@ -41,7 +41,7 @@ function knight_all_potential_moves(pos: integer): list<square_pos> {
     // Left moves
     moves.add(pos_x_and_y_shift(curr_pos, -2, 1));
     moves.add(pos_x_and_y_shift(curr_pos, -2, -1));
-    log ("/Knight all potential moves: " + pos);
+    //log ("/Knight all potential moves: " + pos);
     
     return moves;
 }

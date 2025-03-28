@@ -1,0 +1,74 @@
+
+function move_skip_inner(
+    caller_pubkey: pubkey,
+    game_id: integer,
+    last_seen_turn: integer
+) {
+    // -----------    
+    // A. Verication
+    // -----------    
+    log("Skip Move Begin: game_id: " + game_id + " last turn: " + last_seen_turn);
+
+    // ----------------
+    // A.1. Check player entity
+    // ----------------
+    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+    require (minimal_game != null, "Player is not in a game, id:" + game_id);
+
+    // ----------------
+    // A.2. Is game is out of sync? 
+    // ----------------
+    val curr_turn = minimal_game.curr_turn_nr;
+    require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
+
+    // ----------------
+    // A.3 Get same state
+    // ----------------
+    // Get some data
+    var align: alignment = alignment.BLACK;
+    var opp_align: alignment = alignment.WHITE;
+    if (minimal_game.is_white) {
+        align = alignment.WHITE;
+        opp_align = alignment.BLACK; 
+    }
+
+    val board: list<with_pos_and_alignment> = vuln_get_all_as_wpaa(minimal_game.game); 
+    val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, align);
+    val board_positions_all = board_positions_all_constructor(minimal_game.game, board, portals);
+
+    val opp_team = team_build_from_db(minimal_game.game, opp_align);
+
+    // Has this piece an jump enchantment on it?
+    val is_enchanted_jump = false; // Yes, somewhat dangerous, but JUMP card won't cause turn to be skipped, so we assume there is no active jump.
+
+    val res = move_get_vuln_path(minimal_game.game, opp_align); 
+    val opp_vuln_ctxt: pre_vuln_context = res.v_ctxt;
+
+    // ----------------------------------------------    
+    // B. Updates 
+    // ----------------------------------------------    
+    var new_turn_type = turn_type.BLACK_MOVE_SKIPPED;
+    if (minimal_game.is_white) { 
+        new_turn_type = turn_type.WHITE_MOVE_SKIPPED;
+    }
+
+    // ----------------
+    // B.1. Create the turn record
+    // ----------------
+    // lots of verification in here.
+    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
+
+    // B.2 Use all unblocked portals
+    move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, opp_team, align);
+
+    // B.3 Promotions
+    // TODO
+
+    // B.4 Cleanup 
+    // For "skip" this will:
+    // 1. Remove vuln context. 
+    // 2. Count down enchantments.
+    move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, align);
+
+    log("/Skip Move End: game_id: " + game_id + " new turn type: " + new_turn_type);
+}

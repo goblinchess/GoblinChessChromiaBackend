@@ -1,4 +1,8 @@
 
+// ------------------------------------------------------------
+// General Piece Functions
+// ------------------------------------------------------------
+// Call this when you want to do something with a piece.
 
 // ------------------------------------------------------------
 // Inspectors
@@ -13,107 +17,61 @@ function piece_is_pos_on_board(pos: integer): boolean {
 }
 
 
+
 // ------------------------------------------------------------
 // Get Piece
 // ------------------------------------------------------------
 
 // Get the piece occupying a given position, or null if none.
-function piece_get_via_game_and_position(game: game, pos: integer): piece? {
-    return (v: vulnerable, p: piece)@? {
-        v.game == game,
+function piece_get_via_game_and_position(g: game, pos: integer): piece? {
+    return (a: alive, v: vulnerable, p: piece)@? {
+        a.game == g, // Only alive pieces are on the board.
+        a.vulnerable == v,
         p.vulnerable == v,
-        v.position == pos,
-        v.is_alive == true // Only alive pieces are on the board.
+        a.position == pos
     } (p);
 }
 
-// Get the piece occupying a given position, or null if none.
-function piece_get_via_owner_and_position(owner: player_game, pos: integer): piece? {
-    return (p: piece, op: owned_piece, v: vulnerable) @? {
-        op.owned_by == owner, 
-        op.piece == p, 
-        p.vulnerable == v,
-        v.position == pos 
-        } (p);
-}
 
-// Here we get the entire board in one go, all pieces and obstacles.
-// We separate black from white via the alignment.
-function piece_get_all_vulnerables(game: game): list<with_pos_and_alignment> {
-    val vulns = (v: vulnerable)@* {
-        v.game == game,
-        v.is_alive == true // Critial, since we keep dead objects around forever.
-    } (v.position, v.color, v.is_obstacle); // Color should really be neutral, since it's not a piece.
-
-    // Transform into structs
-    val res: list<with_pos_and_alignment> = [];
-    for (v in vulns) { 
-        if (v.is_obstacle) {
-            if (v.color != alignment.NEUTRAL) {
-                log("Error: Obstacle has color " + v.color);
-            }
-            res.add(with_pos_and_alignment(v.position, alignment.NEUTRAL));
-        } else {
-            // It's a piece
-            res.add(with_pos_and_alignment(v.position, v.color));
-        }
-    }
-    return res;
-}
-
-// Get data for a vulnerable object, if exists.
-// We do this for performance reasons, 
-// since every single field access could else generate a new SELECT.
-function piece_get_vulnerable_data_from_pos(g: game, given_pos: integer) :vulnerable_data? {
-
-    val res = (v: vulnerable)@? {
-        g == v.game,
-        v.is_alive == true,
-        v.position == given_pos,
-    } (v.color, v.is_obstacle, v.can_retaliate, v.start_hit_points, v.remaining_hit_points, v.defence, found_vulnerable = v);
-
-    if (res != null) {
-
-        return vulnerable_data(
-            align = res.color, 
-            position = given_pos, 
-            is_obstacle = res.is_obstacle,
-            can_retaliate = res.can_retaliate,
-            start_hit_points = res.start_hit_points,
-            remaining_hit_points = res.remaining_hit_points,
-            defence = res.defence,
-            v = res.found_vulnerable
-        );
-
-    } else {
-        return null;
-    }
-}
-
+// ------------------------------------------------------------
 // Get data for a living piece, if exists.
-// We do this for performance reasons, 
+// We do this vuln-piece join for performance reasons, 
 // since every single field access could else generate a new SELECT.
+// 
+// Note: why are we bothering with the IS_OBSTACLE flag?
+// Some enchantments (like STONE) turn a piece into an obstacle,
+// but the PIECE entity still exists, so we cannot be certain that
+// really is a piece.
+// ------------------------------------------------------------
 function piece_get_living_data_from_pos(g: game, given_pos: integer) :piece_living_data? {
 
-    val res = (pi: piece, v: vulnerable)@? {
-        g == v.game,
+    val res = (a: alive, pi: piece, v: vulnerable)@? {
+        a.game == g, // Only alive pieces are on the board.
+        a.vulnerable == v,
         v == pi.vulnerable,
-        v.is_alive == true,
-        v.position == given_pos,
-    } (v.color, v.is_obstacle, v.can_retaliate, v.start_hit_points, v.remaining_hit_points, v.defence, pi.is_knighted, 
-        pi.original_type, pi.active_type, found_vulnerable = v, found_piece = pi);
+        a.position == given_pos,
+    } (v.color, v.is_obstacle, v.can_retaliate, v.start_hit_points, v.remaining_hit_points, v.defence, pi.is_knighted, pi.original_type, pi.active_type, 
+        found_vulnerable = v, found_piece = pi, found_alive = a, found_owned_by = a.owned_by);
 
     if (res != null) {
 
+        var use_align = res.color;
+        if (res.is_obstacle) {
+            use_align = alignment.NEUTRAL; // Easier than trying to remember the original alignment.
+        }
+
         val vln = vulnerable_data(
-            align = res.color, 
+            align = use_align, 
             position = given_pos, 
             is_obstacle = res.is_obstacle,
             can_retaliate = res.can_retaliate,
             start_hit_points = res.start_hit_points,
             remaining_hit_points = res.remaining_hit_points,
             defence = res.defence,
-            v = res.found_vulnerable
+            v = res.found_vulnerable,
+            a = res.found_alive,
+            g = g,
+            owned_by = res.found_owned_by
         );
 
         return piece_living_data(
@@ -150,13 +108,13 @@ function piece_get_living_data_from_align(g: game, given_align: alignment) :list
 
     val ret = list<piece_living_data>();
 
-    val results = (pi: piece, v: vulnerable)@* {
-        g == v.game,
+    val results = (a: alive, pi: piece, v: vulnerable)@* {
+        a.game == g, // Only alive pieces are on the board.
+        a.vulnerable == v,
         v == pi.vulnerable,
-        v.is_alive == true,
         v.color == given_align
-    } (v.position, v.is_obstacle, v.can_retaliate, v.start_hit_points, v.remaining_hit_points, v.defence, pi.is_knighted, 
-        pi.original_type, pi.active_type, found_vulnerable = v, found_piece = pi);
+    } (a.position, v.is_obstacle, v.can_retaliate, v.start_hit_points, v.remaining_hit_points, v.defence, pi.is_knighted, 
+        pi.original_type, pi.active_type, found_vulnerable = v, found_piece = pi, found_alive = a, found_owned_by = a.owned_by);
 
     for (res in results) {
 
@@ -168,7 +126,10 @@ function piece_get_living_data_from_align(g: game, given_align: alignment) :list
             start_hit_points = res.start_hit_points,
             remaining_hit_points = res.remaining_hit_points,
             defence = res.defence,
-            v = res.found_vulnerable
+            v = res.found_vulnerable,
+            a = res.found_alive,
+            g = g,
+            owned_by = res.found_owned_by
         );
 
         val pld = piece_living_data(
@@ -190,58 +151,46 @@ function piece_get_living_data_from_align(g: game, given_align: alignment) :list
 // Constructors
 // ------------------------------------------------------------
 
-function obstacle_create(game: game, pos: integer): vulnerable {
-    return create vulnerable (
-        .game = game,
-        .start_position = pos,
-        .position = pos,
-        .is_obstacle = true,
-        .can_retaliate = false,
-        .color = alignment.NEUTRAL,
-        .is_alive = true, // Not exactly "alive" but at the board.
-        .start_hit_points = 10,
-        .remaining_hit_points = 10,
-        .defence = 3 // Default 
-    );
+function piece_create(g: game, owner: player_game, pos: integer, align: alignment, p_type: piece_type): (p: piece, a: alive, v: vulnerable) { 
+    return piece_create_full(g, owner, pos, align, p_type, p_type);
 }
 
-function piece_create(g: game, owner: player_game, pos: integer, align: alignment, p_type: piece_type): owned_piece {
+function piece_create_full(g: game, owner: player_game, pos: integer, align: alignment, original_type: piece_type, active_type: piece_type): (p: piece, a: alive, v: vulnerable) {
 
     var hp = 2;
-    if (p_type == piece_type.KING) { 
+    if (active_type == piece_type.KING) { 
         hp = 10; // Only the king has more hit points.
     }
     var can_retaliate = true;
-    if (p_type == piece_type.ROOK) {
+    if (active_type == piece_type.ROOK) {
         can_retaliate = false; // Rooks cannot retaliate, for the simple reason we didn't find a good animation for that.
     }
 
     val v = create vulnerable (
         .game = g,
-        .start_position = pos,
-        .position = pos,
         .is_obstacle = false,
         .can_retaliate = can_retaliate,
         .color = align,
-        .is_alive = true, 
         .start_hit_points = hp,
         .remaining_hit_points = hp,
         .defence = 3 
     );
 
+    val a = create alive ( 
+        .vulnerable = v,
+        .position = pos,
+        .game = g,
+        .owned_by = owner
+    );
+
     val p = create piece (
         .vulnerable = v,
-        .original_type = p_type,
-        .active_type = p_type, // Can change during the game.
+        .original_type = original_type,
+        .active_type = active_type, // Can change during the game.
         .is_knighted = false
     );
 
-    val op = create owned_piece (
-        .owned_by = owner,
-        .piece = p
-    );
-
-    return op;
+    return (p = p, a = a, v = v);
 }
 
 // In the beginning of the game, we create all pieces.
@@ -276,66 +225,9 @@ function piece_create_all(g: game, owner_white: player_game, owner_black: player
     piece_create(g, owner_black, 63, alignment.BLACK, piece_type.ROOK);
 }
 
-// ------------------------------------------------------------
-// Card Functions
-// ------------------------------------------------------------
-// Many cards influence the pieces, so we put the logic in here.
-
-// ----------------
-// Enchantments
-// ----------------
 
 
-// 1. FROG
-function piece_set_frog(piece: piece) {
-    update piece (.active_type = piece_type.FROG);
-}
-
-// 2. STONE
-function piece_set_stone(piece: piece) {
-    update piece (.active_type = piece_type.IMMOBILE);
-}
-
-// 3. POTION
-function piece_set_potion(piece: piece) {
-    update piece.vulnerable (.remaining_hit_points += 5);
-}
-
-// 4. KNIGHTED
-function piece_set_knighted(piece: piece) {
-    update piece (.is_knighted = true);
-}
-
-// ----------------
-// Other Spells 
-// ----------------
-
-// 5. JUMP -- Handled by the move module.
-
-// 6. SWITCH_PLACE
-function piece_switch_place(align: alignment, piece1: piece, piece2: piece) {
-    // Validation
-    require(piece1.vulnerable.position != piece2.vulnerable.position, "Cannot switch place with itself");
-
-    val pos1 = piece1.vulnerable.position;
-    val pos2 = piece2.vulnerable.position;
-
-    require(piece1.vulnerable.color == align, "Piece1 at " + pos1 + " is not owned by the player");
-    require(piece2.vulnerable.color == align, "Piece2 at " + pos2 + " is not owned by the player");
 
 
-    update piece1.vulnerable (.position = 1000); // Ugly, but must do this to avoid unique constraint.
-    update piece2.vulnerable (.position = pos1);
-    update piece1.vulnerable (.position = pos2);
-}
 
-// 7. WALL
-function piece_setup_wall(game:game, pos1: integer, pos2: integer, pos3: integer) {
-    obstacle_create(game, pos1);
-    obstacle_create(game, pos2);
-    obstacle_create(game, pos3);
-}
 
-// 8. PORTAL -- Handled by the move module.
-// 9. (potential) RESURRECT -- Can be handled by the card module.
-// 10. DOUBLE_MOVE -- Can be handled by the card module.

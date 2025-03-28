@@ -1,0 +1,70 @@
+// ----------------
+// Enchantments
+// ----------------
+// Rules: 
+// FROG and STONE work the same way, let's use FROG as an example:
+// - When a KNIGHTED piece becomes FROG, the knighted function goes away,
+//   but will come back if the FROG wears off.
+//   The reason the game works this way is that a player might want to cast FROG
+//   on a powerful KNIGHTED piece, and it won't give the same effect if KNIGHTED
+//   is preserved.
+// 
+// Implementation:
+//   We implement this by moving the "alive" piece to the "limbo" group.
+//   Then we need to create a new "alive" piece of the FROG type.
+//   The FROG should have "original" type 
+
+
+// 1. FROG
+// Returns the replacement object
+function piece_set_frog(pld: piece_living_data): vulnerable {
+
+    // 1. Move to LIMBO
+    // Note: we're just leaving the KNIGHTED setting, current hit points on the original piece.
+    alive_move_to_limbo(pld.vuln);
+
+    // 2. Create a new alive object at the old position 
+    val new_obj = piece_create_full(pld.vuln.g, pld.vuln.owned_by, pld.vuln.position, pld.vuln.align, pld.original_type, piece_type.FROG);
+    return new_obj.v;
+}
+
+// 2. STONE
+// Returns the replacement object
+function piece_set_stone(pld: piece_living_data): vulnerable {
+    // 1. Move to LIMBO
+    // Note: we're just leaving the KNIGHTED setting, current hit points on the original piece.
+    alive_move_to_limbo(pld.vuln);
+
+    // 2. Create a new obstacle on the original position
+    return vuln_obstacle_create(pld.vuln.g, pld.vuln.owned_by, pld.vuln.position);
+}
+
+// 3. POTION (cannot be removed)
+function piece_set_potion(piece: piece) {
+    update piece.vulnerable (.remaining_hit_points += 5);
+}
+
+// 4. KNIGHTED (cannot be removed)
+function piece_set_knighted(piece: piece) {
+    update piece (.is_knighted = true);
+}
+
+// 5. JUMP 
+function piece_set_jump(piece: piece) {
+}
+// ----------------
+// Removing enchantments
+// ----------------
+
+// We simly bring back the original vulnerable object.
+function piece_bring_back_original_piece(g: game, owned_by: player_game, replacement_a: alive, limbo_v: vulnerable) {
+    // 1. Save the position
+    val curr_pos = replacement_a.position;
+
+    // 2. Remove the replacement alive object (now it's not in any collection)
+    // Discussion: should we clean up the [vulnerable] object too? 
+    delete replacement_a;  
+
+    // 3. Move the original vulnerable object back to the board.
+    alive_move_from_limbo(g, owned_by, limbo_v, curr_pos);
+}

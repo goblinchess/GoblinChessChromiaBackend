@@ -16,6 +16,7 @@ function rule_interpret_path_position(
     
     when (ss) {
         square_status.FREE -> {
+            //log("interpret_path_position() - Free space at " + new_pos);
             pre_tree.movable_sqs.add(new_pos);
             tmp_path.add(new_pos);
             return true; // Free space is not blocking, continue on path
@@ -23,6 +24,7 @@ function rule_interpret_path_position(
         square_status.BLACK_PIECE -> {
             if (align == alignment.WHITE or align == alignment.NEUTRAL) {
                 // White can attack
+                //log("interpret_path_position() - White can attack at " + new_pos);
                 pre_tree.attackable_sqs.add(new_pos);
                 tmp_path.add(new_pos);
                 pre_tree.paths.add(path_base(tmp_path, path_type.GROUND_ATTACK));
@@ -36,6 +38,8 @@ function rule_interpret_path_position(
         square_status.WHITE_PIECE -> {
             if (align == alignment.BLACK or align == alignment.NEUTRAL) {
                 // Black can attack
+                //log("interpret_path_position() - Black can attack at " + new_pos);
+                pre_tree.attackable_sqs.add(new_pos);
                 pre_tree.attackable_sqs.add(new_pos);
                 tmp_path.add(new_pos);
                 pre_tree.paths.add(path_base(tmp_path, path_type.GROUND_ATTACK));

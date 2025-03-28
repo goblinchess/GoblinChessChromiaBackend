@@ -10,7 +10,7 @@ function move_castle_verify_and_return_rook(
     p_type: piece_type, 
     is_white: boolean, 
     g: game
-): piece {
+): alive {
     require(p_type == piece_type.KING, "Only kings can castle, id:" + game_id);
 
     if (is_white) {
@@ -21,7 +21,7 @@ function move_castle_verify_and_return_rook(
         require(castle_rook_from == 63 or castle_rook_from == 56, "Rook must not have moved: " + castle_rook_from + ", id:" + game_id);
     }
 
-    val rook = piece_get_via_game_and_position(g, castle_rook_from);
+    val rook = alive_get_via_game_and_position(g, castle_rook_from);
     require(rook != null, "No rook at position " + castle_rook_from + ", id:" + game_id);
     return rook;
 }

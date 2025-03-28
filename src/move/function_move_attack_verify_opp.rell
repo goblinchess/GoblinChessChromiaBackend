@@ -13,14 +13,14 @@ function move_verify_opponent_piece(
         att_args: move_attack_arguments, 
         minimal_game: minimal_game_result, 
         opp_vuln_ctxt: pre_vuln_context, 
-        v_path_opp_piece: piece?
-): (opp_vuln: vulnerable_data, opp_piece: piece_living_data?) {
+        v_path_opp_vuln: vulnerable?
+): (opp_vd: vulnerable_data, opp_pld: piece_living_data?) {
 
-    var opp_vuln: vulnerable_data? = piece_get_vulnerable_data_from_pos(minimal_game.game, att_args.attacked_position);
+    var opp_vuln: vulnerable_data? = vuln_get_data_from_pos(minimal_game.game, att_args.attacked_position);
     if (opp_vuln == null) {
         // If we cannot find the opponent at the attacked position,
         // there MUST be a vulnerable path, or client sent us wrong data.
-        return move_verify_opp_vuln_context_inner(game_id, att_args, minimal_game, opp_vuln_ctxt, v_path_opp_piece);
+        return move_verify_opp_vuln_context_inner(game_id, att_args, minimal_game, opp_vuln_ctxt, v_path_opp_vuln);
     } else {
         // Found the vulnerable.
 
@@ -28,14 +28,15 @@ function move_verify_opponent_piece(
         require(opp_vuln.align != attacker_align, "Expected opponent piece to NOT have the same alignment as the attacker " + opp_vuln.align + ", id:" + game_id);
 
         //log("Move A.5: Opponent remaining hp: " + opp.remaining_hit_points + ", defence: " + opp.defence);
-        require(att_args.defender_defense_points == opp_vuln.defence, "Given defense points " + att_args.defender_defense_points + " does not match opponent's defence " + opp_vuln.defence + ", id:" + game_id);
+        require(att_args.defender_defense_points == opp_vuln.defence, "Given defense points " + att_args.defender_defense_points + 
+            " does not match opponent's defence " + opp_vuln.defence + ", id:" + game_id);
 
         if (opp_vuln.is_obstacle) {
             // Don't look for the piece.
-            return (opp_vuln = opp_vuln, opp_piece = null); 
+            return (opp_vd = opp_vuln, opp_pld = null); 
         } else {
             var opp: piece_living_data = piece_get_piece_data_from_vuln(opp_vuln);
-            return (opp_vuln = opp_vuln, opp_piece = opp);
+            return (opp_vd = opp_vuln, opp_pld = opp);
         }
     }
 }
@@ -48,21 +49,21 @@ function move_verify_opp_vuln_context_inner(
         att_args: move_attack_arguments, 
         minimal_game: minimal_game_result, 
         opp_vuln_ctxt: pre_vuln_context, 
-        v_path_opp_piece: piece?
-): (opp_vuln: vulnerable_data, opp_piece: piece_living_data) {
+        v_path_opp_vuln: vulnerable?
+): (opp_vd: vulnerable_data, opp_pld: piece_living_data) {
 
     val opp_destination_pos = pre_vuln_check_if_pos_part_of_vulnerable_path(opp_vuln_ctxt, att_args.attacked_position);
     require(opp_destination_pos != null, "No opponent piece at position " + att_args.attacked_position + ", id:" + game_id);
 
-    require(v_path_opp_piece != null, "Internal error: We have a vulnerable path but no piece, id:" + game_id);
+    require(v_path_opp_vuln != null, "Internal error: We have a vulnerable path but no piece, id:" + game_id);
 
     // We found a vulnerable position, and we should find the opponent's piece via the destination position.
     val opp = piece_get_living_data_from_pos(minimal_game.game, opp_destination_pos);
     // It's extremly unlikely that the opponent has been moved (via magic) from its destination position,
     // but IF that happened we should not be able to do en passant, and the client shouldn't have allowed this attack.
     require(opp != null, "Yes, it's extremly unlikely case where en passant failed (due to defender piece has been moved from " + 
-        opp_destination_pos + " to " + v_path_opp_piece.vulnerable.position + ") but client should have noticed this and not allowed this attack.");
+        opp_destination_pos + " to some other position) but client should have noticed this and not allowed this attack.");
         
     log("En passant success on " + att_args.attacked_position + ". Opponent piece found at " + opp_destination_pos + ".");
-    return (opp_vuln = opp.vuln, opp_piece = opp);
+    return (opp_vd = opp.vuln, opp_pld = opp);
 }

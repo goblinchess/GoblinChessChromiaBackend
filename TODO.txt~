@@ -1,10 +1,24 @@
 
  TODO: 
+
+ 1. Put a link to the replacement sprite in the EnchantmentReplaced.
+
+-------------
+
+
+ BUG: Multiple enchantments failed: 
+ Reproduce: 
+  1. Me:Turn X into Frog
+  2. Opp: Knight X
+  3. Me: Turn X into Stone
+  4. Wait until Stone is removed.
+  ERROR: Now it becomes a knighted frog again, then when it goes away the "knighted" is also gone!
  
 
  2. Finish the game when mate
     
  3. Promote on final rank.
+    (Remember to transfer enchantments, call card_enchantment_can_be_transferred() ).
 
  4. Use Luck
 
@@ -12,7 +26,7 @@
 
  6. Resurrection -> save random number.
 
- 7. Make Random on client side.
+ 7. test new Resurrect.
 
 
 

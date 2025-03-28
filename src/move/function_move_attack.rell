@@ -83,9 +83,9 @@ function move_attack_inner(
     // Get the opponent's vulnerable positions if any
     val res_v_path = move_get_vuln_path(minimal_game.game, opp_align); 
     val opp_vuln_ctxt: pre_vuln_context = res_v_path.v_ctxt;
-    val v_path_opp_piece: piece? = res_v_path.moved_piece;
+    val v_path_opp_vuln: vulnerable? = res_v_path.moved_vuln;
 
-    val (opp_vuln: vulnerable_data, opp: piece_living_data?) = move_verify_opponent_piece(game_id, align, att_args, minimal_game, opp_vuln_ctxt, v_path_opp_piece);
+    val (opp_vuln: vulnerable_data, opp: piece_living_data?) = move_verify_opponent_piece(game_id, align, att_args, minimal_game, opp_vuln_ctxt, v_path_opp_vuln);
   
     // ----------------
     // A.6 Battle calculation
@@ -120,7 +120,7 @@ function move_attack_inner(
     var m_tree: move_tree? = null;
 
 
-    val board: list<with_pos_and_alignment> = piece_get_all_vulnerables(minimal_game.game); 
+    val board: list<with_pos_and_alignment> = vuln_get_all_as_wpaa(minimal_game.game); 
     val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, align);
     val board_positions_all = board_positions_all_constructor(minimal_game.game, board, portals);
 
@@ -199,7 +199,7 @@ function move_attack_inner(
 
     if (attacker_still_alive) {
         // B.3 Same as for peaceful move
-        move_common_change_piece_position(board_positions_all, p.p.vulnerable, p_wpaa, m_args.from_position, m_args.to_position);
+        move_common_change_piece_position(board_positions_all, p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position);
     }
 
     // B.4 Use all unblocked portals

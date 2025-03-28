@@ -1,0 +1,39 @@
+
+
+function move_neutral_skip_inner(
+    caller_pubkey: pubkey,
+    game_id: integer,
+    last_seen_turn: integer
+) {
+    // -----------    
+    // A. Verication
+    // -----------    
+    log("Skip Neutral Begin: game_id: " + game_id + " last_turn: " + last_seen_turn);
+
+    // ----------------
+    // A.1. Check player entity
+    // ----------------
+    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+    require (minimal_game != null, "Player is not in a game, id:" + game_id);
+
+    // ----------------
+    // A.2. Is game is out of sync? 
+    // ----------------
+    val curr_turn = minimal_game.curr_turn_nr;
+    require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
+
+    // ----------------------------------------------    
+    // B. Updates 
+    // ----------------------------------------------    
+    var new_turn_type = turn_type.NEUTRAL_MOVE_2_SKIPPED;
+    if (minimal_game.is_white) { 
+        new_turn_type = turn_type.NEUTRAL_MOVE_1_SKIPPED;
+    }
+
+    // ----------------
+    // B.1. Create the turn record
+    // ----------------
+    // lots of verification in here.
+    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
+    log("/Skip Neutral End: game_id: " + game_id + " new turn type: " + new_turn_type);
+}

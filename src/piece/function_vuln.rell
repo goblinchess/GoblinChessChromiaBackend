@@ -1,0 +1,108 @@
+
+// ------------------------------------------------------------
+// General Vuln Functions
+// ------------------------------------------------------------
+// Call this when you want to do something with a vulnerable object.
+
+
+// ------------------------------------------------------------
+// Get data for a vulnerable object, if exists.
+// We do this for performance reasons, 
+// since every single field access could else generate a new SELECT.
+// ------------------------------------------------------------
+function vuln_get_data_from_pos(g: game, given_pos: integer) :vulnerable_data? {
+
+    val res = (a: alive, v: vulnerable)@? {
+        a.game == g, // Only alive pieces are on the board.
+        a.vulnerable == v,
+        a.position == given_pos
+    } (v.color, v.is_obstacle, v.can_retaliate, v.start_hit_points, v.remaining_hit_points, v.defence, 
+       found_vulnerable = v, found_alive = a, found_owned_by = a.owned_by);
+
+    if (res != null) {
+
+        var use_align = res.color;
+        if (res.is_obstacle) {
+            use_align = alignment.NEUTRAL; // Easier than trying to remember the original alignment.
+        }
+
+        return vulnerable_data(
+            align = use_align, 
+            position = given_pos, 
+            is_obstacle = res.is_obstacle,
+            can_retaliate = res.can_retaliate,
+            start_hit_points = res.start_hit_points,
+            remaining_hit_points = res.remaining_hit_points,
+            defence = res.defence,
+            v = res.found_vulnerable,
+            a = res.found_alive,
+            g = g,
+            owned_by = res.found_owned_by
+        );
+
+    } else {
+        return null;
+    }
+}
+
+// Here we get the entire board in one go, all pieces and obstacles.
+// We separate black from white via the alignment.
+function vuln_get_all_as_wpaa(game: game): list<with_pos_and_alignment> {
+    val vulns = (a: alive, v: vulnerable)@* {
+        a.game == game, // Only alive pieces are on the board.
+        a.vulnerable == v
+    } (a.position, v.color, v.is_obstacle); // Color should really be neutral, since it's not a piece.
+
+    // Transform into structs
+    val res: list<with_pos_and_alignment> = [];
+    for (v in vulns) { 
+        if (v.is_obstacle) {
+            // We ALLOW for obstacles to be of any color (it's simplest for STONE enchantments).
+            // But we just ignore it and use NEUTRAL.
+            // 
+            //if (v.color != alignment.NEUTRAL) {
+            //    log("Error: Obstacle has color " + v.color);
+            //}
+            res.add(with_pos_and_alignment(v.position, alignment.NEUTRAL));
+        } else {
+            // It's a piece
+            res.add(with_pos_and_alignment(v.position, v.color));
+        }
+    }
+    return res;
+}
+
+
+// ------------------------------------------------------------
+// Constructors
+// ------------------------------------------------------------
+
+function vuln_obstacle_create(game: game, owner: player_game, pos: integer): vulnerable {
+    val v = create vulnerable (
+        .game = game,
+        .is_obstacle = true,
+        .can_retaliate = false,
+        .color = alignment.NEUTRAL,
+        .start_hit_points = 10,
+        .remaining_hit_points = 10,
+        .defence = 3 // Default 
+    );
+
+
+    // Not exactly "alive" but at the board.
+    val a = create alive ( 
+        .vulnerable = v,
+        .position = pos,
+        .game = game,
+        .owned_by = owner
+    );
+
+    return v;
+}
+
+// CARD: WALL
+function vuln_setup_wall(game:game, owner: player_game, pos1: integer, pos2: integer, pos3: integer) {
+    vuln_obstacle_create(game, owner, pos1);
+    vuln_obstacle_create(game, owner, pos2);
+    vuln_obstacle_create(game, owner, pos3);
+}

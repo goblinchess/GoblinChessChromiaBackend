@@ -41,14 +41,11 @@ function card_pick_are_valid(
     expected_pick_types: list<card_pick_type>,
     card_picks: list<integer>,
     my_color: alignment,
-    pick_piece_map: map<integer, piece> // Stores the square picks that maps to a piece.
+    pick_piece_map: map<integer, piece_living_data> // Stores the square picks that maps to a piece.
 ) {
-
-    val expected_nr_of_picks = expected_pick_types.size();
-    require(expected_nr_of_picks == card_picks.size(), "Expected " + expected_nr_of_picks + " picks for card " + card_type_str + " but got " + card_picks.size());
-
     var pick_summary = "";
   
+    val expected_nr_of_picks = expected_pick_types.size();
     for (pick_index: integer in range(expected_nr_of_picks)) {
         val expected_p_type: card_pick_type = expected_pick_types[pick_index];
         val given_pos: integer = card_picks[pick_index];
@@ -71,7 +68,7 @@ function card_pick_validate_single_pick(
     expected_p_type: card_pick_type,
     given_pos: integer,
     my_color: alignment,
-    pick_piece_map: map<integer, piece>
+    pick_piece_map: map<integer, piece_living_data>
 ): text {
 
 
@@ -86,26 +83,26 @@ function card_pick_validate_single_pick(
         }
         card_pick_type.PIECE_SQUARE -> {
             require(maybe_piece != null, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a free square at position " + given_pos + "."); 
-            pick_piece_map[pick_index] = maybe_piece.p;
+            pick_piece_map[pick_index] = maybe_piece;
             return "piece(" + given_pos + "), ";
         }
         card_pick_type.PIECE_NON_KING_SQUARE -> {
             require(maybe_piece != null, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a free square at position " + given_pos + "."); 
             require(maybe_piece.original_type != piece_type.KING, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a king at position " + given_pos + "."); 
-            pick_piece_map[pick_index] = maybe_piece.p;
+            pick_piece_map[pick_index] = maybe_piece;
             return "piece_non_king(" + given_pos + "), ";
         }
         card_pick_type.PIECE_MINE_SQUARE -> {
             require(maybe_piece != null, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a free square at position " + given_pos + "."); 
             require(maybe_piece.vuln.align == my_color, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but opponent piece at position " + given_pos + "."); 
-            pick_piece_map[pick_index] = maybe_piece.p;
+            pick_piece_map[pick_index] = maybe_piece;
             return "piece_mine(" + given_pos + "), ";
         }
         card_pick_type.PIECE_MINE_NON_KING_SQUARE -> {
             require(maybe_piece != null, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a free square at position " + given_pos + "."); 
             require(maybe_piece.vuln.align == my_color, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but opponent piece at position " + given_pos + "."); 
             require(maybe_piece.original_type != piece_type.KING, "Expected pick at pos " + pick_index + " to be type " + expected_p_type + " but found a king at position " + given_pos + "."); 
-            pick_piece_map[pick_index] = maybe_piece.p;
+            pick_piece_map[pick_index] = maybe_piece;
             return "piece_mine_non_king(" + given_pos + "), ";
         }
     }

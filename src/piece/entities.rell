@@ -15,20 +15,46 @@
 // as to not break the unique constraint.
 entity vulnerable {
     index game: game;
-    start_position: integer; // 0-63 - This is needed since we put dead pieces on "-start_position"
-    mutable position: integer; // 0-63
-    key game, position; // No two objects can be in the same position
+    //start_position: integer; // 0-63 - This is needed since we put dead pieces on "-start_position"
 
     is_obstacle: boolean; // If true, this vulnerable is an obstacle
     can_retaliate: boolean; // If true, this vulnerable can retaliate during chaos mode.
 
     mutable color: alignment; // This can change via recruitment or resurrect 
-    mutable is_alive: boolean; // We keep dead/removed objects in the DB, to preserve the events. 
+    //mutable is_alive: boolean; // We keep dead/removed objects in the DB, to preserve the events. 
 
     // For chaos mode we need hit points
     mutable start_hit_points: integer;
     mutable remaining_hit_points: integer;
     mutable defence: integer;
+}
+
+// A living vulnerabel that is owned by a player
+entity alive {
+    key vulnerable;
+    mutable position: integer; // 0-63, only living objects have a position.
+    index game: game;
+    key game, position; // No two objects can be in the same position
+    index owned_by: player_game; // Note: Remember to change this after resurrectino.
+}
+
+// A vulnerabe in limbo that is(was) owned by a player
+//
+// NOTE:
+// "Limbo" means it's neither alive nor dead.
+// We put enchanted pieces here, so that they can be brought back 
+// when the enchantment times out.
+entity limbo {
+    key vulnerable;
+    index game: game;
+    index owned_by: player_game;
+}
+
+// A dead vulnerabel that is(was) owned by a player
+entity dead {
+    key vulnerable;
+    index game: game;
+    index owned_by: player_game; // Note: Remember to change this after resurrectino.
 }
 
 // -------------------------------------
@@ -59,15 +85,7 @@ entity piece {
     mutable is_knighted: boolean; // If true, this piece can also move as a knight (or a bishop).
 }
 
-// A piece that is owned by a player
-// TODO: Not sure if this is needed, since we have the "piece.color"?
-//
-// Note:
-// Remember to change this after resurrectino.
-entity owned_piece {
-    index owned_by: player_game;
-    index piece: piece;
-}
+
 
 // -------------------------------------
 // Events

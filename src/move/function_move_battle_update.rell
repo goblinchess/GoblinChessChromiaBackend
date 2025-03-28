@@ -15,7 +15,7 @@ function move_battle_update_health(
         battle_result_type.KILL -> {
             move_battle_death_of_vulnerable(
                 def_vuln, 
-                def_vuln.v.position, // Defender does NOT have to stand on the attacked_square (see en passant)
+                def_vuln.position, // Defender does NOT have to stand on the attacked_square (see en passant)
                 board_positions_all
             );
         }
@@ -62,9 +62,16 @@ function move_battle_death_of_vulnerable(
     dead_pos: integer, // Where the piece is standing, assuming nobody moved it this turn.
     board_positions_all
 ) {
-    update dead_vuln.v (
-        .is_alive = false,
-        .position = -dead_vuln.v.rowid.to_integer() // Remember that pos + game is unique. We cannot put dead pieces just anywhere.
+
+    // Add to the DEAD collection
+    create dead (
+        .game = dead_vuln.g,
+        .owned_by = dead_vuln.owned_by,
+        .vulnerable = dead_vuln.v
     );
+
+    // Remove from the ALIVE collection
+    delete dead_vuln.a; 
+
     board_remove_at(board_positions_all, dead_pos); // Remove the dead from board.
 }
