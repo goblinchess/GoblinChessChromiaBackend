@@ -70,20 +70,30 @@ operation move_attack(
     // Mandatory arguments
     att_args: move_attack_arguments,
 
-    // ----------------------
+    // ------------------------------------------------------------------
     // Random 
     // If any randomness was used while attacking, the numbers generated goes in here.
     // The list can have different length:
-    // 1. classical mode = 0
-    // 2. chaos mode normal attack: 2 die rolls or sometimes 3 die rolls if miss, 
-    // 3. chaos mode retaliation: 4 die rolls.
-    // ----------------------
+    // ------------------------------------------------------------------
+    // Example                                     | Number of elements
+    // ------------------------------------------------------------------
+    // 1. classical mode normal                    = 0
+    // 2. classical mode resurrection              = 1
+    // 3. chaos mode attack normal hit/kill        = 2
+    // 4. chaos mode attack kill + resurrection    = 3
+    // 5. chaos mode attack miss                   = Either 2 or 3
+    // 6. chaos mode attack hit + retaliation      = 4
+    // ------------------------------------------------------------------
     rnd_numbers: list<rnd_data>,  
 
     // ----------------------
-    // Only if the client wants
+    // Only if the client needs to send it
     // ----------------------
     check_args: move_check_arguments? = null,
+
+    // Did the defender die and was resurrected?
+    // If so this data must be provided.
+    resurrection_event: resurrection_event_data? = null,
 
     // ----------------------
     // Needed for chaos mode

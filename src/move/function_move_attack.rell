@@ -157,7 +157,7 @@ function move_attack_inner(
     val opp_team = team_build_from_db(minimal_game.game, opp_align);
 
     val our_king = team_get_king(our_team)!!;
-    val opp_king = team_get_king(our_team)!!;
+    val opp_king = team_get_king(opp_team)!!;
 
     // ----------------
     // A.7. Verify if this move will get us into check
@@ -195,21 +195,21 @@ function move_attack_inner(
 
     // B.2 Update hp and is_alive for both attacker and defender
     // NOTE: Must be done BEFORE we move the attacker, since we require both combatants to stay on original positions.
-    val attacker_still_alive = move_battle_update_health(battle_res, is_chaos_mode, p, opp_vuln, board_positions_all);
+    val attacker_still_alive = move_battle_update_health(battle_res, is_chaos_mode, p, opp_vuln, board_positions_all, our_team, opp_team);
 
     if (attacker_still_alive) {
         // B.3 Same as for peaceful move
-        move_common_change_piece_position(board_positions_all, p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position);
+        move_common_change_piece_position(p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position, board_positions_all, our_team);
     }
 
     // B.4 Use all unblocked portals
-    move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, opp_team, align);
+    move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, our_team, opp_team, align);
 
     // B.5 Promotions
     // TODO
 
     // B.6 Verify if we just won via checkmate?
-    val (is_check, is_checkmate, is_stalemate) = move_common_check_stale_n_mate(minimal_game, board_positions_all, opp_align, opp_king, our_team, opp_team, check_args);
+    val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(minimal_game, board_positions_all, opp_align, opp_king, our_team, opp_team, check_args);
 
     // B.7 Turn and static move
     val is_castle = false; // Must be false for attacks
@@ -260,20 +260,8 @@ function move_attack_inner(
     // ----------------
     // B.9 Is it over?
     // ----------------
-    if (is_checkmate or is_stalemate) {
-        log("Game Over");
-        if (is_checkmate) {
-            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = false);
-
-            // TODO
-        } else {
-            // Stalemate
-            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = true);
-
-            // TODO
-        }
-
-    } else {
+    val is_game_over = game_over(minimal_game, new_turn, is_checkmate, is_stalemate);
+    if (not is_game_over) {
         // Cleanup
         move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, align);
         // Won't add any vulns for attacks.
@@ -281,6 +269,6 @@ function move_attack_inner(
         update minimal_game.game (.current_turn = new_turn.number);
     }
 
-    log("/Move Attack End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + ", game_id: " + game_id);
+    log("/Move Attack End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + ", is_game_over: " + is_game_over + ", game_id: " + game_id);
 }
 

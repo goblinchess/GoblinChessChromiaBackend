@@ -131,33 +131,29 @@ function create_game_inner(white_player: player, black_player: player, game_type
     piece_create_all(new_game, white_player_game, black_player_game);
 
     return new_game;
-    /*
-    // Generate 10 random card ids (card id = 0-9)
-    val random_card_numbers = generate_random_numbers(op_context.last_block_time, 10, 9);
+}
 
-    // Add 5 cards to the white hand
-    for (i in range(5)) {  // <- 0-4
-        val card_id = random_card_numbers[i];
-        val card_type = card_type.value(card_id);
-        create card(
-            .hand = white_hand,
-            .card_type = card_type,
-            .is_used = false
-        );
+
+// ----------
+// Game Over
+// ----------
+
+function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkmate: boolean, is_stalemate: boolean) :boolean {
+    if (is_checkmate or is_stalemate) {
+        log("Game Over");
+        if (is_checkmate) {
+            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = false);
+
+            // TODO
+        } else {
+            // Stalemate
+            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = true);
+
+            // TODO
+        }
+
+        return true;
+    } else {
+        return false;
     }
-
-    // Add 5 cards to the black hand
-    for (j in range(5)) {
-
-        val i = j + 5;
-        val card_id = random_card_numbers[i];
-        val card_type = card_type.value(card_id);
-        create card(
-            .hand = black_hand,
-            .card_type = card_type,
-            .is_used = false
-        );
-
-    }
-    */
 }

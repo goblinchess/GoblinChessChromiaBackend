@@ -53,8 +53,8 @@ function move_peaceful_inner(
     val v_res = move_verify_basic_move(game_id, m_args, minimal_game);
     val p_type = v_res.p_type; // The main piece type
     val p = v_res.p; // The main piece data
-    val align = v_res.align; // This players color
-    val opp_align = v_res.opp_align; // Opponent's color
+    val my_color = v_res.align; // This players color
+    val opp_color = v_res.opp_align; // Opponent's color
 
 
     // ----------------
@@ -63,7 +63,7 @@ function move_peaceful_inner(
     // Has this piece an jump enchantment on it?
     val is_enchanted_jump = move_has_enchanted_jump(minimal_game.player_game, p.p);
 
-    val res = move_get_vuln_path(minimal_game.game, opp_align); 
+    val res = move_get_vuln_path(minimal_game.game, opp_color); 
     val opp_vuln_ctxt: pre_vuln_context = res.v_ctxt;
 
     // ----------------
@@ -72,7 +72,7 @@ function move_peaceful_inner(
 
     //log("A.6.1");
     val board: list<with_pos_and_alignment> = vuln_get_all_as_wpaa(minimal_game.game); 
-    val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, align);
+    val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, my_color);
     val board_positions_all = board_positions_all_constructor(minimal_game.game, board, portals);
 
 
@@ -107,7 +107,7 @@ function move_peaceful_inner(
             is_enchanted_jump,
             p.is_knighted,
             m_args.from_position,
-            align,
+            my_color,
             opp_vuln_ctxt // Not actually needed. (this is a peaceful move, so we don't need to check for vulnerable paths)
         );
 
@@ -126,21 +126,21 @@ function move_peaceful_inner(
 
     // Get all pieces of both teams
     // Expensive, so we wait until last moment
-    val our_team = team_build_from_db(minimal_game.game, align);
-    val opp_team = team_build_from_db(minimal_game.game, opp_align);
+    val our_team = team_build_from_db(minimal_game.game, my_color);
+    val opp_team = team_build_from_db(minimal_game.game, opp_color);
 
     val our_king = team_get_king(our_team)!!;
-    val opp_king = team_get_king(our_team)!!;
+    val opp_king = team_get_king(opp_team)!!;
 
     // ----------------
     // A.7. Verify if this move will get us into check
     // ----------------
     //log ("Move A.7 - Verify if this move will get us into check ");
-    val p_wpaa = with_pos_and_alignment(m_args.from_position, align);
+    val p_wpaa = with_pos_and_alignment(m_args.from_position, my_color);
     val get_into_check = will_hypothetical_move_cause_check(
             selected_path,
             p_wpaa,
-            align,
+            my_color,
             our_king.vuln.position,
             opp_team,
             board_positions_all
@@ -166,7 +166,7 @@ function move_peaceful_inner(
     val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
 
     // B.2 (Really simple for peaceful moves)
-    move_common_change_piece_position(board_positions_all, p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position);
+    move_common_change_piece_position(p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position, board_positions_all, our_team);
 
     // B.3 Castle needs to move the rook too
     if (is_castle) {
@@ -175,13 +175,13 @@ function move_peaceful_inner(
     }
 
     // B.4 Use all unblocked portals
-    move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, opp_team, align);
+    move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color);
 
     // B.5 Promotions
     // TODO
 
     // B.6 Verify if we just won via checkmate?
-    val (is_check, is_checkmate, is_stalemate) = move_common_check_stale_n_mate(minimal_game, board_positions_all, opp_align, opp_king, our_team, opp_team, check_args);
+    val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args);
 
     // B.7 Create move event
     val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_check); 
@@ -189,33 +189,21 @@ function move_peaceful_inner(
     // ----------------
     // B.8 Is it over?
     // ----------------
-    if (is_checkmate or is_stalemate) {
-        log("Game Over");
-        if (is_checkmate) {
-            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = false);
-
-            // TODO
-        } else {
-            // Stalemate
-            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = true);
-
-            // TODO
-        }
-
-    } else {
+    val is_game_over = game_over(minimal_game, new_turn, is_checkmate, is_stalemate);
+    if (not is_game_over) {
 
         // Cleanup
-        move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, align);
+        move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, my_color);
 
         // Add new vuln path (if exists and match the actual move)
         if (m_tree != null) {
             val maybe_pot_paths: list<path_base>? = m_tree.potential_vuln_paths;
-            move_vuln_path_add_from_move(minimal_game.game, align, m, maybe_pot_paths, m_args.to_position);
+            move_vuln_path_add_from_move(minimal_game.game, my_color, m, maybe_pot_paths, m_args.to_position);
         }
 
         update minimal_game.game (.current_turn = new_turn.number);
     }
 
-    log("/Move Peaceful End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + "game_id: " + game_id );
+    log("/Move Peaceful End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + ", is_game_over: " + is_game_over + ", game_id: " + game_id );
 }
 

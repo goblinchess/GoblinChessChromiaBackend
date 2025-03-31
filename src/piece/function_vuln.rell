@@ -106,3 +106,21 @@ function vuln_setup_wall(game:game, owner: player_game, pos1: integer, pos2: int
     vuln_obstacle_create(game, owner, pos2);
     vuln_obstacle_create(game, owner, pos3);
 }
+
+
+// Clone a [vulnerable_data] struct, but change the position
+function vuln_data_clone_new_pos(orig_vuln: vulnerable_data, new_pos: integer): vulnerable_data {
+     return vulnerable_data(
+        align = orig_vuln.align,
+        position = new_pos, // Use the new position
+        is_obstacle = orig_vuln.is_obstacle,
+        can_retaliate = orig_vuln.can_retaliate,
+        start_hit_points = orig_vuln.start_hit_points,
+        remaining_hit_points = orig_vuln.remaining_hit_points,
+        defence = orig_vuln.defence,
+        v = orig_vuln.v,
+        a = orig_vuln.a,
+        g = orig_vuln.g,
+        owned_by = orig_vuln.owned_by
+    );
+}

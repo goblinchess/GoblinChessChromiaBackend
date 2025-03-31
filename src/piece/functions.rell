@@ -193,6 +193,17 @@ function piece_create_full(g: game, owner: player_game, pos: integer, align: ali
     return (p = p, a = a, v = v);
 }
 
+// Clone a [piece_living_data] struct, but change the position
+function piece_living_data_clone_new_pos(pld: piece_living_data, new_pos: integer): piece_living_data {
+    return piece_living_data(
+        vuln = vuln_data_clone_new_pos(pld.vuln, new_pos),
+        is_knighted = pld.is_knighted,
+        original_type = pld.original_type,
+        active_type = pld.active_type,
+        p = pld.p
+    );
+}
+
 // In the beginning of the game, we create all pieces.
 function piece_create_all(g: game, owner_white: player_game, owner_black: player_game) {
 

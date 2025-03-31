@@ -1,0 +1,28 @@
+
+// -------------------------------------
+// Event
+// -------------------------------------
+
+// Something that happens on the board
+// that's NOT an immediate effect of a move or card played.
+// 
+// Events are here to make it easier to re-play old games.
+enum event_type {
+    // Vulnerable events
+    DEATH_EVENT, // When some obstracle/piece disappears from the board (dead usually)
+    // Piece events
+    PORTAL_EVENT, // When a piece is (magically) teleported on the board (Portal, Switch Place)
+    RESURRECT_TAKES_EFFECT, // Not when the card is played
+    // Spell events
+    DOUBLE_MOVE_TAKES_EFFECT, // Not when the card is played
+    // Enchantment events
+    ENCHANTMENT_APPLIED, // When an enchantment is applied to a piece
+    ENCHANTMENT_REMOVED // When an enchantment is removed from a piece
+}
+
+// Something that happens on the board
+entity event {
+    index game;
+    index turn;
+    event_type;
+}

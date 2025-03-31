@@ -25,15 +25,22 @@ function move_debug_str(m_args: move_arguments, check_args: move_check_arguments
 // Sometimes we want to update the position of a vulnerable, 
 // AND update the board at the same time.
 function move_common_change_piece_position(
-    board_positions_all, 
     a: alive, 
     wpaa: with_pos_and_alignment,
     from_position: integer, 
-    to_position: integer
+    to_position: integer,
+    // Extra: Update these data structures
+    board_positions_all,  // Must update the board when we move a piece
+    our_team: character_team? // Must update the team when we move a piece, if we have one.
 ) {
     update a (.position = to_position);
     val attack_allowed = false; // Think we should protest if the position is occupied.
+
+    // Extra: Update these data structures
     board_place_character_at(board_positions_all, from_position, to_position, wpaa, attack_allowed);
+    if (our_team != null) {
+        team_move_character_from_to(our_team, from_position, to_position);
+    }
 }
 
 
@@ -113,176 +120,6 @@ function move_cleanup_after_move(is_enchanted_jump: boolean, opp_vuln_ctxt: pre_
 }
 
 
-function move_common_check_stale_n_mate(
-    minimal_game: minimal_game_result, 
-    board: board_positions_all, // <-- Should been updated with all moves, promotions and deaths
-    opp_align: alignment,
-    opp_king: piece_living_data,
-    our_team: character_team,
-    opp_team: character_team,
-    check_args: move_check_arguments? 
-): (is_check: boolean, is_checkmate: boolean, is_stalemate: boolean) {
-
-    var is_checkmate = false;
-    var is_stalemate = false;
-
-    // For check calculation we don't have to use hypothetical moves, since we do the
-    // calculation AFTER the move has been saved to the board.
-    val check_sb_data = check_sb_build_calculator(
-            opp_king.vuln.position, // We're supposed to check the opponent's king
-            our_team, // we are the checking team
-            board // This isn't a hypothetical move, must use the new board positions
-    );
-
-    val is_check = check_sb_is_check(check_sb_data);
-    if (is_check) {
-        log("move_common_check_stale_n_mate() - Found CHECK.");
-        if (check_args != null) {
-            require(check_args.is_check or check_args.is_checkmate, "Our calculation says check but client didn't claim check?");
-        }
-
-        // -----------------------------------------------------------------------------------
-        // We do this as a two-step rocket, where we only calculate mate if we have check.
-        // For the mate calculation we must use hypothetical moves, which is heavier.
-        // -----------------------------------------------------------------------------------
-        var should_do_mate_calc = true;
-        if (check_args != null) {
-            should_do_mate_calc =  check_args.is_checkmate; // No need to verify checkmate unless the client claims mate.
-        }
-
-        if (should_do_mate_calc) {
-            val king_wpaa = with_pos_and_alignment(opp_king.vuln.position, opp_align);
-            val check_mate_data = check_mate_calc_data_constructor(
-                    king_wpaa, // We're supposed to check the opponent's king
-                    our_team, // We are the mating team
-                    board,
-                    check_sb_data
-            );
-            is_checkmate = check_mate_can_escape(check_mate_data, opp_team);
-
-            if (check_args != null) { 
-                // We wouldn't be here unless the client said is_checkmate, so must be "true" now.
-                require(is_checkmate, "Client said is_checkmate but we could not verify it.");
-            }
-
-            if (is_checkmate) {
-                log("Found CHECKMATE. Game over");
-                // TODO: Implement this
-            }
-        }
-
-    } else {
-        //log("move_common_check_stale_n_mate() - No CHECK.");
-        if (check_args != null) {
-            require(not check_args.is_check, "Client thinks this is check but we could not verify it.");
-            require(not check_args.is_checkmate, "Client thinks this is checkmate but we could not verify it.");
-        }
-
-        // Only check for stalemated opponent if opp is not in check.
-        // Stalemate MUST be checked for here, since the caller isn't necessarily benefiting from this ending.
-        is_stalemate = move_common_calc_stalemate(
-            opp_team, // kings_team
-            our_team, // mating_team
-            board
-        );
-
-        if (is_stalemate) {
-            if (check_args != null) {
-                require(check_args.is_stalemate, "Our calculation says stalemate but client didn't claim it?");
-            }
-
-            log("move_common_check_stale_n_mate() - Found STALEMATE. Game over");
-            // TODO: Implement this
-        } else {
-            if (check_args != null) {
-                require(not check_args.is_stalemate, "Client thinks this is stalemate but we could not verify it.");
-            }
-        }
-    }
-
-    return (is_check = is_check, is_checkmate = is_checkmate, is_stalemate = is_stalemate);
-}
-
-
-// -----------------------------------------------------------------------------------
-// Stalemate happens when:
-// 1. The king is NOT in check
-// 2. The king has nowhere to go
-// 3. There is no other piece that can move
-// 
-// The fastest way to verify that we are not in stalemate is to: 
-//
-// a) Take a random non-king piece, and see if it has any moves in its [move_tree], 
-// if not, take next until only the king is left.
-// 
-// b) When we get to the king it gets harder, we must use the [kings_escape_calculator].
-// -----------------------------------------------------------------------------------
-function move_common_calc_stalemate(
-    kings_team: character_team, 
-    mating_team: character_team,
-    board_all: board_positions_all
-): boolean {
-    
-    // a) Take a random non-king piece, and see if it has any moves in its [move_tree]
-    for (subject in team_get_subjects_list(kings_team)) {
-        if(inner_single_subject_can_act(board_all, subject)) {
-            // Not stalemate
-            //log("move_common_calc_stalemate() - Not stalemate since subject at " + subject.position + " can take action.");
-            return false;
-        }
-    }
-    
-    // b) When we get to the king it gets harder, we must use the [king_escape_data]
-    // Note that for stalemate there is no subject that can help the king, so the king must find a good square alone
-    val king = team_get_king(kings_team)!!;
-    val king_wpaa = with_pos_and_alignment(king.vuln.position, king.vuln.align);
-    
-    val king_escape_data = king_escape_builder(king_wpaa, mating_team, board_all);
-    val (escape_pos, is_attack) = king_escape_find_first_without_help(king_escape_data, king_wpaa);
-    
-    if (escape_pos != null) {
-        return false; // Not stalemate, since the king can escape
-    } else {
-        log("move_common_calc_stalemate() - Stalemate detected! King at " + king.vuln.position + " has no moves and is not in check.");
-        return true;
-    }
-}
-
-
-
-
-// Returns "true" if this subject can take action the coming turn.
-function inner_single_subject_can_act(board_all: board_positions_all, subject: piece_living_data): boolean {
-    // Get all valid moves for the subject
-    val is_enchanted_jump = false;  // <-- Magic Jumps shouldn't be relevant here.
-
-    // TODO: We don't care about "en passant" here, but we should,
-    // since it's possible that the ONLY move that the king's team can do is 
-    // en passant, and if this is the case it's NOT a stalemate.
-    val v_ctxt =  pre_vuln_context(null);
-
-    val (norm_mt, jump_mt) = rules_get_all_valid_moves(
-            board_all, 
-            subject.active_type,  // We wanna know how it moves, not what it is.
-            is_enchanted_jump,
-            subject.is_knighted,
-            subject.vuln.position, 
-            subject.vuln.align,
-            v_ctxt 
-    );
-    // Ignore castle, since this never a king.
-    
-    if (norm_mt != null and move_tree_can_take_action(norm_mt)) {
-        return true;
-    }
-    
-    if (jump_mt != null and move_tree_can_take_action(jump_mt)) {
-        return true;
-    }
-    
-    return false;
-}
-
 
 // -----------------------------------------------------------------------------------
 // Portals
@@ -300,6 +137,7 @@ function move_common_use_all_unblocked_portals(
     game,
     curr_turn: turn, 
     board_positions_all,
+    our_team: character_team?, // Only use this for position updates (likely overkill?)
     opp_team: character_team,
     my_align: alignment // Player can only use OWNED portals
 ): list<portal_event> {
@@ -319,6 +157,7 @@ function move_common_use_all_unblocked_portals(
                         game,
                         curr_turn,
                         board_positions_all,
+                        our_team,
                         opp_team,
                         my_align,
                         piece,
@@ -342,6 +181,7 @@ function move_common_use_portal_depending_on_piece_type(
     game,
     curr_turn: turn, 
     board_positions_all,
+    our_team: character_team?, // Only use this for position updates (likely overkill?)
     opp_team: character_team,
     my_align: alignment,
     piece_wpaa: with_pos_and_alignment,
@@ -380,7 +220,7 @@ function move_common_use_portal_depending_on_piece_type(
 
     if (use_portal) {
         // Move the piece through the portal
-        move_common_change_piece_position(board_positions_all, piece_data.vuln.a, piece_wpaa, portal.entry_pos, portal.exit_pos);
+        move_common_change_piece_position(piece_data.vuln.a, piece_wpaa, portal.entry_pos, portal.exit_pos, board_positions_all, our_team);
         
         return move_event_portal_create(game, curr_turn, portal, piece_data.p);
     } else {

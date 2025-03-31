@@ -16,10 +16,12 @@ entity switch_event {
 }
 
 // When the actual resurrection happens
-entity resurrect_event {
+entity resurrection_event {
     key event; // Event is the "base type" for all events
     card;
     piece; // Piece that was resurrected
+    death_pos: integer; // Where the piece died
+    resurrect_pos: integer; // Where the piece was resurrected
 }
 
 // Some enchantments (like Knighted) stay for the entire game.

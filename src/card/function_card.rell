@@ -10,8 +10,12 @@ function card_play_inner(
     card_type_str: text, 
     card_order_number: integer, // The order number when the card was drawn/generated.
     card_picks: list<integer>, // The squares picked by the player when playing the card.
-    rnd_numbers: list<rnd_data> // If any randomness was used playing this card, the numbers generated goes in here.
-    //is_this_a_test: boolean // If true, we skip some checks.
+    rnd_numbers: list<rnd_data>, // If any randomness was used playing this card, the numbers generated goes in here.
+
+    // ----------------------
+    // Only if the client needs to send it
+    // ---------------------- 
+    check_args: move_check_arguments? = null // Yes, a card can result in check/mate.
 ) {
     // -----------    
     // A. Verication
@@ -24,9 +28,11 @@ function card_play_inner(
 
     var new_turn_type = turn_type.BLACK_CARD;
     var my_color = alignment.BLACK;
+    var opp_color: alignment = alignment.WHITE;
     if (minimal_game.is_white) { 
         new_turn_type = turn_type.WHITE_CARD;
         my_color = alignment.WHITE;
+        opp_color = alignment.BLACK; 
     }
     
     // Yeah, but is it the CORRECT game?
@@ -64,6 +70,12 @@ function card_play_inner(
     // -----------    
     // A. Verication, cont
     // -----------    
+
+    // We need the full board
+    val board: list<with_pos_and_alignment> = vuln_get_all_as_wpaa(minimal_game.game); 
+    val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, my_color);
+    val board_positions_all = board_positions_all_constructor(minimal_game.game, board, portals);
+
     // A.6. Check individual picks 
     val pick_piece_map = map<integer, piece_living_data>(); // Save the pieces we found on the board for the pick.
     val pick_summary = card_pick_are_valid(minimal_game.game, card_type, card_type_str, expected_pick_types, card_picks, my_color, pick_piece_map);
@@ -107,6 +119,9 @@ function card_play_inner(
     // -----------    
     // Card pick verification should have been done already.
     when (card_type) {
+        // ----------------
+        // a) Enchantments (no change in position or alignment, so no update of [board_positions_all])
+        // ----------------
         FROG -> {
             card_enchantment_create_frog(minimal_game.game, new_turn, minimal_game.player_game, new_card, pick_piece_map[0]);
         }
@@ -120,53 +135,31 @@ function card_play_inner(
             card_enchantment_create_knighted(minimal_game.game, new_turn, new_card, pick_piece_map[0]);
         }
         JUMP -> {
-            create_jump(minimal_game.player_game, new_card, pick_piece_map[0]);
+            card_enchantment_create_jump(minimal_game.player_game, new_card, pick_piece_map[0]);
         }
+        // ----------------
+        // b) Something happens on the Board 
+        // ----------------
         SWITCH_PLACE -> {
-
-            create_switch_place(my_color, new_card, pick_piece_map[0], pick_piece_map[1]);
+            card_board_change_create_switch_place(my_color, new_card, pick_piece_map[0], pick_piece_map[1]);
+            // Actually, since both pieces have the same alignment, the switch won't effect the [board_positions_all].
         }
         WALL -> {
-            create_wall(minimal_game.game, minimal_game.player_game, new_card, pick_piece_map, card_picks);
+            card_board_change_create_wall(minimal_game.game, minimal_game.player_game, new_card, pick_piece_map, card_picks, board_positions_all);
         }
         PORTAL -> {
             // Portal needs a random number
-
-            // We need the full board
-            val board: list<with_pos_and_alignment> = vuln_get_all_as_wpaa(minimal_game.game); 
-            val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, my_color);
-            val board_positions_all = board_positions_all_constructor(minimal_game.game, board, portals);
+            require(rnd_numbers.size() == 1, "Portal needs one random number used when the exit is calculated.");
+            val rnd_data = rnd_numbers[0];
 
             val portal_entry_pos = card_picks[0];
             val portal_exit_pos = card_picks[1]; // Strictly not a pick, but we do it this way.
 
-            require(rnd_numbers.size() == 1, "Portal needs one random number used when the exit is calculated.");
-            val rnd_data = rnd_numbers[0];
-
-            // Player is allowed  to create a tunnel from either side of the board,
-            // We should figure out what side the exit is on.
-            val exit_side_color = card_portal_get_other_side(portal_entry_pos);
-
-            // Verify if the given portal exit is a suitable empty square on the board
-            // And if so, save the random number that corresponds to it.
-            val rnd_res = card_portal_verify_random_free_square_anywhere_on_half(
-                board_positions_all,
-                exit_side_color,
-                portal_exit_pos,
-                rnd_data
-            );
-
-            create_portal(
-                minimal_game.player_game, 
-                new_card, 
-                pick_piece_map, // <-- First pick should be a piece
-                portal_entry_pos ,  // <-- Position of the portal
-                portal_exit_pos 
-            );
-
-            val rnd_results: list<rnd_result> = [rnd_res]; // Only one element
-            rnd_validation_create_player_rnd_nr(new_turn, rnd_results);
+            card_board_change_create_portal(minimal_game.player_game, new_card, pick_piece_map, portal_entry_pos, portal_exit_pos, rnd_data, new_turn, board_positions_all);
         }
+        // ----------------
+        // c) Delayed effects (no update of [board_positions_all])
+        // ----------------
         RESURRECT -> {
 
             // Note: the random number is used when the actual resurrection happens.
@@ -177,72 +170,22 @@ function card_play_inner(
         }
     }
 
+    // Get all pieces of both teams
+    // Expensive, so we wait until last moment
+    val our_team = team_build_from_db(minimal_game.game, my_color);
+    val opp_team = team_build_from_db(minimal_game.game, opp_color);
+
+    val our_king = team_get_king(our_team)!!;
+    val opp_king = team_get_king(opp_team)!!;
+
+    // B.7 Verify if we just won via checkmate?
+    val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args);
+    val is_game_over = game_over(minimal_game, new_turn, is_checkmate, is_stalemate);
+
     // B.7. Move to next turn
-    log("/Play Card End, game: " + game_id + ", new turn type: " + new_turn_type + ", type: " + card_type_str + ", order number: " + card_order_number + ", picks: " + pick_summary);
+    log("/Play Card End, game: " + game_id + ", new turn type: " + new_turn_type + ", type: " + card_type_str + ", order number: " 
+            + card_order_number + ", picks: " + pick_summary + ", is_game_over: " + is_game_over);
 }
 
-// -------------------------------------
-// Create Card Functions 
-// (Only used from the operation above)
-// -------------------------------------
-
-
-
-// 5. JUMP
-// This is a bit special, since the spell is over the same turn.
-// This game chose to handle this as if the move turn is enhanced by the JUMP card,
-// meaning we must remeber the played card when it's time to move.
-function create_jump(played_by: player_game, new_card: card, picked_piece: piece_living_data) {
-    move_set_jump(played_by, new_card, picked_piece.p); // Move function
-}
-
-// 6. SWITCH_PLACE
-function create_switch_place(align: alignment, new_card: card, picked_piece1: piece_living_data, picked_piece2: piece_living_data) {
-    alive_switch_place(align, picked_piece1.vuln.a, picked_piece2.vuln.a); // Piece function
-}
-
-// 7. WALL
-function create_wall(game: game, owner: player_game, new_card: card, pick_piece_map: map<integer, piece_living_data>, card_picks: list<integer>) {
-
-    val sq1 = card_picks[0];
-    val sq2 = card_picks[1];
-    val sq3 = card_picks[2];
-
-    // Validation
-    // Must create a wall on empty squares
-    require(not pick_piece_map.contains(0), "Wall position " + sq1 + " is occupied by a piece");
-    require(not pick_piece_map.contains(1), "Wall position " + sq2 + " is occupied by a piece");
-    require(not pick_piece_map.contains(2), "Wall position " + sq3 + " is occupied by a piece");
-
-    vuln_setup_wall(game, owner, sq1, sq2, sq3); // Vuln function
-}
-
-// 8. PORTAL
-// We ONLY have to create the portal here, the piece will travel through it on the next turn.
-function create_portal(owned_by: player_game, new_card: card, pick_piece_map: map<integer, piece_living_data>, sq1: integer, sq2: integer) {
-
-    // Validation
-    // Must create a portal on a square with a piece on it.
-    require(pick_piece_map.contains(0), "Portal entry " + sq1 + " is not occupied by a piece");
-
-    move_setup_portal(owned_by, new_card, sq1, sq2);
-}
-
-// 9. RESURRECT
-// Create potential resurrect (Not the actual resurrection, that happens later)
-function create_potential_resurrect(player_game: player_game, new_card: card) {
-    create potential_resurrect (
-        .card = new_card, 
-        .owned_by = player_game
-    );
-}
-
-// 10. DOUBLE_MOVE 
-function create_double_move(player_game: player_game, new_card: card) {
-    create active_double_move(
-        .card = new_card, 
-        .owned_by = player_game
-    );
-}
 
 

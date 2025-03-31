@@ -1,0 +1,46 @@
+
+
+
+
+// ----------------------------------------------------------
+// There are a few events that are not obvious when they should happen:
+// 
+// 1. RESURRECT_TAKES_EFFECT = When an opponent is killed and then resurrected as "ours".
+// 2. PORTAL_EVENT = When a piece is (magically) teleported on the board (Portal, Switch Place)
+// 3. ENCHANTMENT_REMOVED = When an enchantment is removed from a piece
+//
+// The reason these events are a non-obvious is b/c the client needs to 
+// store some counter/state that must be regularly checked to see when it's 
+// time to take the action.
+// All other events (not in the lista above)) happen the same turn as the card was played, 
+// so they are trivial implement. The exception is DOUBLE_MOVE but this will 
+// get it's own turn, so it's not considered an "event".  
+// 
+// We create special structs for all the relevant events, 
+// and we send these to the client, for two reasons:
+// 1. Either the client has it's own logic for keeping track of 
+//    when these events should happen, and can use the events 
+//    from the node to verify if everything is in synch, or 
+// 2. The client skip the implementation and simply react to 
+//    the data coming from the node. 
+// ----------------------------------------------------------
+
+// Since this requires random, the client MUST send this struct to the node.
+// The node cannot do this alone.
+struct resurrection_event_data {
+    rnd_data; // Exactly ONE Rnd number was used by the client
+    death_pos: integer; // Piece died at this position
+    resurrect_pos: integer; // Piece resurrected at this position
+}
+
+struct portal_event_data {
+    // Portal entry
+    // Portal exit
+}
+
+
+struct enchantment_removed_data {
+    // Rnd number used
+}
+
+

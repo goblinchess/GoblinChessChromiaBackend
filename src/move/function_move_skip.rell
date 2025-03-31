@@ -25,23 +25,25 @@ function move_skip_inner(
     // A.3 Get same state
     // ----------------
     // Get some data
-    var align: alignment = alignment.BLACK;
-    var opp_align: alignment = alignment.WHITE;
+    var my_color: alignment = alignment.BLACK;
+    var opp_color: alignment = alignment.WHITE;
     if (minimal_game.is_white) {
-        align = alignment.WHITE;
-        opp_align = alignment.BLACK; 
+        my_color = alignment.WHITE;
+        opp_color = alignment.BLACK; 
     }
 
     val board: list<with_pos_and_alignment> = vuln_get_all_as_wpaa(minimal_game.game); 
-    val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, align);
+    val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, my_color);
     val board_positions_all = board_positions_all_constructor(minimal_game.game, board, portals);
 
-    val opp_team = team_build_from_db(minimal_game.game, opp_align);
+    // Only need opp team
+    val opp_team = team_build_from_db(minimal_game.game, opp_color);
+    val opp_king = team_get_king(opp_team)!!;
 
     // Has this piece an jump enchantment on it?
     val is_enchanted_jump = false; // Yes, somewhat dangerous, but JUMP card won't cause turn to be skipped, so we assume there is no active jump.
 
-    val res = move_get_vuln_path(minimal_game.game, opp_align); 
+    val res = move_get_vuln_path(minimal_game.game, opp_color); 
     val opp_vuln_ctxt: pre_vuln_context = res.v_ctxt;
 
     // ----------------------------------------------    
@@ -59,16 +61,41 @@ function move_skip_inner(
     val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
 
     // B.2 Use all unblocked portals
-    move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, opp_team, align);
+    val hist_portals: list<portal_event> = move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, null, opp_team, my_color);
 
     // B.3 Promotions
     // TODO
+    val has_promotions = false;
 
-    // B.4 Cleanup 
-    // For "skip" this will:
-    // 1. Remove vuln context. 
-    // 2. Count down enchantments.
-    move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, align);
+    // This is somewhat tricky, but there are two cases where we need to calculate check/mate:
+    // 1. if we use the portal, potentially a piece has moved and
+    // 2. if we have promotions, since a promotion can cause check/mate.
+    var is_game_over = false;
+    if (hist_portals.size() > 0 or has_promotions) {
+         
+        // Expensive, so we wait until last moment
+        val our_team = team_build_from_db(minimal_game.game, my_color);
+        val our_king = team_get_king(our_team)!!;
+
+        // B.4 Verify if we just won via checkmate?
+        val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, null);
+
+        // ----------------
+        // B.4 Is it over?
+        // ----------------
+
+        is_game_over = game_over(minimal_game, new_turn, is_checkmate, is_stalemate);
+      
+    } 
+
+
+    if (not is_game_over) {
+        // B.5 Cleanup 
+        // For "skip" this will:
+        // 1. Remove vuln context. 
+        // 2. Count down enchantments.
+        move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, my_color);
+    }
 
     log("/Skip Move End: game_id: " + game_id + " new turn type: " + new_turn_type);
 }

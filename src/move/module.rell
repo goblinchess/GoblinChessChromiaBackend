@@ -6,4 +6,5 @@ import ^.dice.*;
 import ^.battle.*;
 import ^.check.*;
 import ^.portal.*;
+import ^.team.*;
 import ^.*;

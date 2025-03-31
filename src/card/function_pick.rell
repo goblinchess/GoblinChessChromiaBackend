@@ -64,13 +64,12 @@ function card_pick_are_valid(
 // Validate a single pick and return the summary for that pick.
 function card_pick_validate_single_pick(
     pick_index: integer,
-    maybe_piece: piece_living_data?,
+    maybe_piece: piece_living_data?, // [with_pos_and_alignment] isn't enough since we sometimes need to check if this is a king.
     expected_p_type: card_pick_type,
     given_pos: integer,
     my_color: alignment,
     pick_piece_map: map<integer, piece_living_data>
 ): text {
-
 
     when (expected_p_type) {
         card_pick_type.ANY_SQUARE -> {

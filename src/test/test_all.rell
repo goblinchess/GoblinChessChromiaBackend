@@ -383,7 +383,7 @@ function test_full_game() {
     // --------------------
     // First we try a few invalid cards, to make sure the validation works.
 
-    log("Turn 8= Card Fail A. No picks for FROG");
+    log("Turn 1(1): Card Fail A. No picks for FROG");
     val card_picks_none: list<integer> = []; // No picks
     var failed_card = assert_fails(card_play_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_none, list<rnd_data>(),
         * // Note, this star is what makes it work.
@@ -391,7 +391,7 @@ function test_full_game() {
     val expected_no_pick_msg: text = "Expected 1 picks for card FROG but got 0";
     assert_true(failed_card.message.starts_with(expected_no_pick_msg));
 
-    log("Turn 8= Card Fail B. Out of board pick for FROG");
+    log("Turn 1(1): Card Fail B. Out of board pick for FROG");
     val card_picks_out_of_board = [64]; // Out of board
     failed_card = assert_fails(card_play_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_out_of_board, list<rnd_data>(),
         * // Note, this star is what makes it work.
@@ -420,7 +420,7 @@ function test_full_game() {
     // /Failed White Cards
     // --------------------
 
-    log("Turn 8= White playes a card");
+    log("Turn 1(1): White playes a card");
     val black_rook_to_frog = 56; // a8, Turns black rook into frog
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "FROG", 1, [black_rook_to_frog], list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
@@ -441,7 +441,7 @@ function test_full_game() {
     // --------------------------
     // First we try a few invalid moves, to make sure the validation works.
 
-    log("Turn 2= Move Fail A. No piece at position");
+    log("Turn 1(2): Move Fail A. No piece at position");
     val wrong_orig_pos = 22; // Nothing on this position
     val wrong_to_pos = 23; 
 
@@ -464,7 +464,7 @@ function test_full_game() {
     val expected_wrong_pos: text = "No piece at position " + wrong_orig_pos;
     assert_true(failed_move.message.starts_with(expected_wrong_pos));
 
-    log("Turn 2= Move Fail B. Wrong piece_type at position");
+    log("Turn 1(2): Move Fail B. Wrong piece_type at position");
     val knight_orig_pos = 1; // b1 (correct)
     val knight_to_pos = 18;  // c3 (Valid move)
 
@@ -482,7 +482,7 @@ function test_full_game() {
     val expected_wrong_type: text = "Expected piece to have active type KNIGHT but got BISHOP";
     assert_true(failed_move.message.starts_with(expected_wrong_type));
 
-    log("Turn 2= Move Fail C. Invalid move pattern");
+    log("Turn 1(2): Move Fail C. Invalid move pattern");
     val knight_to_wrong_pos = 17;  // b3 (Invalid move)
 
     m_args = move_arguments(
@@ -501,7 +501,7 @@ function test_full_game() {
     assert_true(failed_move.message.starts_with(expected_wrong_move));
 
 
-    log("Turn 2= Move Fail D. Bishop cannot move to own piece!");
+    log("Turn 1(2): Move Fail D. Bishop cannot move to own piece!");
     val bishop_orig_pos = 2; // c1 (correct)
     val bishop_to_pos = 9; // Vaild move pattern, but pawn here, cannot move this way
 
@@ -523,7 +523,7 @@ function test_full_game() {
     // /Failed White moves
     // --------------------
 
-    log("Turn 2= White makes a valid move Kn b1->c3");
+    log("Turn 1(2): White makes a valid move Kn b1->c3");
 
     m_args = move_arguments(
         game_id = the_game.game_rowid, 
@@ -536,7 +536,7 @@ function test_full_game() {
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
 
-    log ("Turn 6= Skip neutral.");
+    log ("Turn 1(3): Skip neutral.");
     rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
@@ -552,11 +552,11 @@ function test_full_game() {
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
-    log ("Turn 5= Black skips spell");
+    log ("Turn 1(4): Black skips spell");
     rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
-    log ("Turn4= Black moves pawn a7->a5");
+    log ("Turn 1(5): Black moves pawn a7->a5");
     val black_move_1_from = 48; // a7
     val black_move_1_to = 32; // a5 = Pawn double move 
 
@@ -571,7 +571,7 @@ function test_full_game() {
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
 
-    log ("Turn 3= Skip neutral.");
+    log ("Turn 1(6): Skip neutral.");
     rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
@@ -582,18 +582,18 @@ function test_full_game() {
     // 5= p  .  .  .  .  .  .  .
     // 4= .  .  .  .  .  .  .  .
     // 3= .  .  Kn .  .  .  .  .
-    // 2= P  P  P  P  P  P  P  P
+    // 2= P  P  P  P  P  P  P  P // <-- card: turn c3 into a knight
     // 1= R  .  B  Q  K  B  Kn R
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
 
-    log("Turn 2= White plays Knighted.");
-    val card_picks_knighted = [10]; // Turns c2 pawn into knight
+    log("Turn 2(7): White plays Knighted on c3 pawn.");
+    val card_picks_knighted = [10]; // Turns c3 pawn into knight
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "KNIGHTED", 2, card_picks_knighted, list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
 
-    log("Turn 1= White makes a valid move Pawn g2 -> g3");
+    log("Turn 2(8): White makes a valid move Pawn g2 -> g3");
 
     m_args = move_arguments(
         game_id = the_game.game_rowid, 
@@ -606,7 +606,7 @@ function test_full_game() {
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
 
-    log ("Turn 9: Skip neutral.");
+    log ("Turn 2(9): Skip neutral.");
     rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
@@ -622,7 +622,7 @@ function test_full_game() {
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
-    log ("Turn 10: Black skips spell");
+    log ("Turn 2(10): Black skips spell");
     rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
@@ -631,7 +631,7 @@ function test_full_game() {
     // --------------------
     // First we try to move the rook link usually, but its ACTIVE TYPE is a frog, so shouldn't work.
     // It's only been a frog 2 turns, to the enchantment has not yet timed out.
-    log ("Turn 11: Failed Black Rook (=actually a Frog) moves a8->a6");
+    log ("Turn 2(11): Failed Black Rook (=actually a Frog) moves a8->a6");
     val rook_to_wrong_pos = 40;  // a6 (Cannot move two steps since is frog)
 
     m_args = move_arguments(
@@ -650,7 +650,7 @@ function test_full_game() {
     assert_true(failed_move.message.starts_with(expected_rook_vs_frog));
 
     // If we call the frog a FROG, can it move as a rook?
-    log ("Turn 11: Failed Black Frog moves a8->a6");
+    log ("Turn 2(11): Failed Black Frog moves a8->a6");
 
     m_args = move_arguments(
         game_id = the_game.game_rowid, 
@@ -670,7 +670,7 @@ function test_full_game() {
     // /Failed Blakc moves
     // --------------------
 
-    log ("Turn 11: Black moves pawn a5->a4");
+    log ("Turn 2(11): Black moves pawn a5->a4");
     val a5 = 32; 
     val a4 = 24; 
 
@@ -685,7 +685,7 @@ function test_full_game() {
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
     
-    log ("Turn 12: Skip neutral.");
+    log ("Turn 2(12): Skip neutral.");
     rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
@@ -702,11 +702,11 @@ function test_full_game() {
     //    a  b  c  d  e  f  g  h
     // --------------------------
 
-    log("Turn 13: White skips spell.");
+    log("Turn 3(13): White skips spell.");
     rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
-    log("Turn 14: White makes a valid move Pawn b2 -> b4. Opens for en passant.");
+    log("Turn 3(14): White makes a valid move Pawn b2 -> b4. Opens for en passant.");
     val b2 = 9;
     val b4 = 25;
 
@@ -721,7 +721,7 @@ function test_full_game() {
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
 
-    log ("Turn 15: Skip neutral.");
+    log ("Turn 3(15): Skip neutral.");
     rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
@@ -738,11 +738,11 @@ function test_full_game() {
     //    a  b  c  d  e  f  g  h
     // --------------------------
 
-    log ("Turn 16: Black skips spell");
+    log ("Turn 3(16): Black skips spell");
     rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
-    log ("Turn 17: Black captuers pawn a4->b3, via en passant");
+    log ("Turn 3(17): Black captuers pawn a4->b3, via en passant");
     val b3 = 17;
 
     m_args = move_arguments(
@@ -765,7 +765,7 @@ function test_full_game() {
     rell.test.tx(move_attack(m_args, att_args, list<rnd_data>(), check_args)).sign(black_player).run();
     last_seen_turn += 1;
     
-    log ("Turn 18: Skip neutral.");
+    log ("Turn 3(18): Skip neutral.");
     rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
@@ -782,7 +782,7 @@ function test_full_game() {
     //    a  b  c  d  e  f  g  h
     // --------------------------
 
-    log("Turn 19: White playes Portal at a2->f6");
+    log("Turn 4(19): White playes Portal at a2->f6");
 
     // Bit tricky to figure out what the random number should be to put the exit at f6.
     val a2 = 8;
@@ -801,11 +801,11 @@ function test_full_game() {
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "PORTAL", 2, [a2, f6], rnds)).sign(white_player).run();
     last_seen_turn += 1;
 
-    log ("Turn 20: White must skip move (due to portal).");
+    log ("Turn 4(20): White must skip move (due to portal).");
     rell.test.tx(skip_move(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
-    log ("Turn 21: Skip neutral.");
+    log ("Turn 4(21): Skip neutral.");
     rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
@@ -838,12 +838,12 @@ function test_full_game() {
         log("what at f6: null");
     }
 
-    log("Turn 22: Black playes Resurrect");
+    log("Turn 4(22): Black playes Resurrect");
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "RESURRECT", 5, [], list<rnd_data>())).sign(black_player).run();
     last_seen_turn += 1;
 
     // The A8 rook was turned into a FROG turn 1, but this enchantment should have been removed by now.
-    log ("Turn 23: Black captuers rook a8->a1");
+    log ("Turn 4(23): Black captuers rook a8->a1");
     val a8 = 56;
     val a1 = 0;
 
@@ -866,7 +866,7 @@ function test_full_game() {
     rell.test.tx(move_attack(m_args, att_args, list<rnd_data>(), check_args)).sign(black_player).run();
     last_seen_turn += 1;
 
-    log ("Turn 24: Skip neutral.");
+    log ("Turn 4(24): Skip neutral.");
     rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
@@ -876,12 +876,314 @@ function test_full_game() {
     // 6= .  .  .  .  .  P  .  .
     // 5= .  .  .  .  .  .  .  .
     // 4= .  .  .  .  .  .  .  . 
-    // 3= .  p  Kn .  .  .  P  .
+    // 3= .  p  Kn .  .  .  P  . // <--- now: Pawn takes on b3 (shouldn't cause resurrection)
     // 2= .  .  P  P  P  P  .  P 
-    // 1= r  .  B  Q  K  B  Kn R  // <--- Rook a8 x a1
+    // 1= r  .  B  Q  K  B  Kn R  // <--- prev: Rook a8 x a1
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
+
+    log("Turn 5(25): White skips spell.");
+    rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    log ("Turn 5(26): White captuers pawn c2->b3, but no resurrection (Note: pawn is KNIGHTED).");
+    val c2 = 10;
+
+    m_args = move_arguments(
+        game_id = the_game.game_rowid, 
+        last_seen_turn = last_seen_turn, 
+        from_position = c2, 
+        to_position = b3, 
+        piece_type_str = "PAWN",  
+        given_is_knighted = true);
+
+
+    // Attack data, mandatory for attacks.
+    att_args = move_attack_arguments (
+        attacked_position = b3, 
+        attack_result_type_str = "KILL", 
+        defender_defense_points = 3, 
+        damage_points = 7 
+    );
+
+    rell.test.tx(move_attack(m_args, att_args, list<rnd_data>(), check_args)).sign(white_player).run();
+    last_seen_turn += 1;
+    
+    log ("Turn 5(27): Skip neutral.");
+    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    // +++++++++++++++++++++++++++++++++++++++++ Black Move 5 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= .  kn b  q  k  b  kn r
+    // 7= .  p  p  p  p  p  p  p
+    // 6= .  .  .  .  .  P  .  . // <-- now: Pawn g7 -> g6
+    // 5= .  .  .  .  .  .  .  .
+    // 4= .  .  .  .  .  .  .  . 
+    // 3= .  P  Kn .  .  .  P  . // <--- prev: Pawn c2 x b3 (shouldn't cause resurrection)
+    // 2= .  .  .  P  P  P  .  P 
+    // 1= r  .  B  Q  K  B  Kn R  
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    log ("Turn 5(28): Black skips spell");
+    rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    last_seen_turn += 1;
+
+    log ("Turn 5(29): Black moves pawn g7->g6, to avoid being taken.");
+    val g7 = 54; 
+    val g6 = 46; 
+
+    m_args = move_arguments(
+        game_id = the_game.game_rowid, 
+        last_seen_turn = last_seen_turn, 
+        from_position = g7, // <-- Ok
+        to_position = g6, // <-- Ok
+        piece_type_str = "PAWN",  // <-- Ok
+        given_is_knighted = false);
+
+    rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(black_player).run();
+    last_seen_turn += 1;
+    
+    log ("Turn 5(30): Skip neutral.");
+    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    last_seen_turn += 1;
+
+    // +++++++++++++++++++++++++++++++++++++++++ White Move 6 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= .  kn b  q  k  b  kn r
+    // 7= .  p  p  p  p  p  .  p
+    // 6= .  .  .  .  .  P  p  .
+    // 5= .  .  .  .  .  .  .  .
+    // 4= .  .  .  .  .  .  .  . 
+    // 3= .  P  Kn .  .  .  P  . 
+    // 2= .  .  .  P  P  P  .  P 
+    // 1= r  .  B  Q  K  B  Kn R  
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    log("Turn 6(31): White skips spell.");
+    rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    log("Turn 6(32): White makes a valid move Knight c3 -> a4. Blocks rook's escape.");
+    val c3 = 18;
+
+    m_args = move_arguments(
+        game_id = the_game.game_rowid, 
+        last_seen_turn = last_seen_turn, 
+        from_position = c3, // <-- Ok
+        to_position = a4, // <-- Ok
+        piece_type_str = "KNIGHT",  // <-- Ok
+        given_is_knighted = false);
+
+    rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    log ("Turn 6(33): Skip neutral.");
+    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    // +++++++++++++++++++++++++++++++++++++++++ Black Move 6 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= .  kn b  q  k  b  kn r
+    // 7= .  p  p  p  p  p  .  p
+    // 6= .  .  .  .  .  P  p  .
+    // 5= .  .  .  .  .  .  .  . // <-- new: Pawn e7 -> e5
+    // 4= Kn .  .  .  .  .  .  . // <-- prev: Knight c3 -> a4
+    // 3= .  P  .  .  .  .  P  . 
+    // 2= .  .  .  P  P  P  .  P 
+    // 1= r  .  B  Q  K  B  Kn R  
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    log ("Turn 6(34): Black skips spell");
+    rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    last_seen_turn += 1;
+
+    log ("Turn 6(35): Black moves pawn e7->e5, to avoid being taken.");
+    val e7 = 52; 
+    val e5 = 36; 
+
+    m_args = move_arguments(
+        game_id = the_game.game_rowid, 
+        last_seen_turn = last_seen_turn, 
+        from_position = e7, // <-- Ok
+        to_position = e5, // <-- Ok
+        piece_type_str = "PAWN",  // <-- Ok
+        given_is_knighted = false);
+
+    rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(black_player).run();
+    last_seen_turn += 1;
+    
+    log ("Turn 6(36): Skip neutral.");
+    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    last_seen_turn += 1;
+
+    // +++++++++++++++++++++++++++++++++++++++++ White Move 7 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= .  kn b  q  k  b  kn r
+    // 7= .  p  p  p  .  p  .  p
+    // 6= .  .  .  .  .  P  p  .
+    // 5= .  .  .  .  p  .  .  . // <-- prev: Pawn e7 -> e5
+    // 4= Kn .  .  .  .  .  .  . 
+    // 3= .  P  .  .  .  .  P  . 
+    // 2= .  .  .  P  P  P  .  P 
+    // 1= r  .  B  Q  K  B  Kn R // <-- new: Queen d1 -> c2 
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    log("Turn 7(37): White skips spell.");
+    rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    log("Turn 7(38): White makes a valid move Queen d1 -> c2. Trying to trap the rook.");
+    val d1 = 3;
+
+    m_args = move_arguments(
+        game_id = the_game.game_rowid, 
+        last_seen_turn = last_seen_turn, 
+        from_position = d1, // <-- Ok
+        to_position = c2, // <-- Ok
+        piece_type_str = "QUEEN",  // <-- Ok
+        given_is_knighted = false);
+
+    rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    log ("Turn 7(39): Skip neutral.");
+    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    // +++++++++++++++++++++++++++++++++++++++++ Black Move 7 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= .  kn b  q  k  b  kn r
+    // 7= .  p  p  p  .  p  .  p
+    // 6= .  .  .  .  .  P  p  . // <-- new: Queen d8 x f6
+    // 5= .  .  .  .  p  .  .  .
+    // 4= Kn .  .  .  .  .  .  . 
+    // 3= .  P  .  .  .  .  P  . 
+    // 2= .  .  Q  P  P  P  .  P  // <-- prev: Queen d1 -> c2
+    // 1= r  .  B  .  K  B  Kn R  
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    log ("Turn 7(40): Black skips spell");
+    rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    last_seen_turn += 1;
+
+    log ("Turn 7(41): Black captuers rook a8->a1");
+    val d8 = 59;
+
+    m_args = move_arguments(
+        game_id = the_game.game_rowid, 
+        last_seen_turn = last_seen_turn, 
+        from_position = d8, 
+        to_position = f6, 
+        piece_type_str = "QUEEN",  
+        given_is_knighted = false);
+
+    // Attack data, mandatory for attacks.
+    att_args = move_attack_arguments (
+        attacked_position = f6, 
+        attack_result_type_str = "KILL", 
+        defender_defense_points = 3, 
+        damage_points = 7 
+    );
+
+    rell.test.tx(move_attack(m_args, att_args, list<rnd_data>(), check_args)).sign(black_player).run();
+    last_seen_turn += 1;
+
+    log ("Turn 7(42): Skip neutral.");
+    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    last_seen_turn += 1;
+
+    // +++++++++++++++++++++++++++++++++++++++++ White Move 8 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= .  kn b  .  k  b  kn r
+    // 7= .  p  p  p  .  p  .  p
+    // 6= .  .  .  .  .  q  p  . // <-- prev: Captured by Queen d8 x f6
+    // 5= .  .  .  .  p  .  .  .
+    // 4= Kn .  .  .  .  .  .  . 
+    // 3= .  P  .  .  .  .  P  . // <-- new: Instead KNIGHTED pawn goes b3 x a1, causing the rook to resurrect.
+    // 2= .  .  Q  P  P  P  .  P 
+    // 1= r  .  B  .  K  B  Kn R // <-- new: We want to verify that White cannot move Bishop c1 -> d2 (causing check). 
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    log("Turn 8(43): White skips spell.");
+    rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    // --------------------
+    // Failed White moves
+    // --------------------
+    log("Turn 8(43): Move Fail . Bishop cannot move c1 -> b2 to put king in check!");
+    val c1 = 2; // c1 (correct)
+
+    m_args = move_arguments(
+        game_id = the_game.game_rowid, 
+        last_seen_turn = last_seen_turn, 
+        from_position = c1, // <-- Ok
+        to_position = b2, // <-- Valid bishop move, but will cause check
+        piece_type_str = "BISHOP",  
+        given_is_knighted = false);
+
+    failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, check_args,
+        * // Note, this star is what makes it work.
+    ));
+    val expected_move_causes_check: text = "Move puts us into check: type: BISHOP";
+    log(failed_move.message);
+    assert_true(failed_move.message.starts_with(expected_move_causes_check));
+
+    // --------------------
+    // /Failed White moves
+    // --------------------
+
+    log("Turn 8(44): White makes a valid move KNIGHTED pawn b3 x a1, capturing the rook, causing resurrection.");
+
+     m_args = move_arguments(
+        game_id = the_game.game_rowid, 
+        last_seen_turn = last_seen_turn, 
+        from_position = b3, 
+        to_position = a1, 
+        piece_type_str = "PAWN",  
+        given_is_knighted = true);
+
+
+    // Attack data, mandatory for attacks.
+    att_args = move_attack_arguments (
+        attacked_position = b3, 
+        attack_result_type_str = "KILL", 
+        defender_defense_points = 3, 
+        damage_points = 7 
+    );
+
+    rell.test.tx(move_attack(m_args, att_args, list<rnd_data>(), check_args)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    log ("Turn 8(45): Skip neutral.");
+    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+
+
+    // +++++++++++++++++++++++++++++++++++++++++ Black Move 8 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= .  kn b  .  k  b  kn r
+    // 7= .  p  p  p  .  p  .  p
+    // 6= .  .  .  .  .  q  p  . 
+    // 5= .  .  .  .  p  .  .  .
+    // 4= Kn .  .  .  .  .  .  . 
+    // 3= .  P  .  .  .  .  P  . 
+    // 2= .  Q  .  P  P  P  .  P // <-- prev: Queen goes c2 -> b2, trying to trap the rook.
+    // 1= r  .  B  .  K  B  Kn R 
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    log ("Turn 8(46): Black skips spell");
+    rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    last_seen_turn += 1;
 
 }
 

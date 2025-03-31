@@ -56,11 +56,18 @@ function card_enchantment_create_potion(g: game, t: turn, new_card: card, picked
     piece_set_potion(picked_piece.p); // Piece function
 }
 
-
 // 4. KNIGHTED
 function card_enchantment_create_knighted(g: game, t: turn, new_card: card, picked_piece: piece_living_data) {
     card_event_create_enchantment(g, t, new_card, picked_piece.p); 
     piece_set_knighted(picked_piece.p); // Piece function
+}
+
+// 5. JUMP
+// This is a bit special, since the spell is over the same turn.
+// This game chose to handle this as if the move turn is enhanced by the JUMP card,
+// meaning we must remeber the played card when it's time to move.
+function card_enchantment_create_jump(played_by: player_game, new_card: card, picked_piece: piece_living_data) {
+    move_set_jump(played_by, new_card, picked_piece.p); // Move function
 }
 
 // ------------------------------------------------------------

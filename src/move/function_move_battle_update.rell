@@ -9,14 +9,19 @@ function move_battle_update_health(
     is_chaos_mode: boolean, 
     att_piece: piece_living_data, // We know that the attacker is a piece.
     def_vuln: vulnerable_data, // Could be an obstacle, so best send this.
-    board_positions_all
+
+    // Extra: Update these data structures
+    board_positions_all,
+    our_team: character_team, 
+    opp_team: character_team
 ): boolean {
       when(battle_res.result) {
         battle_result_type.KILL -> {
             move_battle_death_of_vulnerable(
                 def_vuln, 
                 def_vuln.position, // Defender does NOT have to stand on the attacked_square (see en passant)
-                board_positions_all
+                board_positions_all,
+                opp_team
             );
         }
         battle_result_type.HIT -> {
@@ -31,7 +36,8 @@ function move_battle_update_health(
                         move_battle_death_of_vulnerable( 
                             attacker_vuln, // Attacker
                             attacker_vuln.position, // Attacker hasn't moved yet, so should be found here.
-                            board_positions_all
+                            board_positions_all,
+                            our_team
                         );
                         return false; // <-- Only case where we return "false"
                     }
@@ -60,7 +66,10 @@ function move_battle_update_health(
 function move_battle_death_of_vulnerable(
     dead_vuln: vulnerable_data, 
     dead_pos: integer, // Where the piece is standing, assuming nobody moved it this turn.
-    board_positions_all
+
+    // Extra: Update these data structures
+    board_positions_all,
+    dying_team: character_team
 ) {
 
     // Add to the DEAD collection
@@ -74,4 +83,6 @@ function move_battle_death_of_vulnerable(
     delete dead_vuln.a; 
 
     board_remove_at(board_positions_all, dead_pos); // Remove the dead from board.
+
+    team_remove_if_character(dying_team, dead_pos);
 }

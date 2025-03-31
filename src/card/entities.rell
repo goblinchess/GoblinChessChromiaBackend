@@ -4,14 +4,23 @@
 // -------------------------------------
 // Represents a card type
 enum card_type {
+    // ----------------
+    // a) Enchantments 
+    // ----------------
     FROG,
     TURN_TO_STONE,
     POTION,
     KNIGHTED,
     JUMP,
+    // ----------------
+    // b) Something happens on the Board 
+    // ----------------
     SWITCH_PLACE,
     WALL,
     PORTAL,
+    // ----------------
+    // c) Delayed effects
+    // ----------------
     RESURRECT,
     DOUBLE_MOVE
 }

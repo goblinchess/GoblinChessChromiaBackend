@@ -1,0 +1,4 @@
+//import ^.card.*;
+import ^.*; // All from parent
+import ^.turn.*; // Only to get the ActiveDoubleMove 
+import ^.rnd_validation.*; // rnd_data
