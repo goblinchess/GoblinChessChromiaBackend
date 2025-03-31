@@ -80,6 +80,52 @@ function card_play_inner(
     val pick_piece_map = map<integer, piece_living_data>(); // Save the pieces we found on the board for the pick.
     val pick_summary = card_pick_are_valid(minimal_game.game, card_type, card_type_str, expected_pick_types, card_picks, my_color, pick_piece_map);
 
+
+    // A.7. Apply restrictions if we are in check
+    // If we are in check, there are restriction on what spells we can cast.
+    // 
+    // -----------------+----------------------------------------------------------------
+    // Forbidden Spell  | Message
+    // -----------------+----------------------------------------------------------------
+    // DOUBLE MOVE      = "King is in check! 
+    //                    You cannot use this spell, you have to escape check.";
+    // PORTAL           = King is in check! 
+    //                    You cannot use this spell.";
+    // SWITCH PLACE     = (We CAN use it, but only if we use it on the king
+    //                    to make the king escape.)
+    // -----------------+----------------------------------------------------------------
+    //
+    // a) DOUBLE MOVE is forbidden b/c we don't allow the king to stay in check
+    // while we forfeit the turn.
+    //
+    // b) PORTAL is forbidden since the king cannot discover a portal, and if we 
+    // use the portal on some other piece the king will stay in check
+    // while we forfeit the turn.
+    //
+    // c) We cannot use SWITCH PLACE on a non-king, since the king would stay in check
+    // while we forfeit the turn.
+    
+    if (minimal_game.in_check) {
+        when (card_type) {
+            DOUBLE_MOVE -> {
+                require(false, "Cannot use DOUBLE MOVE when in check");
+            }
+            PORTAL -> {
+                require(false, "Cannot use PORTAL when in check");
+            }
+            SWITCH_PLACE -> {   
+                var ok = false;
+                for (pld: piece_living_data in pick_piece_map.values()) {
+                    if (pld.original_type == piece_type.KING) {
+                        ok = true; // If one of the pieces is the king we CAN use SWITCH PLACE.
+                    }
+                }
+                require(ok, "Cannot use SWITCH PLACE when in check, unless switching the king away from check.");
+            }
+        }
+    }
+
+
     log("Card passed verification, game: " + game_id +", type: " + card_type_str + " order number: " + card_order_number + " picks: " + pick_summary);
 
     // -----------    

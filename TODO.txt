@@ -8,8 +8,7 @@
 
  TODO Node: 
 -------------
-Mate check on card, use board_all to verify picks. 
- UPDATE board_all depending on the spell.
+Added "in_check" on player_game.
 
 
 
@@ -31,5 +30,8 @@ Mate check on card, use board_all to verify picks.
 
 DONE:
 
-"Added mate check to play_card. Added Resurrect to the test (4: white move ). Verified that we cannot move to put king in check (8: white move)" 
+
+"1. Implement restriction on what spells can be cast when in check. 2. Added Resurrect to the test (4: white move ). Verified that we cannot move to put king in check (8: white move)" 
+
+
 

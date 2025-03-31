@@ -21,6 +21,7 @@ struct minimal_game_result {
     game_type: game_type;
     curr_turn_nr: integer; // We always check this, so best to store it.
     is_white: boolean;
+    in_check: boolean; // "true" if currently in check
 }
 
 /*
