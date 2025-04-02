@@ -129,3 +129,53 @@ function check_sb_build_hypothetical_subject_move(
     print("check_sb_build_hypothetical_subject_move() - king at " + king_orig_pos + ", subject at: " + pos_dest);
     return check_sb_constructor(king_orig_pos, checking_team_move_trees);
 }
+
+// -----------------------------------------------
+// We build an hypothetical check calc, where we add a wall on the board:
+// 
+// 1. Clone the board -> hypothetical board
+// 2. Add the wall on the hypothetical board (clone). 
+// 3. Build a new [CheckCalculator] based on the hypothetical board (using the opponent as "mating team"),
+// -----------------------------------------------
+function check_sb_build_hypothetical_wall(
+    wall_positions: list<integer>,
+    king_orig_pos: integer,
+    checking_team: character_team,
+    board_all: board_positions_all
+): check_stat_board_calculator_data {
+
+    // ------------------------
+    // 1. Clone the board -> hypothetical board
+    // ------------------------
+    // map doesn't have a clone() method, so we need to do it manually.
+    val board_obstacles_clone = map<integer, with_pos_and_alignment>();  
+    for (sq in board_all.board_obstacles.keys()) {
+        board_obstacles_clone[sq] = board_all.board_obstacles[sq];
+    }
+
+    // ------------------------
+    // 2. Add the wall on the hypothetical board (clone) 
+    // ------------------------
+    val pos_wall1 = wall_positions[0];
+    val pos_wall2 = wall_positions[1];
+    val pos_wall3 = wall_positions[2];
+
+    // Add the obstacles at the wall positions with neutral alignment
+    board_obstacles_clone[pos_wall1] = with_pos_and_alignment(pos_wall1, alignment.NEUTRAL);
+    board_obstacles_clone[pos_wall2] = with_pos_and_alignment(pos_wall2, alignment.NEUTRAL);
+    board_obstacles_clone[pos_wall3] = with_pos_and_alignment(pos_wall3, alignment.NEUTRAL);
+
+    val board_all_clone = board_positions_all(
+        board_characters = board_all.board_characters, // Keep the original characters
+        board_obstacles = board_obstacles_clone, // Use our modified obstacles
+        portals = board_all.portals
+    );
+
+    // ------------------------
+    // 3. Build new calculator based on the hypothetical board
+    // ------------------------
+    val checking_team_move_trees = team_get_all_move_trees(checking_team, board_all_clone);
+    
+    print("check_sb_build_hypothetical_wall() - king at " + king_orig_pos + ", wall at: " + pos_wall1 + ", " + pos_wall2 + ", " + pos_wall3);
+    return check_sb_constructor(king_orig_pos, checking_team_move_trees);
+}

@@ -10,7 +10,7 @@
 
 // 9. RESURRECT
 // Create potential resurrect (Not the actual resurrection, that happens later)
-function create_potential_resurrect(player_game: player_game, new_card: card) {
+function card_delayed_create_potential_resurrect(player_game: player_game, new_card: card) {
     create potential_resurrect (
         .card = new_card, 
         .owned_by = player_game
@@ -18,7 +18,7 @@ function create_potential_resurrect(player_game: player_game, new_card: card) {
 }
 
 // 10. DOUBLE_MOVE 
-function create_double_move(player_game: player_game, new_card: card) {
+function card_delayed_create_double_move(player_game: player_game, new_card: card) {
     create active_double_move(
         .card = new_card, 
         .owned_by = player_game

@@ -121,8 +121,10 @@ function card_enchantment_count_down_all_durations(
 // Summary: we want to remove all enchantments that have timed out
 //    for the given owner. 
 // ------------------------------------------------------------
-function card_enchantment_revert_timed_out(g: game, owner: player_game, new_turn: turn) {
+function card_enchantment_revert_timed_out(g: game, owner: player_game): list<card_enchantment_reverted> {
 
+
+    val ret_list = list<card_enchantment_reverted>();
 
     // --------------------
     // 1. Find all enchantments that have timed out.
@@ -174,7 +176,9 @@ function card_enchantment_revert_timed_out(g: game, owner: player_game, new_turn
             }
         }
 
-        // 4. Create the event
-        card_event_create_remove_enchantment(g, new_turn, orig_card, enchanted_piece);
+        val ret = card_enchantment_reverted(orig_card, enchanted_piece);
+        ret_list.add(ret);
     }
+
+    return ret_list;
 }

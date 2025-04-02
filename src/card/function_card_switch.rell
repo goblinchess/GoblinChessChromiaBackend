@@ -1,0 +1,17 @@
+
+// Returns a tuple of (king_pld, other_pld)
+function card_switch_extract_king_pld(
+    pick_piece_list: list<piece_living_data>
+): (piece_living_data?, piece_living_data?) {
+    var king_pld: piece_living_data? = null;
+    var other_pld: piece_living_data? = null;
+    for (pld: piece_living_data in pick_piece_list) {
+        if (pld.original_type == piece_type.KING) {
+            king_pld = pld; // If one of the pieces is the king we CAN use SWITCH PLACE.
+        } else {
+            other_pld = pld;
+        }
+    }
+
+    return (king_pld, other_pld);
+}

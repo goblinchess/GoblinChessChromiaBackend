@@ -77,37 +77,6 @@ function vuln_get_all_as_wpaa(game: game): list<with_pos_and_alignment> {
 // Constructors
 // ------------------------------------------------------------
 
-function vuln_obstacle_create(game: game, owner: player_game, pos: integer): vulnerable {
-    val v = create vulnerable (
-        .game = game,
-        .is_obstacle = true,
-        .can_retaliate = false,
-        .color = alignment.NEUTRAL,
-        .start_hit_points = 10,
-        .remaining_hit_points = 10,
-        .defence = 3 // Default 
-    );
-
-
-    // Not exactly "alive" but at the board.
-    val a = create alive ( 
-        .vulnerable = v,
-        .position = pos,
-        .game = game,
-        .owned_by = owner
-    );
-
-    return v;
-}
-
-// CARD: WALL
-function vuln_setup_wall(game:game, owner: player_game, pos1: integer, pos2: integer, pos3: integer) {
-    vuln_obstacle_create(game, owner, pos1);
-    vuln_obstacle_create(game, owner, pos2);
-    vuln_obstacle_create(game, owner, pos3);
-}
-
-
 // Clone a [vulnerable_data] struct, but change the position
 function vuln_data_clone_new_pos(orig_vuln: vulnerable_data, new_pos: integer): vulnerable_data {
      return vulnerable_data(

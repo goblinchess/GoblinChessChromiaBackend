@@ -1,0 +1,64 @@
+function card_wall_verify_picks(board_positions_all: board_positions_all, card_picks: list<integer>) {
+    val sq1 = card_picks[0];
+    val sq2 = card_picks[1];
+    val sq3 = card_picks[2];
+
+    // Validation
+    // Must create a wall on empty squares
+    // But didn't we validate this already when verifying the picks?
+    require(board_get_at(board_positions_all, sq1) == null, "Wall position " + sq1 + " is occupied by a piece");
+    require(board_get_at(board_positions_all, sq2) == null, "Wall position " + sq2 + " is occupied by a piece");
+    require(board_get_at(board_positions_all, sq3) == null, "Wall position " + sq3 + " is occupied by a piece");
+    
+    // Validate wall symmetry - wall must form a straight line with no gaps
+    card_wall_verify_symmetry(card_picks);
+}
+
+function card_wall_verify_symmetry(card_picks: list<integer>) {
+    require(card_picks.size() == 3, "Wall must consist of exactly 3 pieces");
+    
+    // Convert integer positions to square_pos for easier X/Y analysis
+    val pos1 = translate_integer_pos_to_square_pos(card_picks[0]);
+    val pos2 = translate_integer_pos_to_square_pos(card_picks[1]);
+    val pos3 = translate_integer_pos_to_square_pos(card_picks[2]);
+    
+    // Find min/max X and Y
+    val min_x = min(min(pos1.x, pos2.x), pos3.x);
+    val max_x = max(max(pos1.x, pos2.x), pos3.x);
+    val min_y = min(min(pos1.y, pos2.y), pos3.y);
+    val max_y = max(max(pos1.y, pos2.y), pos3.y);
+    
+    // Two cases are allowed
+    if (min_x == max_x) {
+        // Wall is vertical (same file)
+        // Check if it's 3 consecutive positions (no gaps)
+        require(max_y - min_y == 2, "Wall must form a continuous vertical line with no gaps");
+    } 
+    else if (min_y == max_y) {
+        // Wall is horizontal (same rank)
+        // Check if it's 3 consecutive positions (no gaps)
+        require(max_x - min_x == 2, "Wall must form a continuous horizontal line with no gaps");
+    } 
+    else {
+        require(false, "Wall must be placed on a single file or rank");
+    }
+}
+
+/*
+// 7. WALL
+function card_wall_create(
+    game: game, 
+    owner: player_game, 
+    new_card: card, 
+    pick_piece_map: map<integer, piece_living_data>, 
+    card_picks: list<integer>
+) {
+
+    vuln_setup_wall(game, owner, card_picks[0], card_picks[1], card_picks[2]); // Vuln function
+
+    // No need to update the board (since not used after this)
+    //board_positions_all.board_obstacles[sq1] = with_pos_and_alignment(sq1, alignment.NEUTRAL);
+    //board_positions_all.board_obstacles[sq2] = with_pos_and_alignment(sq2, alignment.NEUTRAL);
+    //board_positions_all.board_obstacles[sq3] = with_pos_and_alignment(sq3, alignment.NEUTRAL);
+}
+*/

@@ -1,5 +1,4 @@
 
-
 // -------------------------------------
 // A function is easier to test. 
 // -------------------------------------
@@ -10,21 +9,54 @@ function card_play_inner(
     card_type_str: text, 
     card_order_number: integer, // The order number when the card was drawn/generated.
     card_picks: list<integer>, // The squares picked by the player when playing the card.
-    rnd_numbers: list<rnd_data>, // If any randomness was used playing this card, the numbers generated goes in here.
+    rnd_numbers: list<rnd_data> // If any randomness was used playing this card, the numbers generated goes in here.
+) {
+    // A.1. Check player entity
+    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+    require (minimal_game != null, "Player is not in a game");
 
-    // ----------------------
-    // Only if the client needs to send it
-    // ---------------------- 
-    check_args: move_check_arguments? = null // Yes, a card can result in check/mate.
+    // B.1. Maybe Revert Enchantments:
+    // We need to revert enchantments before we can verify the picks, since if a STONE times out (becomes a piece again)
+    // it should be allowed to be picked for a new spell.
+    //
+    // NOTE: This is an UPDATE on the board, meaning that we cannot test any require() after this 
+    //       line. Therefore we must call the [card_play_inner()] function in our tests to verify 
+    //       that require() statements work.
+    val reverted_list: list<card_enchantment_reverted> = card_enchantment_revert_timed_out(minimal_game.game, minimal_game.player_game);
+
+    card_play_inner_core(
+        minimal_game, 
+        game_id, 
+        last_seen_turn, 
+        card_type_str, 
+        card_order_number, 
+        card_picks,
+        rnd_numbers,
+        reverted_list
+    );
+}
+
+
+// -------------------------------------
+// Use this function for tests where we 
+// expect the requirements to fail.
+// It won't revert the old enchantments, so that
+// must be done manually before calling this function.
+// -------------------------------------
+function card_play_inner_core(
+    minimal_game: minimal_game_result,
+    game_id: integer, 
+    last_seen_turn: integer, // What turn the client last saw.
+    card_type_str: text, 
+    card_order_number: integer, // The order number when the card was drawn/generated.
+    card_picks: list<integer>, // The squares picked by the player when playing the card.
+    rnd_numbers: list<rnd_data>, // If any randomness was used playing this card, the numbers generated goes in here.
+    reverted_list: list<card_enchantment_reverted> // List of reverted enchantments.
 ) {
     // -----------    
     // A. Verication
     // -----------    
     log("Play Card Beign, game: " + game_id + ", last turn: " + last_seen_turn + ", type: " + card_type_str + ", order number: " + card_order_number );
-
-    // A.1. Check player entity
-    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
-    require (minimal_game != null, "Player is not in a game");
 
     var new_turn_type = turn_type.BLACK_CARD;
     var my_color = alignment.BLACK;
@@ -55,22 +87,6 @@ function card_play_inner(
     val expected_nr_of_picks = expected_pick_types.size();
     require(expected_nr_of_picks == card_picks.size(), "Expected " + expected_nr_of_picks + " picks for card " + card_type_str + " but got " + card_picks.size());
 
-    // -----------    
-    // B. Updates Maybe
-    // -----------    
-    // B.1. Create the turn record
-    // Do this FIRST since lots of verification in here.
-    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
-
-    // B.2 Maybe Revert Enchantments
-    // We need to revert enchantments before we can verify the picks, since if a STONE times out (becomes a piece again)
-    // it should be allowed to be picked for a new spell.
-    card_enchantment_revert_timed_out(minimal_game.game, minimal_game.player_game, new_turn);
-
-    // -----------    
-    // A. Verication, cont
-    // -----------    
-
     // We need the full board
     val board: list<with_pos_and_alignment> = vuln_get_all_as_wpaa(minimal_game.game); 
     val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, my_color);
@@ -87,40 +103,100 @@ function card_play_inner(
     // -----------------+----------------------------------------------------------------
     // Forbidden Spell  | Message
     // -----------------+----------------------------------------------------------------
-    // DOUBLE MOVE      = "King is in check! 
-    //                    You cannot use this spell, you have to escape check.";
+    // DOUBLE MOVE      = King is in check! 
+    //                    You cannot use this spell.
+    //                    Explanation: Your move would be forfeit after this card is played,
+    //                    meaning that your king would remain in check during your entire turn.
     // PORTAL           = King is in check! 
-    //                    You cannot use this spell.";
-    // SWITCH PLACE     = (We CAN use it, but only if we use it on the king
-    //                    to make the king escape.)
+    //                    You cannot use this spell.
+    //                    Explanation: Only non-kings can discover a portal,
+    //                    and your move would be forfeit after the portal is created,
+    //                    meaning that your king would remain in check during your entire turn.
+    // SWITCH PLACE     = (We CAN use it, but only if we use it on the king to make the king escape.)
+    //                    King is in check! 
+    //                    If you use this spell you must switch the king to a safe place.
+    //                    Explanation: If you switch two non-king pieces,
+    //                    your move would be forfeit after this card is played,
+    //                    meaning that your king would remain in check during your entire turn.
+    // WALL             = (We CAN use it, but only if we use it to block the check)
+    //                    King is in check! 
+    //                    You cannot use this spell unless you use it to prevent the check.
     // -----------------+----------------------------------------------------------------
     //
-    // a) DOUBLE MOVE is forbidden b/c we don't allow the king to stay in check
-    // while we forfeit the turn.
-    //
-    // b) PORTAL is forbidden since the king cannot discover a portal, and if we 
-    // use the portal on some other piece the king will stay in check
-    // while we forfeit the turn.
-    //
-    // c) We cannot use SWITCH PLACE on a non-king, since the king would stay in check
-    // while we forfeit the turn.
+    // The reason why we restrict WALL when in check is tricky:
+    // There is a possibility that the player uses the WALL to create self-mate.
+    // It's too hard to calculate mate when playing wall, so we're doing this instead. 
+    // (Note: the wall can also create self-stalemate, but we don't check for that)
+
+    when (card_type) {
+
+        SWITCH_PLACE -> {   
+            val (king_pld: piece_living_data?, other_pld: piece_living_data?) = card_switch_extract_king_pld(pick_piece_map.values());
+            if (king_pld != null) {
+                // We're switching the king, now we will verify it won't get into check after the switch.
+
+                // Expensive, so we wait until last moment
+                val opp_team = team_build_from_db(minimal_game.game, opp_color);
+
+                val king_from_pos = king_pld.vuln.position;
+                val king_to_pos = other_pld!!.vuln.position;
+                val king_wpaa = with_pos_and_alignment(king_from_pos, king_pld.vuln.align);
+                val calc: check_stat_board_calculator_data = check_sb_build_hypothetical_king_move(
+                    king_wpaa,
+                    king_from_pos,
+                    king_to_pos,
+                    opp_team,
+                    board_positions_all
+                );
+
+                require(not check_sb_is_check(calc), "Cannot SWITCH the king to a position where it is in check.");
+            }
+        }
+        WALL -> {
+            card_wall_verify_picks(board_positions_all, card_picks);
+        }
+        else -> {
+            // Ok, we can use this card
+        }
+    }
     
     if (minimal_game.in_check) {
         when (card_type) {
             DOUBLE_MOVE -> {
+                // Simple
                 require(false, "Cannot use DOUBLE MOVE when in check");
             }
             PORTAL -> {
+                // Simple
                 require(false, "Cannot use PORTAL when in check");
             }
             SWITCH_PLACE -> {   
-                var ok = false;
-                for (pld: piece_living_data in pick_piece_map.values()) {
-                    if (pld.original_type == piece_type.KING) {
-                        ok = true; // If one of the pieces is the king we CAN use SWITCH PLACE.
-                    }
-                }
-                require(ok, "Cannot use SWITCH PLACE when in check, unless switching the king away from check.");
+                // Note: this is all we have to do, since we've already verified 
+                // that the king can't move to a check position.
+                val (king_pld: piece_living_data?, other_pld: piece_living_data?) = card_switch_extract_king_pld(pick_piece_map.values());
+                // One of the pieces must be the king.
+                require(king_pld != null, "Cannot use SWITCH PLACE when in check, unless switching the king away from check.");
+
+            }
+            WALL -> {
+                // Only allow wall if it blocks the check.
+           
+                // Expensive, so we wait until last moment
+                val opp_team = team_build_from_db(minimal_game.game, opp_color);
+                val my_king_pld = piece_get_living_data_for_king(minimal_game.game, my_color);
+
+                val king_from_pos = my_king_pld!!.vuln.position;
+                val calc: check_stat_board_calculator_data = check_sb_build_hypothetical_wall(
+                    card_picks,
+                    king_from_pos,
+                    opp_team,
+                    board_positions_all
+                );
+
+                require(not check_sb_is_check(calc), "Cannot SWITCH the king to a position where it is in check.");
+            }
+            else -> {
+                // Ok, we can use this card
             }
         }
     }
@@ -129,8 +205,17 @@ function card_play_inner(
     log("Card passed verification, game: " + game_id +", type: " + card_type_str + " order number: " + card_order_number + " picks: " + pick_summary);
 
     // -----------    
-    // B. Updates, cont
+    // B. Updates
     // -----------    
+    // B.1. Create the turn record
+    // Do this FIRST since lots of verification in here.
+    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
+
+    // B.2. Create the events
+    for (reverted in reverted_list) {
+        card_event_create_remove_enchantment(minimal_game.game, new_turn, reverted.orig_card, reverted.enchanted_piece);
+    }
+
     // We must replicate the random number used on the client side.
     val rnd_list = list<rnd_result>();
 
@@ -187,11 +272,11 @@ function card_play_inner(
         // b) Something happens on the Board 
         // ----------------
         SWITCH_PLACE -> {
-            card_board_change_create_switch_place(my_color, new_card, pick_piece_map[0], pick_piece_map[1]);
-            // Actually, since both pieces have the same alignment, the switch won't effect the [board_positions_all].
+            alive_switch_place(my_color, pick_piece_map[0].vuln.a, pick_piece_map[1].vuln.a);
+            // Since both pieces have the same alignment, the switch won't effect the [board_positions_all].
         }
         WALL -> {
-            card_board_change_create_wall(minimal_game.game, minimal_game.player_game, new_card, pick_piece_map, card_picks, board_positions_all);
+            alive_setup_wall(minimal_game.game, minimal_game.player_game, card_picks[0], card_picks[1], card_picks[2]); 
         }
         PORTAL -> {
             // Portal needs a random number
@@ -201,36 +286,23 @@ function card_play_inner(
             val portal_entry_pos = card_picks[0];
             val portal_exit_pos = card_picks[1]; // Strictly not a pick, but we do it this way.
 
-            card_board_change_create_portal(minimal_game.player_game, new_card, pick_piece_map, portal_entry_pos, portal_exit_pos, rnd_data, new_turn, board_positions_all);
+            card_portal_create_and_validate(minimal_game.player_game, new_card, pick_piece_map, portal_entry_pos, portal_exit_pos, rnd_data, new_turn, board_positions_all);
         }
         // ----------------
         // c) Delayed effects (no update of [board_positions_all])
         // ----------------
         RESURRECT -> {
-
             // Note: the random number is used when the actual resurrection happens.
-            create_potential_resurrect(minimal_game.player_game, new_card);
+            card_delayed_create_potential_resurrect(minimal_game.player_game, new_card);
         }
         DOUBLE_MOVE -> {
-            create_double_move(minimal_game.player_game, new_card);
+            card_delayed_create_double_move(minimal_game.player_game, new_card);
         }
     }
 
-    // Get all pieces of both teams
-    // Expensive, so we wait until last moment
-    val our_team = team_build_from_db(minimal_game.game, my_color);
-    val opp_team = team_build_from_db(minimal_game.game, opp_color);
-
-    val our_king = team_get_king(our_team)!!;
-    val opp_king = team_get_king(opp_team)!!;
-
-    // B.7 Verify if we just won via checkmate?
-    val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args);
-    val is_game_over = game_over(minimal_game, new_turn, is_checkmate, is_stalemate);
-
     // B.7. Move to next turn
     log("/Play Card End, game: " + game_id + ", new turn type: " + new_turn_type + ", type: " + card_type_str + ", order number: " 
-            + card_order_number + ", picks: " + pick_summary + ", is_game_over: " + is_game_over);
+            + card_order_number + ", picks: " + pick_summary + ", in_check: " + minimal_game.in_check);
 }
 
 

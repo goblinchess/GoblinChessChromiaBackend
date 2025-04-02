@@ -27,24 +27,19 @@ operation play_card(
     card_type_str: text, 
     card_order_number: integer, // The order number when the card was drawn/generated, starting from 0.
     card_picks: list<integer>, // The squares picked by the player when playing the card.
-    rnd_numbers: list<rnd_data>, // If any randomness was used playing this card, the numbers generated goes in here.
-    // ----------------------
-    // Only if the client needs to send it
-    // ---------------------- 
-    check_args: move_check_arguments? = null // Yes, a card can result in check/mate.
+    rnd_numbers: list<rnd_data> // If any randomness was used playing this card, the numbers generated goes in here.
 ) {
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
 
     card_play_inner(
-        caller_pubkey, 
+        caller_pubkey,
         game_id, 
         last_seen_turn, 
         card_type_str, 
         card_order_number, 
         card_picks,
-        rnd_numbers,
-        check_args
+        rnd_numbers
     );
 }
 

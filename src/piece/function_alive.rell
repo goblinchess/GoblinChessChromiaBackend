@@ -79,3 +79,37 @@ function alive_switch_place(align: alignment, piece1: alive, piece2: alive) {
     update piece2 (.position = pos1);
     update piece1 (.position = pos2);
 }
+
+// ------------------------------------------------------------
+// Constructors
+// ------------------------------------------------------------
+
+function alive_obstacle_create(game: game, owner: player_game, pos: integer): vulnerable {
+    val v = create vulnerable (
+        .game = game,
+        .is_obstacle = true,
+        .can_retaliate = false,
+        .color = alignment.NEUTRAL,
+        .start_hit_points = 10,
+        .remaining_hit_points = 10,
+        .defence = 3 // Default 
+    );
+
+
+    // Not exactly "alive" but at the board.
+    val a = create alive ( 
+        .vulnerable = v,
+        .position = pos,
+        .game = game,
+        .owned_by = owner
+    );
+
+    return v;
+}
+
+// CARD: WALL
+function alive_setup_wall(game:game, owner: player_game, pos1: integer, pos2: integer, pos3: integer) {
+    alive_obstacle_create(game, owner, pos1);
+    alive_obstacle_create(game, owner, pos2);
+    alive_obstacle_create(game, owner, pos3);
+}

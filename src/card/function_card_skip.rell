@@ -31,7 +31,12 @@ function card_skip_inner(
     val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
 
     // B.2 Maybe Revert Enchantments
-    card_enchantment_revert_timed_out(minimal_game.game, minimal_game.player_game, new_turn);
+    val reverted_list: list<card_enchantment_reverted> = card_enchantment_revert_timed_out(minimal_game.game, minimal_game.player_game);
+
+    // B.3. Create the events
+    for (reverted in reverted_list) {
+        card_event_create_remove_enchantment(minimal_game.game, new_turn, reverted.orig_card, reverted.enchanted_piece);
+    }
 
     log("/Skip Card End, game: " + game_id + ", new turn type: " + new_turn_type);
 }

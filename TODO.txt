@@ -2,13 +2,15 @@
  TODO Client: 
 -------------
 
+ Test WALL when in check.
+
  Make Resurrect random calculation happen 
  earlier, so that we can send the "move_attack()" to the node.
 
 
  TODO Node: 
 -------------
-Added "in_check" on player_game.
+Added "in_check" on player_game, make sure it's UPDATED when check is caused!
 
 
 
@@ -31,7 +33,7 @@ Added "in_check" on player_game.
 DONE:
 
 
-"1. Implement restriction on what spells can be cast when in check. 2. Added Resurrect to the test (4: white move ). Verified that we cannot move to put king in check (8: white move)" 
+"Added Resurrect to the test (4: white move ). Verified that we cannot move to put king in check (8: white move)" 
 
 
 

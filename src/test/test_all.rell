@@ -383,9 +383,14 @@ function test_full_game() {
     // --------------------
     // First we try a few invalid cards, to make sure the validation works.
 
+    var minimal_game: minimal_game_result? = get_minimal_game_data(white_player.pub);
+    require (minimal_game != null, "Player is not in a game");
+    val reverted_list: list<card_enchantment_reverted> = card_enchantment_revert_timed_out(minimal_game.game, minimal_game.player_game);
+    require (reverted_list.size() == 0, "Shouldn't start with timed out enchantments");
+
     log("Turn 1(1): Card Fail A. No picks for FROG");
     val card_picks_none: list<integer> = []; // No picks
-    var failed_card = assert_fails(card_play_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_none, list<rnd_data>(),
+    var failed_card = assert_fails(card_play_inner_core(minimal_game, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_none, list<rnd_data>(), reverted_list,
         * // Note, this star is what makes it work.
     ));
     val expected_no_pick_msg: text = "Expected 1 picks for card FROG but got 0";
@@ -393,28 +398,20 @@ function test_full_game() {
 
     log("Turn 1(1): Card Fail B. Out of board pick for FROG");
     val card_picks_out_of_board = [64]; // Out of board
-    failed_card = assert_fails(card_play_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_out_of_board, list<rnd_data>(),
+    failed_card = assert_fails(card_play_inner_core(minimal_game, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_out_of_board, list<rnd_data>(), reverted_list,
         * // Note, this star is what makes it work.
     ));
-
-
-    // --------------------
-    // NOTE: Cannot test this since we might creat an [remove_enchantment_event] before this test.
-    //       and it seems like the "assert_fails()" cannot handle DB writes before the failed require().
-    // --------------------
-    /*
     val expected_out_of_board_pick: text = "Pick at pos 0 is out of board.";
     log("Err:" + failed_card.message);
     assert_true(failed_card.message.starts_with(expected_out_of_board_pick));
 
-    log("Turn 8= Card Fail C. Free square pick for FROG");
+    log("Turn 1(1)= Card Fail C. Free square pick for FROG");
     val card_picks_free = [18]; // = c3, free square
-    failed_card = assert_fails(card_play_inner(white_player.pub, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_free, list<rnd_data>(),
+    failed_card = assert_fails(card_play_inner_core(minimal_game, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_free, list<rnd_data>(), reverted_list,
         * // Note, this star is what makes it work.
     ));
     val expected_must_be_piece_msg: text = "Expected pick at pos 0 to be type PIECE_NON_KING_SQUARE but found a free square at position 18.";
     assert_true(failed_card.message.starts_with(expected_must_be_piece_msg));
-    */
 
     // --------------------
     // /Failed White Cards

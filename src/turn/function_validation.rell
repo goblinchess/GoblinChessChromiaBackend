@@ -103,7 +103,7 @@ function validate_white_move(game: game, player_game: player_game, new_turn_type
         // Some cards will prevent the move.
         return validate_executed_move(player_game, old_turn_number);
     } else if (new_turn_type == turn_type.WHITE_MOVE_SKIPPED) {
-        // Can only skip if we played a double move card this turn
+        // Can only skip if we played a double move (or similar "move consuming") card this turn
         return validate_skipped_move(player_game, old_turn_number);
     } else {
         return "White player can only play WHITE_MOVE_? after WHITE_CARD_?. Trying to play " + new_turn_type;
@@ -139,7 +139,7 @@ function validate_black_move(game: game, player_game: player_game, new_turn_type
         // Some cards will prevent the move.
         return validate_executed_move(player_game, old_turn_number);
     } else if (new_turn_type == turn_type.BLACK_MOVE_SKIPPED) {
-        // Can only skip if we played a double move card this turn
+        // Can only skip if we played a double move (or similar "move consuming") card this turn
         return validate_skipped_move(player_game, old_turn_number);
     } else {
         return "Black player can only play BLACK_MOVE_? after BLACK_CARD_?. Trying to play " + new_turn_type;
@@ -162,10 +162,10 @@ function validate_black_neutral(game: game, player_game: player_game, new_turn_t
 // -------------------------------------
 
 function validate_executed_move(player_game: player_game, old_turn_number: integer): text? {
-    val card_type = get_card_type_for_turn_number(old_turn_number);
+    val card_type = card_get_type_for_turn_number(old_turn_number);
     if (card_type == null) {
         return null; // Most common case, no card was played
-    } else if (will_card_skip_move(card_type)) {
+    } else if (card_should_skip_move(card_type)) {
         return "The card " + card_type + " does not allow the player to make a move.";
     } else {
         return null; // Valid
@@ -175,10 +175,10 @@ function validate_executed_move(player_game: player_game, old_turn_number: integ
 
 // We can ONLY skip move if we played a double move card this turn.
 function validate_skipped_move(player_game: player_game, old_turn_number: integer): text? {
-    val card_type = get_card_type_for_turn_number(old_turn_number);
+    val card_type = card_get_type_for_turn_number(old_turn_number);
     if (card_type == null) {
         return "Player can only issue ?_MOVE_SKIPPED if she played a card this turn.";
-    } else if (will_card_skip_move(card_type)) {
+    } else if (card_should_skip_move(card_type)) {
         return null; // Valid
     } else {
         return "The card " + card_type + " does not allow ?_MOVE_SKIPPED.";
@@ -187,7 +187,7 @@ function validate_skipped_move(player_game: player_game, old_turn_number: intege
 
 // We can ONLY hijack a neutral move if we played a double move card last turn.
 function validate_neutral_move_hijacked(player_game: player_game, old_turn_number: integer): text? {
-    val double_move_turn_number = look_for_active_double_move(player_game);
+    val double_move_turn_number = card_look_for_active_double_move(player_game);
     if (double_move_turn_number == null) { 
         return "Player can only create a NEUTRAL_MOVE_?_HIJACKED if Double Move card was played last turn (Null).";
     } else {

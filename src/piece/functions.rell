@@ -55,14 +55,48 @@ function piece_get_living_data_from_pos(g: game, given_pos: integer) :piece_livi
 
     if (res != null) {
 
-        var use_align = res.color;
-        if (res.is_obstacle) {
-            use_align = alignment.NEUTRAL; // Easier than trying to remember the original alignment.
-        }
+        val vln = vulnerable_data(
+            align = res.color, 
+            position = given_pos, 
+            is_obstacle = res.is_obstacle,
+            can_retaliate = res.can_retaliate,
+            start_hit_points = res.start_hit_points,
+            remaining_hit_points = res.remaining_hit_points,
+            defence = res.defence,
+            v = res.found_vulnerable,
+            a = res.found_alive,
+            g = g,
+            owned_by = res.found_owned_by
+        );
+
+        return piece_living_data(
+            vuln = vln,
+            is_knighted = res.is_knighted,
+            original_type = res.original_type,
+            active_type = res.active_type,
+            p = res.found_piece
+        );
+
+    } else {
+        return null;
+    }
+}
+
+function piece_get_living_data_for_king(g: game, given_align: alignment): piece_living_data? {
+     val res = (a: alive, pi: piece, v: vulnerable)@? {
+        a.game == g, // Only alive pieces are on the board.
+        a.vulnerable == v,
+        v == pi.vulnerable,
+        v.color == given_align,
+        pi.original_type == piece_type.KING
+    } (a.position, v.is_obstacle, v.can_retaliate, v.start_hit_points, v.remaining_hit_points, v.defence, pi.is_knighted, pi.original_type, pi.active_type, 
+        found_vulnerable = v, found_piece = pi, found_alive = a, found_owned_by = a.owned_by);
+
+    if (res != null) {
 
         val vln = vulnerable_data(
-            align = use_align, 
-            position = given_pos, 
+            align = given_align, 
+            position = res.position, 
             is_obstacle = res.is_obstacle,
             can_retaliate = res.can_retaliate,
             start_hit_points = res.start_hit_points,
