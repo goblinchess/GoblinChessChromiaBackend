@@ -2,6 +2,8 @@
  TODO Client: 
 -------------
 
+ Test WALL when in check.
+
  Make Resurrect random calculation happen 
  earlier, so that we can send the "move_attack()" to the node.
 

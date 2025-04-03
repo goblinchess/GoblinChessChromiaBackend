@@ -12,7 +12,7 @@ function move_skip_inner(
     // ----------------
     // A.1. Check player entity
     // ----------------
-    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+    val minimal_game: minimal_game_result? = minimal_game_data_get(caller_pubkey);
     require (minimal_game != null, "Player is not in a game, id:" + game_id);
 
     // ----------------
@@ -64,38 +64,41 @@ function move_skip_inner(
     val hist_portals: list<portal_event> = move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, null, opp_team, my_color);
 
     // B.3 Promotions
+    // Not common, but if a PORTAL might send a pawn to the final rank. 
     // TODO
     val has_promotions = false;
 
-    // This is somewhat tricky, but there are two cases where we need to calculate check/mate:
-    // 1. if we use the portal, potentially a piece has moved and
-    // 2. if we have promotions, since a promotion can cause check/mate.
-    var is_game_over = false;
-    if (hist_portals.size() > 0 or has_promotions) {
+    // ----------------------------------------------    
+    // Check/stale/mate
+    // There are many cases where we need to calculate check/mate even if the move was skipped:
+    // 1. if we use the PORTAL, potentially a piece has moved, and
+    // 2. if we did a SWITCH we might cause check/mate, and
+    // Actually, the only case where we can skip the check/mate calculation is after DOUBLE MOVE card,
+    // but it's just easier to always calculate it.
+    // ----------------------------------------------    
          
-        // Expensive, so we wait until last moment
-        val our_team = team_build_from_db(minimal_game.game, my_color);
-        val our_king = team_get_king(our_team)!!;
+    // Expensive, so we wait until last moment
+    val our_team = team_build_from_db(minimal_game.game, my_color);
+    val our_king = team_get_king(our_team)!!;
 
-        // B.4 Verify if we just won via checkmate?
-        val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, null);
+    // B.4 Verify if we just won via checkmate?
+    val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, null);
 
-        // ----------------
-        // B.4 Is it over?
-        // ----------------
-
-        is_game_over = game_over(minimal_game, new_turn, is_checkmate, is_stalemate);
-      
-    } 
-
-
+    // ----------------
+    // B.4 Is it over?
+    // ----------------
+    val is_game_over = game_over(minimal_game, new_turn, is_checkmate, is_stalemate);
     if (not is_game_over) {
         // B.5 Cleanup 
         // For "skip" this will:
         // 1. Remove vuln context. 
         // 2. Count down enchantments.
         move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, my_color);
+
+        // The "is_check" status of the opponent should be saved.
+        game_update_turn_and_check_status(minimal_game, new_turn, is_check);
     }
 
-    log("/Skip Move End: game_id: " + game_id + " new turn type: " + new_turn_type);
+    log("/Skip Move End: new turn type: " + new_turn_type + ", is_game_over: " + is_game_over + ", opp in check: " + is_check + ", game_id: " + game_id );
+
 }

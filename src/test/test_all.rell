@@ -383,7 +383,7 @@ function test_full_game() {
     // --------------------
     // First we try a few invalid cards, to make sure the validation works.
 
-    var minimal_game: minimal_game_result? = get_minimal_game_data(white_player.pub);
+    var minimal_game: minimal_game_result? = minimal_game_data_get(white_player.pub);
     require (minimal_game != null, "Player is not in a game");
     val reverted_list: list<card_enchantment_reverted> = card_enchantment_revert_timed_out(minimal_game.game, minimal_game.player_game);
     require (reverted_list.size() == 0, "Shouldn't start with timed out enchantments");

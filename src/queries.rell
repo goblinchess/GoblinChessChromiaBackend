@@ -49,7 +49,7 @@ query consume_lobby_entry_by_name(
 
 query in_game (caller_pubkey: pubkey) :in_game_result? {
 
-    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+    val minimal_game: minimal_game_result? = minimal_game_data_get(caller_pubkey);
 
     if (minimal_game == null) {
         return null;

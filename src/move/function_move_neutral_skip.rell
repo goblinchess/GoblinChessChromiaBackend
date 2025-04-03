@@ -13,7 +13,7 @@ function move_neutral_skip_inner(
     // ----------------
     // A.1. Check player entity
     // ----------------
-    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+    val minimal_game: minimal_game_result? = minimal_game_data_get(caller_pubkey);
     require (minimal_game != null, "Player is not in a game, id:" + game_id);
 
     // ----------------

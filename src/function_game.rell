@@ -20,7 +20,7 @@ function game_is_classic(gt: game_type) :boolean {
 
 // Will find the player, the game and the color 
 // from the player's pubkey
-function get_minimal_game_data(caller_pubkey: pubkey) :minimal_game_result? {
+function minimal_game_data_get(caller_pubkey: pubkey) :minimal_game_result? {
     // Return data
     val res = (p: player, pg: player_game)@?  {
         p.signer == caller_pubkey, 
@@ -48,10 +48,56 @@ function get_minimal_game_data(caller_pubkey: pubkey) :minimal_game_result? {
 // Updates
 // ----------
 
+// Will update the gome with:
+// 1. New turn number, (actually redundant, since the [turn] entity has been created)
+// 2. is_check = meaning we put the opponent in check.
+// 
+// Note: If we were in check in the beginning of this turn, 
+// we don't bother to remove it, since the opponent will 
+// update our is_check status in the end of their move.
+function game_update_turn_and_check_status(minimal_game: minimal_game_result, new_turn: turn, is_check: boolean) {
+    // 1. Update game with new turn number
+    update minimal_game.game (.current_turn = new_turn.number);
+
+    // 2. Find opponent [player_game]
+    val opponent_player_game = player_game@ {
+        .game == minimal_game.game,
+        .is_white != minimal_game.is_white 
+    };
+
+    // 3. Update opponent [player_game] with new is_check status
+    update opponent_player_game (.in_check = is_check);
+}
+
+function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkmate: boolean, is_stalemate: boolean) :boolean {
+    if (is_checkmate or is_stalemate) {
+        log("Game Over");
+        if (is_checkmate) {
+            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = false);
+
+            // TODO
+        } else {
+            // Stalemate
+            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = true);
+
+            // TODO
+        }
+
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+// ----------
+// Create Game
+// ----------
+
 // Handles the creation of a game
 
 
-function create_game_via_lobby_inner(opponent_player: player, game_type_str: text): game {
+function game_create_via_lobby_inner(opponent_player: player, game_type_str: text): game {
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
     
@@ -62,7 +108,7 @@ function create_game_via_lobby_inner(opponent_player: player, game_type_str: tex
     val existing_lobby = lobby@? {.player == opponent_player, .game_type == g_type};
     require(existing_lobby != null, "Opponent is not in the lobby");
     
-    val new_game = create_game_random_black_white(caller_player, opponent_player, game_type_str);
+    val new_game = game_create_random_black_white(caller_player, opponent_player, game_type_str);
 
     // Remove opponent's lobby
     delete lobby@* {.player == opponent_player};
@@ -72,7 +118,7 @@ function create_game_via_lobby_inner(opponent_player: player, game_type_str: tex
     return new_game;
 }
 
-function create_game_random_black_white(caller_player: player, opponent_player: player, game_type_str: text): game {
+function game_create_random_black_white(caller_player: player, opponent_player: player, game_type_str: text): game {
     // Determine who plays white based on timestamp
     val timestamp_is_even = (op_context.last_block_time / 1000) % 2 == 0;
     
@@ -82,7 +128,7 @@ function create_game_random_black_white(caller_player: player, opponent_player: 
      else 
         (caller_player, opponent_player);
     
-    return create_game_inner(white_player, black_player, game_type_str);
+    return game_create_inner(white_player, black_player, game_type_str);
 }
 
 
@@ -90,7 +136,7 @@ function create_game_random_black_white(caller_player: player, opponent_player: 
 
 // We create the GAME and 
 // one HAND for each player
-function create_game_inner(white_player: player, black_player: player, game_type_str: text): game {
+function game_create_inner(white_player: player, black_player: player, game_type_str: text): game {
 
     val g_type: game_type = game_type.value(game_type_str);
     
@@ -137,26 +183,4 @@ function create_game_inner(white_player: player, black_player: player, game_type
 }
 
 
-// ----------
-// Game Over
-// ----------
 
-function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkmate: boolean, is_stalemate: boolean) :boolean {
-    if (is_checkmate or is_stalemate) {
-        log("Game Over");
-        if (is_checkmate) {
-            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = false);
-
-            // TODO
-        } else {
-            // Stalemate
-            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = true);
-
-            // TODO
-        }
-
-        return true;
-    } else {
-        return false;
-    }
-}

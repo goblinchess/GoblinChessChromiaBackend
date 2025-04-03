@@ -12,7 +12,7 @@ function card_play_inner(
     rnd_numbers: list<rnd_data> // If any randomness was used playing this card, the numbers generated goes in here.
 ) {
     // A.1. Check player entity
-    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+    val minimal_game: minimal_game_result? = minimal_game_data_get(caller_pubkey);
     require (minimal_game != null, "Player is not in a game");
 
     // B.1. Maybe Revert Enchantments:

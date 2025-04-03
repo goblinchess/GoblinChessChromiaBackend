@@ -11,7 +11,7 @@ function card_skip_inner(
     log("Skip Card Beign, game: " + game_id + " last turn: " + last_seen_turn );
 
     // 1. Check player entity
-    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+    val minimal_game: minimal_game_result? = minimal_game_data_get(caller_pubkey);
     require (minimal_game != null, "Player is not in a game");
 
     // A.2. Is game is out of sync? 

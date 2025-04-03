@@ -30,7 +30,7 @@ function move_peaceful_inner(
     // A.1. Check player entity
     // ----------------
     //log("Move A.1");
-    val minimal_game: minimal_game_result? = get_minimal_game_data(caller_pubkey);
+    val minimal_game: minimal_game_result? = minimal_game_data_get(caller_pubkey);
     require (minimal_game != null, "Player is not in a game, id:" + game_id);
 
     // ----------------
@@ -201,9 +201,11 @@ function move_peaceful_inner(
             move_vuln_path_add_from_move(minimal_game.game, my_color, m, maybe_pot_paths, m_args.to_position);
         }
 
-        update minimal_game.game (.current_turn = new_turn.number);
+        // The "is_check" status of the opponent should be saved.
+        game_update_turn_and_check_status(minimal_game, new_turn, is_check);
     }
 
-    log("/Move Peaceful End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + ", is_game_over: " + is_game_over + ", game_id: " + game_id );
+    log("/Move Peaceful End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + 
+        ", is_game_over: " + is_game_over + ", opp in check: " + is_check + ", game_id: " + game_id );
 }
 
