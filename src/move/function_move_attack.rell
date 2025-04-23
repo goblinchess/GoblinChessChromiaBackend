@@ -26,6 +26,9 @@ function move_attack_inner(
 
     check_args: move_check_arguments? = null,
 
+    // Events that might happen after a move.
+    end_args: move_end_events_arguments? = null,
+
     // ----------------------
     // Some args
     // ----------------------
@@ -74,7 +77,7 @@ function move_attack_inner(
     val v_res = move_verify_basic_move(game_id, m_args, minimal_game);
     val p_type = v_res.p_type; // The main piece type
     val p = v_res.p; // The main piece data
-    val align = v_res.align; // This players color
+    val my_color = v_res.align; // This players color
     val opp_align = v_res.opp_align; // Opponent's color
 
     // ----------------
@@ -85,7 +88,7 @@ function move_attack_inner(
     val opp_vuln_ctxt: pre_vuln_context = res_v_path.v_ctxt;
     val v_path_opp_vuln: vulnerable? = res_v_path.moved_vuln;
 
-    val (opp_vuln: vulnerable_data, opp: piece_living_data?) = move_verify_opponent_piece(game_id, align, att_args, minimal_game, opp_vuln_ctxt, v_path_opp_vuln);
+    val (opp_vuln: vulnerable_data, opp: piece_living_data?) = move_verify_opponent_piece(game_id, my_color, att_args, minimal_game, opp_vuln_ctxt, v_path_opp_vuln);
   
     // ----------------
     // A.6 Battle calculation
@@ -121,7 +124,7 @@ function move_attack_inner(
 
 
     val board: list<with_pos_and_alignment> = vuln_get_all_as_wpaa(minimal_game.game); 
-    val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, align);
+    val portals: list<owned_portal> = portal_get_all_by_owner(minimal_game.player_game, my_color);
     val board_positions_all = board_positions_all_constructor(minimal_game.game, board, portals);
 
 
@@ -132,7 +135,7 @@ function move_attack_inner(
             is_enchanted_jump,
             p.is_knighted,
             m_args.from_position,
-            align,
+            my_color,
             opp_vuln_ctxt
     );
 
@@ -153,7 +156,7 @@ function move_attack_inner(
 
     // Get all pieces of both teams
     // Expensive, so we wait until last moment
-    val our_team = team_build_from_db(minimal_game.game, align);
+    val our_team = team_build_from_db(minimal_game.game, my_color);
     val opp_team = team_build_from_db(minimal_game.game, opp_align);
 
     val our_king = team_get_king(our_team)!!;
@@ -163,11 +166,11 @@ function move_attack_inner(
     // A.7. Verify if this move will get us into check
     // ----------------
     //log ("Move A.7 - Verify if this move will get us into check ");
-    val p_wpaa = with_pos_and_alignment(m_args.from_position, align);
+    val p_wpaa = with_pos_and_alignment(m_args.from_position, my_color);
     val get_into_check = will_hypothetical_move_cause_check(
             selected_path,
             p_wpaa,
-            align,
+            my_color,
             our_king.vuln.position,
             opp_team,
             board_positions_all
@@ -202,21 +205,57 @@ function move_attack_inner(
         move_common_change_piece_position(p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position, board_positions_all, our_team);
     }
 
-    // B.4 Use all unblocked portals
-    move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, our_team, opp_team, align);
+    // ----------------
+    // 4. Apply end_args
+    // ----------------
+    // B.4.a Use all unblocked portals
+    move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
 
-    // B.5 Promotions
-    // TODO
+    // B.4.b Resurrection
+    // (Must happen after the portal travel, so we won't end up blocking a portal exit)
+    if (battle_res.result == battle_result_type.KILL) {
+        if (not opp_vuln.is_obstacle) {
 
-    // B.6 Verify if we just won via checkmate?
+            val opp_resurrect_piece = opp!!;
+
+            // We killed an opponent piece, so we can maybe resurrect one.
+            val old_card: card? = resurrect_find_potential(minimal_game.player_game, new_turn.number);
+            if (old_card != null) {
+
+                // We found a potential resurrect, so we can resurrect one!
+                // But first, check the players arguments.
+                require(end_args != null, 
+                "move_battle_resurrect_of_vulnerable() - ERROR: Node thinks we should resurrect. "
+                + ", but no end_args provided!");
+                require(end_args.resurrection_pos != null, 
+                "move_battle_resurrect_of_vulnerable() - ERROR: Node thinks we should resurrect. "
+                + ", but no resurrection_pos provided.");
+
+                val old_pos = att_args.attacked_position; // The place where the piece was killed.
+                val new_pos = end_args.resurrection_pos; // This cannot be validated, must wait to the end of the game.
+                val new_owner = minimal_game.player_game; // Me
+                move_battle_resurrect_of_vulnerable(new_turn, old_card, opp_resurrect_piece, old_pos, new_pos,  
+                    new_owner, my_color, board_positions_all, our_team);
+            }
+        }
+    }
+
+    // B.4.c Promotions
+    // (Must happen after the portal travel, if a pawn travels to an exit at the final rank)
+    promote_all_pawns_at_final_rank(board_positions_all, our_team, my_color, end_args);
+
+    // ----------------
+    // 5. Check/stale/mate
+    // ----------------
+    // B.5 Verify if we just won via checkmate?
     val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(minimal_game, board_positions_all, opp_align, opp_king, our_team, opp_team, check_args);
 
-    // B.7 Turn and static move
+    // B.6 Turn and static move
     val is_castle = false; // Must be false for attacks
     val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_check); 
 
     // ----------------
-    // B.8. Create attack_move entity
+    // B.7. Create attack_move entity
     // ----------------
 
     val am = create attack_move(
@@ -229,7 +268,7 @@ function move_attack_inner(
 
     if (is_chaos_mode) {
 
-        // B.8.chaos.1. Create chaos_mode_args entity
+        // B.7.chaos.1. Create chaos_mode_args entity
         require(chaos_args != null, "Internal error: Chaos mode args is null, id:" + game_id); // Already checked above.
         create chaos_mode_args(
             attack_move = am,
@@ -240,7 +279,7 @@ function move_attack_inner(
 
         when (battle_res.result) {
             battle_result_type.HIT -> {
-                // B.8.chaos.2. Create retaliation entity
+                // B.7.chaos.2. Create retaliation entity
                 require(ret_args != null, "Internal error: Retaliation args is null, id:" + game_id); // Already checked above.
                 val retaliation_move = create retaliation(
                     attack_move = am,
@@ -252,18 +291,18 @@ function move_attack_inner(
         }
 
         // ----------------
-        // B.8.chaos.3. Save the rnd results
+        // B.7.chaos.3. Save the rnd results
         // ----------------
         rnd_validation_create_player_rnd_nr(new_turn, battle_res.rnd_results);
     }
 
     // ----------------
-    // B.9 Is it over?
+    // B.8 Is it over?
     // ----------------
     val is_game_over = game_over(minimal_game, new_turn, is_checkmate, is_stalemate);
     if (not is_game_over) {
         // Cleanup
-        move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, align);
+        move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, my_color);
         // Won't add any vulns for attacks.
 
         // The "is_check" status of the opponent should be saved.

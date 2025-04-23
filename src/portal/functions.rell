@@ -2,8 +2,19 @@
 // Portals
 // ----------------
 
-function is_portal_owned_by(portal: owned_portal, align: alignment): boolean {
+function portal_is_owned_by(portal: owned_portal, align: alignment): boolean {
     return portal.owner_alignment == align; // Trivial
+}
+
+
+// Returns "true" if the found portal is in the given list of portals.
+function portal_does_found_match_given(given_portals: list<integer>, found_portal: owned_portal): boolean {
+    for (given_portal in given_portals) {
+        if (given_portal == found_portal.entry_pos) {  // The given portal pos is entry pos.
+            return true;
+        }
+    }
+    return false;
 }
 
 // Return a list of all portals owned by the player.
@@ -14,7 +25,7 @@ function is_portal_owned_by(portal: owned_portal, align: alignment): boolean {
 // (It's as if the opponent's portals are invisible, 
 // and the movements are inscrutable to the this player)
 // TODO: This might change when we add check/mate calculations.
-function move_get_all_portals(player_game: player_game, player_align: alignment): list<owned_portal> {
+function portal_get_all_by_owner(player_game: player_game, player_align: alignment): list<owned_portal> {
 
     val ps = (p: portal)@* {p.owned_by == player_game} (prtl = p, p.entry_position, p.exit_position);
 
@@ -31,7 +42,7 @@ function move_get_all_portals(player_game: player_game, player_align: alignment)
 }
 
 // When a portal card is played, we need to set up the portal on the board.
-function move_setup_portal(owned_by: player_game, card: card, entry_pos: integer, exit_pos: integer) {
+function portal_setup(owned_by: player_game, card: card, entry_pos: integer, exit_pos: integer) {
 
     // Half-assed check (assumping client did proper validation)
     val res = portal@? {.owned_by == owned_by, .entry_position == entry_pos};

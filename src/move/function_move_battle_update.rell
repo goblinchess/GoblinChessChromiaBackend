@@ -71,18 +71,50 @@ function move_battle_death_of_vulnerable(
     board_positions_all,
     dying_team: character_team
 ) {
-
-    // Add to the DEAD collection
-    create dead (
-        .game = dead_vuln.g,
-        .owned_by = dead_vuln.owned_by,
-        .vulnerable = dead_vuln.v
-    );
-
-    // Remove from the ALIVE collection
-    delete dead_vuln.a; 
+    alive_move_to_dead(dead_vuln);
 
     board_remove_at(board_positions_all, dead_pos); // Remove the dead from board.
 
     team_remove_if_character(dying_team, dead_pos);
+}
+
+// ------------------------------------------------------------
+// We take the dead vulnerable and resurrect it.
+// 1. Basic resurrection
+// 2. Fix board
+// 3. Fix team
+// 4. Create Event
+// ------------------------------------------------------------
+function move_battle_resurrect_of_vulnerable(
+    new_turn: turn,
+    old_card: card,
+    old_pld: piece_living_data,
+    old_pos: integer, // Where the death happened
+    resurrect_pos: integer, 
+    new_owner: player_game,
+    new_align: alignment,
+
+    // Extra: Update these data structures
+    board_positions_all,
+    new_team: character_team
+) {
+
+    val dead_vuln: vulnerable_data = old_pld.vuln;
+
+    // 1. Basic resurrection
+    // We don't change much on the piece, only:
+    // a) HP must go back to original.
+    // b) color goes to new align.
+    // Everything else is handled by the [alive] and [dead] entities.
+    alive_move_from_dead(dead_vuln, new_owner, resurrect_pos, new_align);
+
+    // 2. Fix board
+    board_appear_at(board_positions_all, resurrect_pos, new_align); // Add the resurrected to the board.
+
+    // 3. Fix team
+    val new_pld = piece_get_living_data_from_pos(dead_vuln.g, resurrect_pos);
+    team_character_appears_at(new_team, new_pld!!);
+
+    // 4. Event
+    resurrect_create_event(dead_vuln.g, new_turn, old_card, old_pld.p, old_pos, resurrect_pos);
 }

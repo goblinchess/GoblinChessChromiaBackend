@@ -39,3 +39,4 @@ function card_event_create_remove_enchantment(
 
     log("card_event_create_remove_enchantment() - Card: " + card.card_type + ".");
 }
+

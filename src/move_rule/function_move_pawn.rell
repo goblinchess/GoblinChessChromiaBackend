@@ -54,7 +54,7 @@ function pawn_all_valid_white_moves(
     // (i.e. they don't exist yet)
     val new_vulnerable_paths = list<path_base>();
     
-    val square_pos = translate_integer_pos_to_square_pos(pos);
+    val square_pos = pos_from_integer(pos);
     val x = square_pos.x;
     val y = square_pos.y;
     
@@ -107,7 +107,7 @@ function pawn_all_valid_black_moves(
 ): (move_tree, list<path_base>) {
     val new_vulnerable_paths = list<path_base>();
     
-    val square_pos = translate_integer_pos_to_square_pos(pos);
+    val square_pos = pos_from_integer(pos);
     val x = square_pos.x;
     val y = square_pos.y;
     
@@ -178,7 +178,7 @@ function pawn_all_jump_over_moves(
     align: alignment
 ): move_tree {
     val pre_tree = pre_tree();
-    val pos = translate_integer_pos_to_square_pos(pos_int);
+    val pos = pos_from_integer(pos_int);
     val x = pos.x;
     val y = pos.y;
     
@@ -361,7 +361,7 @@ function pawn_inner_double_step(
     vulnerable_paths: list<path_base>
 ) {
 
-    val double_step = translate_integer_pos_to_square_pos(double_step_pos_int);
+    val double_step = pos_from_integer(double_step_pos_int);
     if (board_is_free_at(board_positions, double_step)) {
         pre_tree.moves_harmless.add(double_step_pos_int);
         
@@ -413,7 +413,7 @@ function pawn_is_attackable(
         val dest_int = pre_vuln_check_if_pos_part_of_vulnerable_path(pre_vuln_ctxt, new_pos_int);
         
         if (dest_int != null) {
-            val dest = translate_integer_pos_to_square_pos(dest_int);
+            val dest = pos_from_integer(dest_int);
 
             // Check if enemy is still occupying the path destination
             // (they could have potentially been moved away)

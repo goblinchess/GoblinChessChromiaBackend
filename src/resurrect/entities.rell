@@ -1,0 +1,17 @@
+
+// Reprsents the state after the Resurrect card was played. 
+// We are now waiting for the player to kill an opponent piece,
+// so that the opponent can be resurrected.
+entity potential_resurrect {
+    key card: card; // The card that generated this (potential) resurrect
+    index owned_by: player_game; // <- The way to find this entity
+}
+
+// When the actual resurrection happens
+entity resurrection_event {
+    key event; // Event is the "base type" for all events
+    card;
+    piece; // Piece that was resurrected
+    death_pos: integer; // Where the piece died
+    resurrect_pos: integer; // Where the piece was resurrected
+}

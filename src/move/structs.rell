@@ -98,6 +98,22 @@ struct move_check_arguments {
     is_stalemate: boolean; // Client thinks this is a stalemate
 }
 
+// ------------------------------------------------------------------------------
+// Events that might happen after a move.
+// 
+// Discussion:
+// Is it really needed for the client to calculate these?
+// The node could calculate these things itself, with the exception of the resurrection_pos.
+// Resurrection requires random on the client side, so the client MUST send this position to the node.
+// And since resurrection cannot happen just anywhere, due to portals that might be used, the 
+// client must calculate the portal usage too. Could just as well send everything.
+// ------------------------------------------------------------------------------
+struct move_end_events_arguments {
+    used_portals: list<integer>; // Portal entry pos  (Note: just b/c a piece stands on a portal entry pos, doesn't mean it was used)
+    resurrection_pos: integer?; // If a piece was resurrected, this will be the new pos of the resurrected piece.
+    promotions: list<integer>; // The positions of the pieces that were promoted.
+}
+
 // Attack data, mandatory for attacks.
 struct move_attack_arguments {
     attacked_position: integer; // 0-63 DOESN'T HAVE TO BE THE SAME AS THE "TO_POSITION"

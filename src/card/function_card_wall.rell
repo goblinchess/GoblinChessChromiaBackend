@@ -18,9 +18,9 @@ function card_wall_verify_symmetry(card_picks: list<integer>) {
     require(card_picks.size() == 3, "Wall must consist of exactly 3 pieces");
     
     // Convert integer positions to square_pos for easier X/Y analysis
-    val pos1 = translate_integer_pos_to_square_pos(card_picks[0]);
-    val pos2 = translate_integer_pos_to_square_pos(card_picks[1]);
-    val pos3 = translate_integer_pos_to_square_pos(card_picks[2]);
+    val pos1 = pos_from_integer(card_picks[0]);
+    val pos2 = pos_from_integer(card_picks[1]);
+    val pos3 = pos_from_integer(card_picks[2]);
     
     // Find min/max X and Y
     val min_x = min(min(pos1.x, pos2.x), pos3.x);

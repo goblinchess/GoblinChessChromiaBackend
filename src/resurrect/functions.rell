@@ -1,0 +1,65 @@
+
+// ---------------------------
+// Inspection
+// ---------------------------
+
+// Returns a [card] if we found a potential resurrect of the correct age.
+// If we found one, it is removed from the list.
+//
+// Note:
+// Only resurrects that are older than 2 turns can be used.
+function resurrect_find_potential(player_game: player_game, current_turn: integer): card? {
+
+    // 1. Cannot be this turn, and 
+    // 2. cannot be last turn (when the card was played), 
+    // => so the largest turn number we can accept must be 3 turns back. 
+    val maximum_allowed_turn_number = current_turn - 3;
+
+    val res = (p: potential_resurrect, c: card, t: turn) @* {
+        p.owned_by == player_game, 
+        p.card == c, 
+        c.turn == t, 
+        t.number <= maximum_allowed_turn_number 
+    } (pot_resurrect = p, crd = c);
+
+    if(res.size() > 0) {
+        // Found something, remove the first we find.
+        // Don't worry about having multiple potential resurrects, next kill will use the next one.
+        delete res[0].pot_resurrect;
+        return res[0].crd; 
+    } else {
+        return null;
+    }
+}
+
+// ---------------------------
+// Creation 
+// ---------------------------
+// Create potential resurrect (Not the actual resurrection, that happens later)
+function resurrect_delayed_create_potential(player_game: player_game, new_card: card) {
+    create potential_resurrect (
+        .card = new_card, 
+        .owned_by = player_game
+    );
+}
+
+function resurrect_create_event(
+    g: game,
+    t: turn,
+    card: card,
+    piece: piece,
+    death_pos: integer,
+    resurrect_pos: integer
+) {
+
+    // New event
+    val new_event = turn_create_event(g, t, event_type.RESURRECT_TAKES_EFFECT);
+
+    create resurrection_event (
+        .event = new_event,
+        .card = card,
+        .piece = piece,
+        .death_pos = death_pos,
+        .resurrect_pos = resurrect_pos
+    );
+}

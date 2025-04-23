@@ -138,6 +138,20 @@ function board_place_character_at(
     board.board_characters[dest_pos] = new_piece;
 }
 
+// A piece (magically) appears on the board.
+// If you are MOVING a piece, use board_place_character_at() instead.
+function board_appear_at(
+    board: board_positions_all,
+    piece_pos: integer,
+    piece_align: alignment
+) {
+    require(not board.board_characters.contains(piece_pos), "board_appear_at() - ERROR: Position is already occupied: " + piece_pos);
+
+    val new_piece = with_pos_and_alignment(piece_pos, piece_align);
+
+    board.board_characters[piece_pos] = new_piece;
+}
+
 // Whatever is on the given position, remove it.
 function board_remove_at(
     board: board_positions_all,

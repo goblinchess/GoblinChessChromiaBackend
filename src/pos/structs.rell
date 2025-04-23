@@ -1,0 +1,16 @@
+
+// --------------------------------
+// Sometimes we need a different type to represent a position than just an integer.
+//
+// I've chosen to use the X/Y "math terms" instead of the (real) Chess terms,
+// but the transalation is straightforward:
+// 
+// X = "file" (Chess term) i.e. a,b,c ..,h 
+// Y = "rank" (Chess term) i.e. 1,2,3 ..,8
+// --------------------------------
+struct square_pos {
+    x: integer; // 0-7 file (in chess notation: a-h)
+    y: integer; // 0-7 rank (in chess notation: 1-8)
+}
+
+

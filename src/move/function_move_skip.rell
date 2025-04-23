@@ -2,7 +2,8 @@
 function move_skip_inner(
     caller_pubkey: pubkey,
     game_id: integer,
-    last_seen_turn: integer
+    last_seen_turn: integer,
+    end_args: move_end_events_arguments?
 ) {
     // -----------    
     // A. Verication
@@ -33,7 +34,7 @@ function move_skip_inner(
     }
 
     val board: list<with_pos_and_alignment> = vuln_get_all_as_wpaa(minimal_game.game); 
-    val portals: list<owned_portal> = move_get_all_portals(minimal_game.player_game, my_color);
+    val portals: list<owned_portal> = portal_get_all_by_owner(minimal_game.player_game, my_color);
     val board_positions_all = board_positions_all_constructor(minimal_game.game, board, portals);
 
     // Only need opp team
@@ -61,25 +62,36 @@ function move_skip_inner(
     val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
 
     // B.2 Use all unblocked portals
-    val hist_portals: list<portal_event> = move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, null, opp_team, my_color);
+    val hist_portals: list<portal_event> = move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, null, opp_team, my_color, end_args);
 
-    // B.3 Promotions
-    // Not common, but if a PORTAL might send a pawn to the final rank. 
-    // TODO
-    val has_promotions = false;
+    // ----------------
+    // 2. Apply end_args
+    // ----------------
+    // Expensive, so we wait until last moment
+    val our_team = team_build_from_db(minimal_game.game, my_color);
+    val our_king = team_get_king(our_team)!!;
+
+    // B.2.a Use all unblocked portals
+    // Skip: We need this for skip moves as well, because we might have played the PORTAL card before the skip.
+    move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
+
+    // B.2.b Resurrection
+    // (Must happen after the portal travel, so we won't end up blocking a portal exit)
+    // Skip: NO RESURRECTION FOR SKIP MOVES 
+
+    // B.2.c Promotions
+    // Skip: Not common, but if a PORTAL might send a pawn to the final rank. 
+    // (Must happen after the portal travel, if a pawn travels to an exit at the final rank)
+    promote_all_pawns_at_final_rank(board_positions_all, our_team, my_color, end_args);
 
     // ----------------------------------------------    
-    // Check/stale/mate
+    // 3. Check/stale/mate
     // There are many cases where we need to calculate check/mate even if the move was skipped:
     // 1. if we use the PORTAL, potentially a piece has moved, and
     // 2. if we did a SWITCH we might cause check/mate, and
     // Actually, the only case where we can skip the check/mate calculation is after DOUBLE MOVE card,
     // but it's just easier to always calculate it.
     // ----------------------------------------------    
-         
-    // Expensive, so we wait until last moment
-    val our_team = team_build_from_db(minimal_game.game, my_color);
-    val our_king = team_get_king(our_team)!!;
 
     // B.4 Verify if we just won via checkmate?
     val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, null);

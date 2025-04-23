@@ -40,11 +40,23 @@ function alive_move_to_limbo(obj: vulnerable_data) {
     delete obj.a;
 }
 
+function alive_move_to_dead(obj: vulnerable_data) {
+    // 1. Add to the DEAD collection
+    create dead (
+        .game = obj.g,
+        .owned_by = obj.owned_by,
+        .vulnerable = obj.v
+    );
+
+    // 2. Remove from the ALIVE collection
+    delete obj.a; 
+}
+
 // Remove an object from the limbo collection, put it in alive.
 function alive_move_from_limbo(
-    g: game, 
-    owned_by: player_game, 
-    v_in_limbo: vulnerable, 
+    g: game, // Send it to avoid getting it from the vuln.
+    owned_by: player_game,  // Who should be the owner of the new alive object?
+    v_in_limbo: vulnerable, // The limbo vuln
     pos: integer // Must be sent, since limbo does not have a position (and the vuln probably moved since the enchanment)
 ) {
     // 1. Select from LIMBO
@@ -60,6 +72,38 @@ function alive_move_from_limbo(
 
     // 3. Remove from LIMBO
     delete limbo_piece;
+}
+
+// Raise a dead piece from the dead collection, put it in alive.
+function alive_move_from_dead(
+    v_data_in_dead: vulnerable_data, // The dead vuln
+    new_owner: player_game,  // Who should be the owner of the new alive object?
+    new_pos: integer, // The dead doesn't have to "rise" from the place it was killed.
+    new_align: alignment // The color of the new alive object.
+) {
+    val g: game = v_data_in_dead.g;
+
+    // 1. Select from DEAD
+    val dead_piece: dead = (d: dead)@ {d.vulnerable == v_data_in_dead.v} (d);
+
+    // 2. Put in ALIVE
+    create alive (
+        .vulnerable = dead_piece.vulnerable,
+        .position = new_pos, 
+        .game = g,
+        .owned_by = new_owner
+    );
+
+    // 3. Remove from DEAD
+    delete dead_piece;
+
+    val dead_vuln = v_data_in_dead.v; // <-- Re-using the same vulnerable entity.
+
+    // 4. Fix health
+    dead_vuln.remaining_hit_points = v_data_in_dead.start_hit_points;
+
+    // 5. Fix color
+    dead_vuln.color = new_align;
 }
 
 

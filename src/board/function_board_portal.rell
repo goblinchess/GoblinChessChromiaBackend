@@ -32,7 +32,7 @@ function board_portal_find_my_from_entry(
     align: alignment
 ) {
     for (portal: owned_portal in board_positions_all.portals) {
-        if (is_portal_owned_by(portal, align)) {
+        if (portal_is_owned_by(portal, align)) {
             if (portal.entry_pos == pos) {
                 return portal;
             }
@@ -53,7 +53,7 @@ function board_portal_find_unblocked_owned_by(
     val result = list<owned_portal>();
     
     for (portal in board_positions_all.portals) {
-        if (is_portal_owned_by(portal, my_align)) {
+        if (portal_is_owned_by(portal, my_align)) {
             // It's ours
             if(board_is_empty(board_positions_all, portal.exit_pos)) {
                 // Exit is unblocked

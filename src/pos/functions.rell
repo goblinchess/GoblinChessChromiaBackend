@@ -1,4 +1,8 @@
-function translate_integer_pos_to_square_pos(pos: integer): square_pos {
+
+// --------------------------------
+// Constructors / Convert to-from integer
+// --------------------------------
+function pos_from_integer(pos: integer): square_pos {
     val x: integer = pos % 8;
     val y: integer = pos / 8;
     return square_pos(x, y);
@@ -8,14 +12,16 @@ function pos_to_int(pos: square_pos): integer {
     return pos.x + (pos.y * 8);
 }
 
-
+// --------------------------------
+// Inspectors 
+// --------------------------------
 function pos_is_out_of_board(pos: square_pos): boolean {
     return pos.x < 0 or pos.y < 0 or pos.x > 7 or pos.y > 7;
 }
 
-// ----------------------------------------------------------------------------
+// --------------------------------
 // Shift functions
-// ----------------------------------------------------------------------------
+// --------------------------------
 
 function pos_x_and_y_shift(pos: square_pos, x_shift: integer, y_shift: integer): square_pos {
     return square_pos(x = pos.x + x_shift, y = pos.y + y_shift);
@@ -28,7 +34,7 @@ function pos_calc_from_directional_shift(
     dir: integer
     ): square_pos?  {
 
-    val square_pos = translate_integer_pos_to_square_pos(pos);
+    val square_pos = pos_from_integer(pos);
     val x_org: integer = square_pos.x;
     val y_org: integer = square_pos.y;
 

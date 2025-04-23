@@ -156,6 +156,14 @@ function team_place_character_at(team: character_team, piece_rowid: rowid, new_p
     team.members[piece_rowid] = new_pld; // Use the cloned version
 }
 
+// When a piece (magically) appears on the board, we can use this function to add it to the team.
+function team_character_appears_at(team: character_team, new_pld: piece_living_data) {
+    val new_pos = new_pld.vuln.position;
+    val pld = team_get_member_from_pos(team, new_pos);
+    require(pld == null, "team_character_appears_at() - ERROR: team has a member at " + new_pos ); 
+    team.members[new_pld.p.rowid] = new_pld; 
+}
+
 // If we know old position of a piece, we can use this function to move it to a new position.
 function team_move_character_from_to(team: character_team, old_pos: integer, new_pos: integer) {
     val pld = team_get_member_from_pos(team, old_pos);

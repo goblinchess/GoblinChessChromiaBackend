@@ -32,7 +32,7 @@ function card_portal_create_and_validate(
     require(pick_piece_map.contains(0), "Portal entry " + portal_entry_pos + " is not occupied by a piece");
 
     // B. Updates
-    move_setup_portal(owned_by, new_card, portal_entry_pos, portal_exit_pos);
+    portal_setup(owned_by, new_card, portal_entry_pos, portal_exit_pos);
 
     val rnd_results: list<rnd_result> = [rnd_res]; // Only one element
     rnd_validation_create_player_rnd_nr(new_turn, rnd_results);
@@ -43,7 +43,7 @@ function card_portal_create_and_validate(
 // 2. "black" -> "white"
 function card_portal_get_other_side(pos_int: integer): alignment {
 
-    val pos: square_pos = translate_integer_pos_to_square_pos(pos_int);
+    val pos: square_pos = pos_from_integer(pos_int);
 
     if (pos.y < 4) {
         // If the chosen piece is on white side, we want to find the exit on the black side.

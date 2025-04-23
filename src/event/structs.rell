@@ -25,22 +25,12 @@
 //    the data coming from the node. 
 // ----------------------------------------------------------
 
-// Since this requires random, the client MUST send this struct to the node.
-// The node cannot do this alone.
-struct resurrection_event_data {
-    rnd_data; // Exactly ONE Rnd number was used by the client
-    death_pos: integer; // Piece died at this position
-    resurrect_pos: integer; // Piece resurrected at this position
-}
-
-struct portal_event_data {
-    // Portal entry
-    // Portal exit
-}
-
-
-struct enchantment_removed_data {
-    // Rnd number used
+// This event happens, either:
+// 1. in the beginning of the card turn, OR
+// 2. in the move turn, before we calculate check/stale/mate (only happens for JUMP)
+struct event_enchantment_removed_data {
+    card_type_str: text; // Like "FROG" etc.
+    position: integer; // Position where the enchanted piece is located.
 }
 
 

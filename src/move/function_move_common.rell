@@ -139,12 +139,14 @@ function move_common_use_all_unblocked_portals(
     board_positions_all,
     our_team: character_team?, // Only use this for position updates (likely overkill?)
     opp_team: character_team,
-    my_align: alignment // Player can only use OWNED portals
+    my_align: alignment, // Player can only use OWNED portals
+    end_args: move_end_events_arguments?
 ): list<portal_event> {
     val hist_portals = list<portal_event>();
     
     // Find all unblocked portals owned by this alignment
     val portals = board_portal_find_unblocked_owned_by(board_positions_all, my_align);
+
     log("move_common_use_all_unblocked_portals() - Found " + portals.size() + " unblocked portals owned by " + my_align);
 
     for (portal in portals) {
@@ -152,6 +154,7 @@ function move_common_use_all_unblocked_portals(
         // Check if there's a character at the entry
         val piece = board_get_at(board_positions_all, portal.entry_pos);
         if (piece != null and piece.alignment == my_align) {
+
             // Character is ours, use the portal
             val hist_portal = move_common_use_portal_depending_on_piece_type(
                         game,
@@ -165,6 +168,19 @@ function move_common_use_all_unblocked_portals(
             );
                     
             if (hist_portal != null) {
+                // Portal was used
+
+                // Discussion:
+                // Validation happens here, despite we already begun update phase.
+                // This is because we don't want to do all these SQL checks twice,
+                // but the downside is that this is impossible to unit-test.
+                require(end_args != null, 
+                "move_common_use_all_unblocked_portals() - ERROR: Node thinks we should use portal: "+ portal.entry_pos + " -> " + portal.exit_pos 
+                + ", but no end_args provided!");
+                require(portal_does_found_match_given(end_args.used_portals, portal), 
+                "move_common_use_all_unblocked_portals() - ERROR: Node thinks we should use portal: " + portal.entry_pos + " -> " + portal.exit_pos 
+                + ", but the move does not match the given portals (size: " + end_args.used_portals.size() + ").");
+
                 hist_portals.add(hist_portal);
             }
         }
@@ -172,6 +188,8 @@ function move_common_use_all_unblocked_portals(
     
     return hist_portals;
 }
+
+
 
 // -----------------------------------------------------------------------
 // We are supposed to use the given portal, but there is one exception:
@@ -227,3 +245,4 @@ function move_common_use_portal_depending_on_piece_type(
         return null;
     }
 }
+

@@ -1,37 +1,25 @@
 
  TODO Client: 
 -------------
+- Create a C# Chromia client.
+ 
 
- Test WALL when in check.
-
- Make Resurrect random calculation happen 
- earlier, so that we can send the "move_attack()" to the node.
+Client Done: 
 
 
  TODO Node: 
 -------------
-Added "in_check" on player_game, make sure it's UPDATED when check is caused!
+Add death event.
 
-
-
- 2. Finish the game when mate
+ 1. Finish the game when mate
     
- 3. Promote on final rank.
-    (Remember to transfer enchantments, call card_enchantment_can_be_transferred() ).
-
  4. Use Luck
 
- 6. Resurrection -> save random number.
-
- 7. 
-
- 8. Promotion, with transferred Enchantments.
-
- 9. Look in [move] entity before allowing castle.
+ 6. Look in [move] entity before allowing castle.
 
 
 DONE:
-
+Use [move_end_events_arguments], specifically to a) Promote on final rank, and b) resurrection.
 
 "Added Resurrect to the test (4: white move ). Verified that we cannot move to put king in check (8: white move)" 
 

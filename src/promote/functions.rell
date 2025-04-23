@@ -1,0 +1,91 @@
+
+
+// Main function
+// Finds all pawns at the final rank and promotes them to queens.
+function promote_all_pawns_at_final_rank(
+    board_all: board_positions_all,
+    our_team: character_team,
+    align: alignment,
+    end_args: move_end_events_arguments?
+): list<integer> {
+    val promotions = list<integer>();
+    val final_rank = if (align == alignment.WHITE) 7 else 0; // Get pawn promotion rank
+    
+    // Find all pawns at the final rank
+    for (pld in team_get_list(our_team)) {
+        val pos = pld.vuln.position;
+        val square_pos = pos_from_integer(pos);
+        
+        // Check if piece is at final rank
+        if (square_pos.y == final_rank) {
+            // Check if it's a pawn
+            if (pld.active_type == piece_type.PAWN) {
+
+                // Discussion:
+                // Validation happens here, despite we already begun update phase.
+                // This is because we don't want to do all these SQL checks twice,
+                // but the downside is that this is impossible to unit-test.
+                require(end_args != null, 
+                "promote_all_pawns_at_final_rank() - ERROR: Node thinks we should use promote pawn at: "+ pos 
+                + ", but no end_args provided!");
+                require(promote_does_found_match_given(end_args.promotions, pos), 
+                "promote_all_pawns_at_final_rank() - ERROR: Node thinks we should use promote pawn at: "+ pos 
+                + ", but the move does not match the given promotions (size: " + end_args.promotions.size() + ").");
+
+                // If we have end_args, we need to add a promotion event
+                log("promote_all_pawns_at_final_rank() - Pawn at final rank " + final_rank + ", promoting at: " + pos);
+                
+                // Promote the pawn
+                promote_pawn_to_queen(
+                    board_all,
+                    our_team,
+                    pld
+                );
+                
+                promotions.add(pos);
+            }
+        }
+    }
+    
+    return promotions;
+}
+
+// -----------------------------------------------------------------------
+// Promotes a pawn to a queen, updating the board and team
+// 1. Update the DB is  actually pretty easy since we only have to update the
+// "active_type" of the piece.
+// 2. Update the team means we have to create a new [piece_living_data] struct
+// -----------------------------------------------------------------------
+function promote_pawn_to_queen(
+    board_all: board_positions_all,
+    our_team: character_team,
+    pawn: piece_living_data
+) {
+    
+    // 1. Update the piece type to queen in the database
+    piece_promote(pawn.p);
+
+    // 2. Update the team means we have to create a new [piece_living_data] struct
+    val updated_pld = piece_living_data(
+        vuln = pawn.vuln,
+        is_knighted = pawn.is_knighted,
+        original_type = pawn.original_type,
+        active_type = piece_type.QUEEN, // <--- Changed to QUEEN
+        p = pawn.p
+    );
+    
+    our_team.members[pawn.p.rowid] = updated_pld;
+    
+    log("promote_pawn_to_queen() - Promoted pawn to queen at " + pawn.vuln.position);
+}
+
+
+// Returns "true" if the found promotion pos is in the given list of promoted pawns.
+function promote_does_found_match_given(given_promotions: list<integer>, found_promotion_pos: integer): boolean {
+    for (given_promotion in given_promotions) {
+        if (given_promotion == found_promotion_pos) {  
+            return true;
+        }
+    }
+    return false;
+}
