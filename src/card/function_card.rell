@@ -130,6 +130,37 @@ function card_play_inner_core(
 
     when (card_type) {
 
+        DOUBLE_MOVE -> {
+            if (minimal_game.in_check) {
+                // Simple
+                require(false, "Cannot use DOUBLE MOVE when in check");
+            }
+        }
+        PORTAL -> {
+            if (minimal_game.in_check) {
+                // Simple
+                require(false, "Cannot use PORTAL when in check");
+            }
+
+            // Also, we cannot create a portal for a piece that is currently preventing a check.
+
+            // King's position
+            val my_king_pld = piece_get_living_data_for_king(minimal_game.game, my_color);
+            val king_from_pos = my_king_pld!!.vuln.position;
+
+            // Expensive, so we wait until last moment
+            val opp_team = team_build_from_db(minimal_game.game, opp_color);
+
+            val portal_entry_pos = pick_piece_map[0].vuln.position;
+            val calc: check_stat_board_calculator_data = check_sb_build_hypothetical_subject_gone(
+                portal_entry_pos,
+                king_from_pos,
+                opp_team,
+                board_positions_all
+            );
+
+            require(not check_sb_is_check(calc), "Cannot use PORTAL on a piece, so that when it moves to the exit it causes a check.");
+        }
         SWITCH_PLACE -> {   
             val (king_pld: piece_living_data?, other_pld: piece_living_data?) = card_switch_extract_king_pld(pick_piece_map.values());
             if (king_pld != null) {
@@ -151,34 +182,19 @@ function card_play_inner_core(
 
                 require(not check_sb_is_check(calc), "Cannot SWITCH the king to a position where it is in check.");
             }
+
+            if (minimal_game.in_check) {
+                // Note: this is all we have to do, since we've already verified 
+                // that the king can't move to a check position.
+                val (king_pld2: piece_living_data?, other_pld2: piece_living_data?) = card_switch_extract_king_pld(pick_piece_map.values());
+                // One of the pieces must be the king.
+                require(king_pld2 != null, "Cannot use SWITCH PLACE when in check, unless switching the king away from check.");
+            }
         }
         WALL -> {
             card_wall_verify_picks(board_positions_all, card_picks);
-        }
-        else -> {
-            // Ok, we can use this card
-        }
-    }
-    
-    if (minimal_game.in_check) {
-        when (card_type) {
-            DOUBLE_MOVE -> {
-                // Simple
-                require(false, "Cannot use DOUBLE MOVE when in check");
-            }
-            PORTAL -> {
-                // Simple
-                require(false, "Cannot use PORTAL when in check");
-            }
-            SWITCH_PLACE -> {   
-                // Note: this is all we have to do, since we've already verified 
-                // that the king can't move to a check position.
-                val (king_pld: piece_living_data?, other_pld: piece_living_data?) = card_switch_extract_king_pld(pick_piece_map.values());
-                // One of the pieces must be the king.
-                require(king_pld != null, "Cannot use SWITCH PLACE when in check, unless switching the king away from check.");
 
-            }
-            WALL -> {
+            if (minimal_game.in_check) {
                 // Only allow wall if it blocks the check.
            
                 // Expensive, so we wait until last moment
@@ -195,9 +211,9 @@ function card_play_inner_core(
 
                 require(not check_sb_is_check(calc), "Cannot SWITCH the king to a position where it is in check.");
             }
-            else -> {
-                // Ok, we can use this card
-            }
+        }
+        else -> {
+            // Ok, we can use this card
         }
     }
 

@@ -9,7 +9,8 @@ Client Done:
 
  TODO Node: 
 -------------
-Add death event.
+- Add death event.
+- Run resurrect test.
 
  1. Finish the game when mate
     

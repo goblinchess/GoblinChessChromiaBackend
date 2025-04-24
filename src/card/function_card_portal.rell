@@ -4,15 +4,17 @@
 // We ONLY have to create the portal here, the piece will travel through it on the next turn.
 // Too complex to separate verification and creation, so we'll to it all here.
 function card_portal_create_and_validate(
-    owned_by: player_game, 
-    new_card: card, 
-    pick_piece_map: map<integer, piece_living_data>, 
-    portal_entry_pos: integer, 
+    owned_by: player_game,
+    new_card: card,
+    pick_piece_map: map<integer, piece_living_data>,
+    portal_entry_pos: integer,
     portal_exit_pos: integer,
     rnd_data: rnd_data,
     new_turn: turn,
     board_positions_all
 ) {
+
+    // A. Validation
 
     // Player is allowed  to create a tunnel from either side of the board,
     // We should figure out what side the exit is on.
@@ -21,15 +23,16 @@ function card_portal_create_and_validate(
     // Verify if the given portal exit is a suitable empty square on the board
     // And if so, save the random number that corresponds to it.
     val rnd_res = card_portal_verify_random_free_square_anywhere_on_half(
-                board_positions_all,
-                exit_side_color,
-                portal_exit_pos,
-                rnd_data
+        board_positions_all,
+        exit_side_color,
+        portal_exit_pos,
+        rnd_data
     );
 
-    // A. Validation
-    // Must create a portal on a square with a piece on it.
+    // A.2 Must create a portal on a square with a piece on it.
     require(pick_piece_map.contains(0), "Portal entry " + portal_entry_pos + " is not occupied by a piece");
+
+    // A.3 Subject move must not cause check.
 
     // B. Updates
     portal_setup(owned_by, new_card, portal_entry_pos, portal_exit_pos);
@@ -61,17 +64,18 @@ function card_portal_get_other_side(pos_int: integer): alignment {
 
 // Finds a random free square anywhere on either side of the board (either black/white side).
 function card_portal_verify_random_free_square_anywhere_on_half(
-    board_positions_all, 
+    board_positions_all,
     align: alignment,
     portal_exit_pos: integer,
     rnd_data
-    ): rnd_result {
+): rnd_result {
     if (align == alignment.WHITE) {
         return board_find_empty_on_white_side(board_positions_all, portal_exit_pos, rnd_data);
     } else if (align == alignment.BLACK) {
         return board_find_empty_on_black_side(board_positions_all, portal_exit_pos, rnd_data);
     } else {
         require(false, "find_random_free_square_anywhere_on_half() - How did we get neutral? " + align);
-        return rnd_result(result = -1, type = rnd_nr_type.CARD_PORTAL, min = 0, max = 0); // Never reached
+        return rnd_result(result = -1, type = rnd_nr_type.CARD_PORTAL, min = 0, max = 0);
+        // Never reached
     }
 }

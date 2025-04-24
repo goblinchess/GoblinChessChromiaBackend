@@ -212,7 +212,10 @@ function move_attack_inner(
     move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
 
     // B.4.b Resurrection
-    // (Must happen after the portal travel, so we won't end up blocking a portal exit)
+    // A resurrection happens on the player's side of the board, close to the player's starting rank.
+    // (Must happen after the portal travel, so we won't end up blocking a portal exit preventing a valid portal travel.
+    // This is highly unlikely though, but still possible if we create a portal from the enemy side of the board with exit 
+    // on our first rank.)
     if (battle_res.result == battle_result_type.KILL) {
         if (not opp_vuln.is_obstacle) {
 
