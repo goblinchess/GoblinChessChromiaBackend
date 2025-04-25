@@ -3,6 +3,7 @@
 // ----------------------------------------------------------------------------
 
 function queen_all_valid_moves(
+    game_id: integer,
     board_positions: board_positions_all, 
     pos: integer, 
     align: alignment
@@ -10,13 +11,14 @@ function queen_all_valid_moves(
     val ptree = pre_tree();
     
     for (dir in range(0, 8)) {
-        queen_follow_path(board_positions, pos, align, dir, ptree);
+        queen_follow_path(game_id, board_positions, pos, align, dir, ptree);
     }
     
     return move_tree_build(pos, ptree);
 }
 
 function queen_follow_path(
+    game_id: integer,
     board_positions: board_positions_all, 
     pos: integer, 
     align: alignment, 
@@ -29,7 +31,7 @@ function queen_follow_path(
     
     while (shift < 10 and continue_path) {
         shift += 1;
-        val new_pos = pos_calc_from_directional_shift(pos, shift, dir);
+        val new_pos = pos_calc_from_directional_shift(game_id, pos, shift, dir);
         require(new_pos != null, "Bug. New position is null");
         val new_pos_int = pos_to_int(new_pos);
         continue_path = rule_interpret_path_position(board_positions, align, new_pos_int, tmp_path, pre_tree);
@@ -37,6 +39,7 @@ function queen_follow_path(
 }
 
 function queen_all_jump_over_moves(
+    game_id: integer,
     board_positions: board_positions_all, 
     pos: integer, 
     align: alignment
@@ -44,13 +47,14 @@ function queen_all_jump_over_moves(
     val pre_tree = pre_tree();
     
     for (dir in range(0, 8)) {
-        queen_follow_path_jump_over(board_positions, pos, align, dir, pre_tree);
+        queen_follow_path_jump_over(game_id, board_positions, pos, align, dir, pre_tree);
     }
     
     return move_tree_build(pos, pre_tree);
 }
 
 function queen_follow_path_jump_over(
+    game_id: integer,
     board_positions: board_positions_all, 
     pos: integer, 
     align: alignment, 
@@ -64,7 +68,7 @@ function queen_follow_path_jump_over(
     
     while (shift < 10 and continue_path) {
         shift += 1;
-        val new_pos = pos_calc_from_directional_shift(pos, shift, dir);
+        val new_pos = pos_calc_from_directional_shift(game_id, pos, shift, dir);
         require(new_pos != null, "Bug. New position is null");
         val new_pos_int = pos_to_int(new_pos);
         

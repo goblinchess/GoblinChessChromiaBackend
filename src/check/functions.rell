@@ -4,6 +4,7 @@
 // Main function called from other modules after a move or a card has been played.
 // -----------------------------------------------------------------------------------
 function check_stale_n_mate(
+    game_id: integer,
     minimal_game: minimal_game_result, 
     board: board_positions_all, // <-- Should been updated with all moves, promotions and deaths
     opp_align: alignment,
@@ -19,14 +20,15 @@ function check_stale_n_mate(
     // For check calculation we don't have to use hypothetical moves, since we do the
     // calculation AFTER the move has been saved to the board.
     val check_sb_data = check_sb_build_calculator(
-            opp_king.vuln.position, // We're supposed to check the opponent's king
-            our_team, // we are the checking team
-            board // This isn't a hypothetical move, must use the new board positions
+        game_id,
+        opp_king.vuln.position, // We're supposed to check the opponent's king
+        our_team, // we are the checking team
+        board // This isn't a hypothetical move, must use the new board positions
     );
 
     val is_check = check_sb_is_check(check_sb_data);
     if (is_check) {
-        log("move_common_check_stale_n_mate() - Found CHECK.");
+        log("game_id: "+game_id+ " - Found CHECK.");
         if (check_args != null) {
             require(check_args.is_check or check_args.is_checkmate, "Our calculation says check but client didn't claim check?");
         }
@@ -43,12 +45,13 @@ function check_stale_n_mate(
         if (should_do_mate_calc) {
             val king_wpaa = with_pos_and_alignment(opp_king.vuln.position, opp_align);
             val check_mate_data = check_mate_calc_data_constructor(
+                    game_id,
                     king_wpaa, // We're supposed to check the opponent's king
                     our_team, // We are the mating team
                     board,
                     check_sb_data
             );
-            is_checkmate = check_mate_can_escape(check_mate_data, opp_team);
+            is_checkmate = check_mate_can_escape(game_id, check_mate_data, opp_team);
 
             if (check_args != null) { 
                 // We wouldn't be here unless the client said is_checkmate, so must be "true" now.
@@ -56,7 +59,7 @@ function check_stale_n_mate(
             }
 
             if (is_checkmate) {
-                log("Found CHECKMATE. Game over");
+                log("game_id: "+game_id+ " - Found CHECKMATE. Game over");
                 // TODO: Implement this
             }
         }
@@ -71,6 +74,7 @@ function check_stale_n_mate(
         // Only check for stalemated opponent if opp is not in check.
         // Stalemate MUST be checked for here, since the caller isn't necessarily benefiting from this ending.
         is_stalemate = check_calc_stalemate(
+            game_id,
             opp_team, // kings_team
             our_team, // mating_team
             board
@@ -81,7 +85,7 @@ function check_stale_n_mate(
                 require(check_args.is_stalemate, "Our calculation says stalemate but client didn't claim it?");
             }
 
-            log("move_common_check_stale_n_mate() - Found STALEMATE. Game over");
+            log("game_id: "+game_id+ " - Found STALEMATE. Game over");
             // TODO: Implement this
         } else {
             if (check_args != null) {
@@ -108,6 +112,7 @@ function check_stale_n_mate(
 // b) When we get to the king it gets harder, we must use the [kings_escape_calculator].
 // -----------------------------------------------------------------------------------
 function check_calc_stalemate(
+    game_id: integer,
     kings_team: character_team, 
     mating_team: character_team,
     board_all: board_positions_all
@@ -115,7 +120,7 @@ function check_calc_stalemate(
     
     // a) Take a random non-king piece, and see if it has any moves in its [move_tree]
     for (subject in team_get_subjects_list(kings_team)) {
-        if(inner_single_subject_can_act(board_all, subject)) {
+        if(inner_single_subject_can_act(game_id, board_all, subject)) {
             // Not stalemate
             //log("move_common_calc_stalemate() - Not stalemate since subject at " + subject.position + " can take action.");
             return false;
@@ -127,13 +132,13 @@ function check_calc_stalemate(
     val king = team_get_king(kings_team)!!;
     val king_wpaa = with_pos_and_alignment(king.vuln.position, king.vuln.align);
     
-    val king_escape_data = king_escape_builder(king_wpaa, mating_team, board_all);
-    val (escape_pos, is_attack) = king_escape_find_first_without_help(king_escape_data, king_wpaa);
+    val king_escape_data = king_escape_builder(game_id, king_wpaa, mating_team, board_all);
+    val (escape_pos, is_attack) = king_escape_find_first_without_help(game_id, king_escape_data, king_wpaa);
     
     if (escape_pos != null) {
         return false; // Not stalemate, since the king can escape
     } else {
-        log("move_common_calc_stalemate() - Stalemate detected! King at " + king.vuln.position + " has no moves and is not in check.");
+        log("game_id: "+game_id+ " - Stalemate detected! King at " + king.vuln.position + " has no moves and is not in check.");
         return true;
     }
 }
@@ -142,7 +147,7 @@ function check_calc_stalemate(
 
 
 // Returns "true" if this subject can take action the coming turn.
-function inner_single_subject_can_act(board_all: board_positions_all, subject: piece_living_data): boolean {
+function inner_single_subject_can_act(game_id: integer, board_all: board_positions_all, subject: piece_living_data): boolean {
     // Get all valid moves for the subject
     val is_enchanted_jump = false;  // <-- Magic Jumps shouldn't be relevant here.
 
@@ -152,6 +157,7 @@ function inner_single_subject_can_act(board_all: board_positions_all, subject: p
     val v_ctxt =  pre_vuln_context(null);
 
     val (norm_mt, jump_mt) = rules_get_all_valid_moves(
+            game_id,
             board_all, 
             subject.active_type,  // We wanna know how it moves, not what it is.
             is_enchanted_jump,

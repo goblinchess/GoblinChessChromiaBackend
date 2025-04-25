@@ -155,7 +155,7 @@ function move_common_use_all_unblocked_portals(
     // Find all unblocked portals owned by this alignment
     val portals = board_portal_find_unblocked_owned_by(board_positions_all, my_align);
 
-    log("move_common_use_all_unblocked_portals() - Found " + portals.size() + " unblocked portals owned by " + my_align);
+    log("game_id: "+game_id+ " - Found " + portals.size() + " unblocked portals owned by " + my_align);
 
     for (portal in portals) {
 
@@ -229,6 +229,7 @@ function move_common_use_portal_depending_on_piece_type(
 
         // Can only move through the portal if there is no foe attacking the exit
         val check_calc_data = check_sb_build_hypothetical_king_move(
+            game_id,
             king_wpaa,
             king_wpaa.pos,
             portal.exit_pos,
@@ -237,15 +238,15 @@ function move_common_use_portal_depending_on_piece_type(
         );
         
         if (check_sb_is_check(check_calc_data)) {
-            log("move_common_use_portal_depending_on_piece_type() - Found an unblocked portal with the king on the entry, but CANNOT enter because exit is attacked: " + portal.entry_pos + " -> " + portal.exit_pos);
+            log("game_id: "+game_id+ " - Found an unblocked portal with the king on the entry, but CANNOT enter because exit is attacked: " + portal.entry_pos + " -> " + portal.exit_pos);
             use_portal = false;
         } else {
             // Move the king through the portal
-            log("move_common_use_portal_depending_on_piece_type() - Found an unblocked portal with the king on the entry: " + portal.entry_pos + " -> " + portal.exit_pos);
+            log("game_id: "+game_id+ " - Found an unblocked portal with the king on the entry: " + portal.entry_pos + " -> " + portal.exit_pos);
         }
     } else {
         // For non-king pieces, just move through the portal
-        log("move_common_use_portal_depending_on_piece_type() - Found an unblocked portal with a (non-king) friend on the entry: " + portal.entry_pos + " -> " + portal.exit_pos);
+        log("game_id: "+game_id+ " - Found an unblocked portal with a (non-king) friend on the entry: " + portal.entry_pos + " -> " + portal.exit_pos);
     }
 
     if (use_portal) {

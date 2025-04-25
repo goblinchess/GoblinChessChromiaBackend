@@ -86,6 +86,7 @@ function move_battle_death_of_vulnerable(
 // 4. Create Event
 // ------------------------------------------------------------
 function move_battle_resurrect_of_vulnerable(
+    game_id: integer,
     new_turn: turn,
     old_card: card,
     old_pld: piece_living_data,
@@ -106,7 +107,7 @@ function move_battle_resurrect_of_vulnerable(
     // a) HP must go back to original.
     // b) color goes to new align.
     // Everything else is handled by the [alive] and [dead] entities.
-    alive_move_from_dead(dead_vuln, new_owner, resurrect_pos, new_align);
+    alive_move_from_dead(game_id, dead_vuln, new_owner, resurrect_pos, new_align);
 
     // 2. Fix board
     board_appear_at(board_positions_all, resurrect_pos, new_align); // Add the resurrected to the board.

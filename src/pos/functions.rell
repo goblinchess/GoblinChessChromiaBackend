@@ -29,6 +29,7 @@ function pos_x_and_y_shift(pos: square_pos, x_shift: integer, y_shift: integer):
 
 // Returns a new position based on the previous position and a directional shift
 function pos_calc_from_directional_shift(
+    game_id: integer,
     pos: integer, 
     shift: integer, 
     dir: integer
@@ -57,7 +58,7 @@ function pos_calc_from_directional_shift(
         // Diagonal forward + left
         7 -> return square_pos(x = x_org - shift, y = y_org + shift);
         else -> {
-            log("Error: Don't know direction " + dir);
+            log("game_id: "+game_id+" - Error: Don't know direction " + dir);
             return null; // Doesn't happen
         }
     }

@@ -7,6 +7,7 @@
 // Note:
 // We don't return castle moves here. 
 function king_all_valid_moves(
+    game_id: integer,
     board_positions: board_positions_all, 
     pos: integer, 
     align: alignment
@@ -15,13 +16,14 @@ function king_all_valid_moves(
     
     for (dir in range(0, 8)) {
          // One path per direction
-        king_follow_path(board_positions, pos, align, dir, ptree);
+        king_follow_path(game_id, board_positions, pos, align, dir, ptree);
     }
     
     return move_tree_build(pos, ptree);
 }
 
 function king_follow_path(
+    game_id: integer,
     board_positions: board_positions_all, 
     pos: integer, 
     align: alignment, 
@@ -29,13 +31,14 @@ function king_follow_path(
     pre_tree: pre_tree
 ) {
     val tmp_path = [pos]; // Initialize list with starting position
-    val new_pos = pos_calc_from_directional_shift(pos, 1, dir);
+    val new_pos = pos_calc_from_directional_shift(game_id, pos, 1, dir);
     require(new_pos != null, "Bug. New position is null");
     val new_pos_int = pos_to_int(new_pos);
     rule_interpret_single_step_position(board_positions, align, new_pos_int, tmp_path, pre_tree, false);
 }
 
 function king_all_jump_over_moves(
+    game_id: integer,
     board_positions: board_positions_all, 
     pos: integer, 
     align: alignment
@@ -44,20 +47,21 @@ function king_all_jump_over_moves(
     
     for (dir in range(0, 8)) {
          // One path per direction
-        king_follow_path_jump_over(board_positions, pos, align, dir, pre_tree);
+        king_follow_path_jump_over(game_id, board_positions, pos, align, dir, pre_tree);
     }
     
     return move_tree_build(pos, pre_tree);
 }
 
 function king_follow_path_jump_over(
+    game_id: integer,
     board_positions: board_positions_all, 
     pos: integer, 
     align: alignment, 
     dir: integer, 
     pre_tree: pre_tree
 ) {
-    val obstacle_pos = pos_calc_from_directional_shift(pos, 1, dir);
+    val obstacle_pos = pos_calc_from_directional_shift(game_id, pos, 1, dir);
     require(obstacle_pos != null, "Bug. Obstacle position is null");
     val obstacle_pos_int = pos_to_int(obstacle_pos);
     
@@ -66,7 +70,7 @@ function king_follow_path_jump_over(
     );
     
     if (has_passed_obstacle) {
-        val behind_obstacle_pos = pos_calc_from_directional_shift(obstacle_pos_int, 1, dir);
+        val behind_obstacle_pos = pos_calc_from_directional_shift(game_id, obstacle_pos_int, 1, dir);
         require(behind_obstacle_pos != null, "Bug. Behind obstacle position is null");
         val behind_obstacle_pos_int = pos_to_int(behind_obstacle_pos);
         

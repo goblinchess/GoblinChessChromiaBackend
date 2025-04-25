@@ -3,6 +3,7 @@
 // Main function
 // Finds all pawns at the final rank and promotes them to queens.
 function promote_all_pawns_at_final_rank(
+    game_id: integer,
     board_all: board_positions_all,
     our_team: character_team,
     align: alignment,
@@ -33,10 +34,11 @@ function promote_all_pawns_at_final_rank(
                 + ", but the move does not match the given promotions (size: " + end_args.promotions.size() + ").");
 
                 // If we have end_args, we need to add a promotion event
-                log("promote_all_pawns_at_final_rank() - Pawn at final rank " + final_rank + ", promoting at: " + pos);
+                log("game_id: "+game_id+" - Pawn at final rank " + final_rank + ", promoting at: " + pos);
                 
                 // Promote the pawn
                 promote_pawn_to_queen(
+                    game_id,
                     board_all,
                     our_team,
                     pld
@@ -57,6 +59,7 @@ function promote_all_pawns_at_final_rank(
 // 2. Update the team means we have to create a new [piece_living_data] struct
 // -----------------------------------------------------------------------
 function promote_pawn_to_queen(
+    game_id: integer,
     board_all: board_positions_all,
     our_team: character_team,
     pawn: piece_living_data
@@ -76,7 +79,7 @@ function promote_pawn_to_queen(
     
     our_team.members[pawn.p.rowid] = updated_pld;
     
-    log("promote_pawn_to_queen() - Promoted pawn to queen at " + pawn.vuln.position);
+    log("game_id: "+game_id+" - Promoted pawn to queen at " + pawn.vuln.position);
 }
 
 

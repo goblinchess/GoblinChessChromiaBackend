@@ -56,7 +56,7 @@ function card_play_inner_core(
     // -----------    
     // A. Verication
     // -----------    
-    log("Play Card Beign, game: " + game_id + ", last turn: " + last_seen_turn + ", type: " + card_type_str + ", order number: " + card_order_number );
+    log("game_id: " + game_id + "- Play Card Beign, last turn: " + last_seen_turn + ", type: " + card_type_str + ", order number: " + card_order_number );
 
     var new_turn_type = turn_type.BLACK_CARD;
     var my_color = alignment.BLACK;
@@ -159,6 +159,7 @@ function card_play_inner_core(
 
             val portal_entry_pos = pick_piece_map[0].vuln.position;
             val calc: check_stat_board_calculator_data = check_sb_build_hypothetical_subject_gone(
+                game_id,
                 portal_entry_pos,
                 king_from_pos,
                 opp_team,
@@ -179,6 +180,7 @@ function card_play_inner_core(
                 val king_to_pos = other_pld!!.vuln.position;
                 val king_wpaa = with_pos_and_alignment(king_from_pos, king_pld.vuln.align);
                 val calc: check_stat_board_calculator_data = check_sb_build_hypothetical_king_move(
+                    game_id,
                     king_wpaa,
                     king_from_pos,
                     king_to_pos,
@@ -209,6 +211,7 @@ function card_play_inner_core(
 
                 val king_from_pos = my_king_pld!!.vuln.position;
                 val calc: check_stat_board_calculator_data = check_sb_build_hypothetical_wall(
+                    game_id,
                     card_picks,
                     king_from_pos,
                     opp_team,
@@ -224,7 +227,7 @@ function card_play_inner_core(
     }
 
 
-    log("Card passed verification, game: " + game_id +", type: " + card_type_str + " order number: " + card_order_number + " picks: " + pick_summary);
+    log("game_id: " + game_id + " - Card passed verification, type: " + card_type_str + " order number: " + card_order_number + " picks: " + pick_summary);
 
     // -----------    
     // B. Updates
@@ -235,7 +238,7 @@ function card_play_inner_core(
 
     // B.2. Create the events
     for (reverted in reverted_list) {
-        card_event_create_remove_enchantment(minimal_game.game, new_turn, reverted.orig_card, reverted.enchanted_piece);
+        card_event_create_remove_enchantment(game_id, minimal_game.game, new_turn, reverted.orig_card, reverted.enchanted_piece);
     }
 
     // We must replicate the random number used on the client side.
@@ -276,19 +279,19 @@ function card_play_inner_core(
         // a) Enchantments (no change in position or alignment, so no update of [board_positions_all])
         // ----------------
         FROG -> {
-            card_enchantment_create_frog(minimal_game.game, new_turn, minimal_game.player_game, new_card, pick_piece_map[0]);
+            card_enchantment_create_frog(game_id, minimal_game.game, new_turn, minimal_game.player_game, new_card, pick_piece_map[0]);
         }
         TURN_TO_STONE -> {
-            card_enchantment_create_stone(minimal_game.game, new_turn, minimal_game.player_game, new_card, pick_piece_map[0]);
+            card_enchantment_create_stone(game_id, minimal_game.game, new_turn, minimal_game.player_game, new_card, pick_piece_map[0]);
         }
         POTION -> {
-            card_enchantment_create_potion(minimal_game.game, new_turn, new_card, pick_piece_map[0]);
+            card_enchantment_create_potion(game_id, minimal_game.game, new_turn, new_card, pick_piece_map[0]);
         }
         KNIGHTED -> {
-            card_enchantment_create_knighted(minimal_game.game, new_turn, new_card, pick_piece_map[0]);
+            card_enchantment_create_knighted(game_id, minimal_game.game, new_turn, new_card, pick_piece_map[0]);
         }
         JUMP -> {
-            card_enchantment_create_jump(minimal_game.player_game, new_card, pick_piece_map[0]);
+            card_enchantment_create_jump(game_id, minimal_game.player_game, new_card, pick_piece_map[0]);
         }
         // ----------------
         // b) Something happens on the Board 
@@ -323,7 +326,7 @@ function card_play_inner_core(
     }
 
     // B.7. Move to next turn
-    log("/Play Card End, game: " + game_id + ", new turn type: " + new_turn_type + ", type: " + card_type_str + ", order number: " 
+    log("game_id: " + game_id + " - /Play Card End, new turn type: " + new_turn_type + ", type: " + card_type_str + ", order number: " 
             + card_order_number + ", picks: " + pick_summary + ", in_check: " + minimal_game.in_check);
 }
 

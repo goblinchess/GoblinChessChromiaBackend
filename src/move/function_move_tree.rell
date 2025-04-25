@@ -40,30 +40,30 @@ function move_tree_can_take_action(mt: move_tree): boolean {
     return false;
 }
 
-function move_tree_get_pos_status(mt: move_tree, pos: integer): integer {
+function move_tree_get_pos_status(game_id: integer, mt: move_tree, pos: integer): integer {
     // Check if position is in attacks list
     if (mt.attackable_sqs.contains(pos)) {
-        log("  move_tree_get_pos_status() - Found " + pos + " in attacks");
+        log("  game_id: "+game_id+ " - Found " + pos + " in attacks");
         return 2;
     }
     
     // Check if position is in normal moves list
     if (mt.moves_normal.contains(pos)) {
-        log("  move_tree_get_pos_status() - Found " + pos + " in normal");
+        log("  game_id: "+game_id+ " - Found " + pos + " in normal");
         return 1;
     }
     
     // Check if position is in harmless moves list
     if (mt.moves_harmless.contains(pos)) {
-        log("  move_tree_get_pos_status() - Found " + pos + " in harmless");
+        log("  game_id: "+game_id+ " - Found " + pos + " in harmless");
         return 1;
     }
  
-    log("  move_tree_get_pos_status() - Didn't find " + pos + " anywhere in the tree. Tree: " + move_tree_debug(mt) + "");
+    log("  game_id: "+game_id+ " - Didn't find " + pos + " anywhere in the tree. Tree: " + move_tree_debug(mt) + "");
     return 0; // Not found
 }
 
-function move_tree_build_active_path_from_destination(mt: move_tree, pos: integer): path_base? {
+function move_tree_build_active_path_from_destination(game_id: integer, mt: move_tree, pos: integer): path_base? {
     for(tmp_path: path_base in mt.paths) {
         if(path_is_destination_in_path(pos, tmp_path)) {
             return path_build_active(tmp_path, pos);
@@ -71,7 +71,7 @@ function move_tree_build_active_path_from_destination(mt: move_tree, pos: intege
     }
 
     // Not sure if this is an error?
-    log("move_tree_build_active_path_from_destination() - Pos " + pos + " not found in any of the paths.");
+    log("game_id: "+game_id+ " - Pos " + pos + " not found in any of the paths.");
     return null;
 }
 

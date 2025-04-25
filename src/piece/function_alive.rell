@@ -76,6 +76,7 @@ function alive_move_from_limbo(
 
 // Raise a dead piece from the dead collection, put it in alive.
 function alive_move_from_dead(
+    game_id: integer,
     v_data_in_dead: vulnerable_data, // The dead vuln
     new_owner: player_game,  // Who should be the owner of the new alive object?
     new_pos: integer, // The dead doesn't have to "rise" from the place it was killed.
@@ -83,7 +84,7 @@ function alive_move_from_dead(
 ) {
     val g: game = v_data_in_dead.g;
 
-    log("alive_move_from_dead() - resurrecting old color: " + v_data_in_dead.align + " to new pos: " + new_pos + ", with new color " + new_align);
+    log("game_id: "+game_id+" - resurrecting old color: " + v_data_in_dead.align + " to new pos: " + new_pos + ", with new color " + new_align);
 
     // 1. Select from DEAD
     val dead_piece: dead = (d: dead)@ {d.vulnerable == v_data_in_dead.v} (d);

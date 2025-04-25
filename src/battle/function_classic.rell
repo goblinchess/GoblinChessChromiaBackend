@@ -1,6 +1,7 @@
 // Returns a battle_result (holding the result of the attack)
 // based on the classic mode.
 function calculate_classic_attack_result(
+    game_id: integer,
 
     // Defender
     def_hp: integer,
@@ -21,7 +22,7 @@ function calculate_classic_attack_result(
     
     val d_health_left = d_curr_hp - att_res;
     
-    log("calculate_classic_attack_result() - Attack res = (Attack Damage: " + attack_damage + " - Defense: " + def_defense + ") = Calculated damage:  " + att_res + ". Def Hp: " + d_curr_hp);
+    log("game_id: "+game_id+ " - Attack res = (Attack Damage: " + attack_damage + " - Defense: " + def_defense + ") = Calculated damage:  " + att_res + ". Def Hp: " + d_curr_hp);
     
     // Calc main battle result type
     require(att_res > 0, "Error for classical mode.");

@@ -2,6 +2,7 @@
 // Returns a battle_result (holding the result of the attack)
 // based on the chaos mode.
 function calculate_chaos_attack_result(
+    game_id: integer,
 
     // Defender
     def_hp: integer,
@@ -46,7 +47,7 @@ function calculate_chaos_attack_result(
     
     val d_health_left = d_curr_hp - att_res;
     
-    log("calculate_chaos_attack_result() - Attack res " + die_set_debug(att_strength) + " = (Attack Damage: " + attack_damage + " - Defense: " + 
+    log("game_id: "+game_id+ " - Attack res " + die_set_debug(att_strength) + " = (Attack Damage: " + attack_damage + " - Defense: " + 
         def_defense + ") = Calculated damage:  " + att_res + ". Def Hp: " + d_curr_hp);
     
     // Calc main battle result type
@@ -85,7 +86,7 @@ function calculate_chaos_attack_result(
             
             val a_health_left = a_curr_hp - def_res;
         
-            log("calculate_attack_result() - Retaliation res " + die_set_debug(def_strength) + " =  " + retaliation_damage + ". Calculated damage: " + def_res + ".");
+            log("game_id: "+game_id+ "  - Retaliation res " + die_set_debug(def_strength) + " =  " + retaliation_damage + ". Calculated damage: " + def_res + ".");
         
             // Calc retaliation result type
             if (def_res > 0) {

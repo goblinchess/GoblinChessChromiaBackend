@@ -3,6 +3,7 @@
 
 // Creates just the enchanment event (without any other changes of the enchanted piece)
 function card_event_create_enchantment(
+    game_id: integer,
     g: game, 
     t: turn,
     new_card: card, 
@@ -22,6 +23,7 @@ function card_event_create_enchantment(
 
 // Called when an enchantment times out
 function card_event_create_remove_enchantment(
+    game_id: integer,
     g: game, 
     t: turn,
     card: card, 
@@ -37,6 +39,6 @@ function card_event_create_remove_enchantment(
         .piece = piece
     );
 
-    log("card_event_create_remove_enchantment() - Card: " + card.card_type + ".");
+    log("game_id: "+game_id+ " - Card: " + card.card_type + ".");
 }
 

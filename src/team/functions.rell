@@ -90,11 +90,11 @@ function team_get_king(team: character_team): piece_living_data? {
 // Note that we're using the given [board_positions_all], which might be hypothetical,
 // but we're using the ACTUAL position of the piece.
 // THIS MEANS WE CANNOT EVER CHANGE THE HYPOTHETICAL POSITION OF THE TEAM WE ARE ABOUT TO GENERATE A MOVE TREE FROM.
-function team_get_all_move_trees(team: character_team, board_all: board_positions_all): list<move_tree> {
+function team_get_all_move_trees(game_id: integer, team: character_team, board_all: board_positions_all): list<move_tree> {
     val ret = list<move_tree>();
     
     for (pld in team_get_list(team)) {
-        _inner_add_move_tree(pld, board_all, ret);
+        _inner_add_move_tree(game_id, pld, board_all, ret);
     }
     
     return ret;
@@ -103,6 +103,7 @@ function team_get_all_move_trees(team: character_team, board_all: board_position
 // Same as above, but if there is a piece on "except_for_pos" we'll ignore that one.
 // Use case: Sometimes we want to exclude the move tree of a piece that will die during the (hypothetical) move.
 function team_get_all_move_trees_except_for_one(
+    game_id: integer,
     team: character_team,
     board_all: board_positions_all, 
     except_for_pos: integer, // Position of the (enemy) piece we want to exclude.
@@ -116,19 +117,20 @@ function team_get_all_move_trees_except_for_one(
         } else if (pld.vuln.position == count_enemy_at_pos_as_dead) {
             //log("team_get_all_move_trees_except_for_one() - Excluding the enemy standing on portal entry at " + count_enemy_at_pos_as_dead );
         } else {
-            _inner_add_move_tree(pld, board_all, ret);
+            _inner_add_move_tree(game_id, pld, board_all, ret);
         }
     }
     
     return ret;
 }
 
-function _inner_add_move_tree(p: piece_living_data, board_all: board_positions_all, ret: list<move_tree>) {
+function _inner_add_move_tree(game_id: integer, p: piece_living_data, board_all: board_positions_all, ret: list<move_tree>) {
 
     // I think the enchanted jump is already consumed when we calculate check/mate.
     val is_enchanted_jump = false;  // <-- We wanna save DB lookups.
 
     val (ground, jumps) = rules_get_all_valid_moves(
+        game_id,
         board_all, 
         p.active_type,  // We wanna know how it moves, not what it is.
         is_enchanted_jump,

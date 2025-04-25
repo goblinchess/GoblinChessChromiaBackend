@@ -66,6 +66,6 @@ function move_verify_opp_vuln_context_inner(
     require(opp != null, "Yes, it's extremly unlikely case where en passant failed (due to defender piece has been moved from " + 
         opp_destination_pos + " to some other position) but client should have noticed this and not allowed this attack.");
         
-    log("En passant success on " + att_args.attacked_position + ". Opponent piece found at " + opp_destination_pos + ".");
+    log("game_id: "+game_id+ " - En passant success on " + att_args.attacked_position + ". Opponent piece found at " + opp_destination_pos + ".");
     return (opp_vd = opp.vuln, opp_pld = opp);
 }

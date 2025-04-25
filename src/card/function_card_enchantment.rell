@@ -6,15 +6,15 @@
 
 // Only use case:
 // During PAWN promotion some enchantments can be transferred to the queen.
-function card_enchantment_can_be_transferred(card_type) {
+function card_enchantment_can_be_transferred(game_id: integer, card_type) {
 
     when (card_type) {
         FROG -> {
-            log("card_enchantment_can_be_transferred() - ERROR: How did this happen? Frogs should stay frogs until the spell is over, i.e. no promotion possible.");
+            log("game_id: "+game_id+ " - ERROR: How did this happen? Frogs should stay frogs until the spell is over, i.e. no promotion possible.");
             return false; // Actually an error. Frogs should stay frogs until the spell is over, i.e. no promotion
         }
         TURN_TO_STONE -> {
-            log("card_enchantment_can_be_transferred() - ERROR: How did this happen? Stones should stay stones until the spell is over, i.e. no promotion possible.");
+            log("game_id: "+game_id+ " - ERROR: How did this happen? Stones should stay stones until the spell is over, i.e. no promotion possible.");
             return false; // No use for this yet.
         }
         KNIGHTED -> {
@@ -27,7 +27,7 @@ function card_enchantment_can_be_transferred(card_type) {
             return false; // It's just for one turn
         }
         else -> {
-            require(false, "card_enchantment_can_be_transferred() - ERROR: unknown enchantment card type: " + card_type);
+            require(false, "game_id: "+game_id+ " - ERROR: unknown enchantment card type: " + card_type);
             return false; 
         }
     }
@@ -35,30 +35,30 @@ function card_enchantment_can_be_transferred(card_type) {
 
 
 // 1. FROG
-function card_enchantment_create_frog(g: game, t: turn, played_by: player_game, new_card: card, picked_piece: piece_living_data) {
-    card_event_create_enchantment(g, t, new_card, picked_piece.p); 
+function card_enchantment_create_frog( game_id: integer, g: game, t: turn, played_by: player_game, new_card: card, picked_piece: piece_living_data) {
+    card_event_create_enchantment(game_id, g, t, new_card, picked_piece.p); 
     val replacement_with = piece_set_frog(picked_piece); // Piece function
     val start_duration = 3 * 2; // We need the double amount since duration is reducend by both players
     card_create_replacement_enchantment_internal(played_by, new_card, picked_piece, replacement_with, start_duration);
 }
 
 // 2. TURN_TO_STONE
-function card_enchantment_create_stone(g: game, t: turn, played_by: player_game, new_card: card, picked_piece: piece_living_data) {
-    card_event_create_enchantment(g, t, new_card, picked_piece.p); 
+function card_enchantment_create_stone(game_id: integer, g: game, t: turn, played_by: player_game, new_card: card, picked_piece: piece_living_data) {
+    card_event_create_enchantment(game_id, g, t, new_card, picked_piece.p); 
     val replacement_with: vulnerable = piece_set_stone(picked_piece);
     val start_duration = 3 * 2; // We need the double amount since duration is reducend by both players
     card_create_replacement_enchantment_internal(played_by, new_card, picked_piece, replacement_with, start_duration);
 }
 
 // 3. POTION
-function card_enchantment_create_potion(g: game, t: turn, new_card: card, picked_piece: piece_living_data) {
-    card_event_create_enchantment(g, t, new_card, picked_piece.p); 
+function card_enchantment_create_potion(game_id: integer, g: game, t: turn, new_card: card, picked_piece: piece_living_data) {
+    card_event_create_enchantment(game_id, g, t, new_card, picked_piece.p); 
     piece_set_potion(picked_piece.p); // Piece function
 }
 
 // 4. KNIGHTED
-function card_enchantment_create_knighted(g: game, t: turn, new_card: card, picked_piece: piece_living_data) {
-    card_event_create_enchantment(g, t, new_card, picked_piece.p); 
+function card_enchantment_create_knighted(game_id: integer, g: game, t: turn, new_card: card, picked_piece: piece_living_data) {
+    card_event_create_enchantment(game_id, g, t, new_card, picked_piece.p); 
     piece_set_knighted(picked_piece.p); // Piece function
 }
 
@@ -66,7 +66,7 @@ function card_enchantment_create_knighted(g: game, t: turn, new_card: card, pick
 // This is a bit special, since the spell is over the same turn.
 // This game chose to handle this as if the move turn is enhanced by the JUMP card,
 // meaning we must remeber the played card when it's time to move.
-function card_enchantment_create_jump(played_by: player_game, new_card: card, picked_piece: piece_living_data) {
+function card_enchantment_create_jump(game_id: integer, played_by: player_game, new_card: card, picked_piece: piece_living_data) {
     move_set_jump(played_by, new_card, picked_piece.p); // Move function
 }
 

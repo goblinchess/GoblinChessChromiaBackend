@@ -8,7 +8,7 @@ function move_neutral_skip_inner(
     // -----------    
     // A. Verication
     // -----------    
-    log("Skip Neutral Begin: game_id: " + game_id + " last_turn: " + last_seen_turn);
+    log("game_id: "+game_id+" - Skip Neutral Begin: last_turn: " + last_seen_turn);
 
     // ----------------
     // A.1. Check player entity
@@ -35,5 +35,5 @@ function move_neutral_skip_inner(
     // ----------------
     // lots of verification in here.
     val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
-    log("/Skip Neutral End: game_id: " + game_id + " new turn type: " + new_turn_type);
+    log("game_id: "+game_id+" - /Skip Neutral End: new turn type: " + new_turn_type);
 }

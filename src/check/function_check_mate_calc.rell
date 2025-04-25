@@ -28,13 +28,14 @@
 
 
 function check_mate_calc_data_constructor(
+    game_id: integer,
     king: with_pos_and_alignment, 
     mating_team: character_team, 
     board_all: board_positions_all, 
     check_sb_data: check_stat_board_calculator_data): check_mate_calc_data
 {
 
-    val king_escape_data = king_escape_builder(king, mating_team, board_all);
+    val king_escape_data = king_escape_builder(game_id, king, mating_team, board_all);
     return check_mate_calc_data(king_escape_data, check_sb_data, board_all);
 }
 
@@ -44,6 +45,7 @@ function check_mate_calc_data_constructor(
 // Prereq: King is in check.
 // -----------------------------------------------
 function check_mate_can_escape(
+    game_id: integer,
     data: check_mate_calc_data,
     kings_team: character_team
 ): boolean {
@@ -53,13 +55,13 @@ function check_mate_can_escape(
     val king_wpaa = with_pos_and_alignment(king.vuln.position, kings_align);
     
     // Begin check mate calculation (do the cheapest checks first)
-    val (escape_pos, is_attack) = king_escape_find_first_without_help(data.king_escape_data, king_wpaa);
+    val (escape_pos, is_attack) = king_escape_find_first_without_help(game_id, data.king_escape_data, king_wpaa);
     if (escape_pos != null) {
         return true; // No prob, king can wiggle free
     }
     
     if (check_sb_is_multi_check(data.check_sb_data)) {
-        log("check_mate_can_escape() - There is never any way to beat two attackers = Mate.");
+        log("game_id: "+game_id+ " - There is never any way to beat two attackers = Mate.");
         return false;
     }
     
@@ -71,6 +73,7 @@ function check_mate_can_escape(
 
         val is_enchanted_jump = false;  // <-- Magic Jumps shouldn't be relevant here.
         val (subject_mt, subject_mt_jump) = rules_get_all_valid_moves(
+            game_id,
             data.board_all, 
             p.active_type,  // We wanna know how it moves, not what it is.
             is_enchanted_jump,
@@ -81,13 +84,13 @@ function check_mate_can_escape(
         );
         // Ignore castle, since this never a king.
         
-        log("check_mate_can_escape() - Verify if subject " + dbg_str + " can help.");
-        if (check_mate_can_subject_save_king(data, subject_mt, subject_mt_jump, kings_align, dbg_str)) {
+        log("game_id: "+game_id+ " - Verify if subject " + dbg_str + " can help.");
+        if (check_mate_can_subject_save_king(game_id, data, subject_mt, subject_mt_jump, kings_align, dbg_str)) {
             return true; // No prob, subject can save the king
         }
     }
     
-    log("check_mate_can_escape() - No subject was able to help the king = Mate.");
+    log("game_id: "+game_id+ " - No subject was able to help the king = Mate.");
     return false;
 }
 
@@ -103,6 +106,7 @@ function check_mate_can_escape(
 // Note a) 1 & 2 can only work for a single checker.
 // -----------------------------------------------
 function check_mate_can_subject_save_king(
+    game_id: integer,
     data: check_mate_calc_data,
     subject_mt_ground: move_tree?,
     subject_mt_jump: move_tree?,
@@ -115,7 +119,7 @@ function check_mate_can_subject_save_king(
     // 1. (The subject) can attack the checker.
     // Note on portals: Portals are NOT relevant for kills, since the kill will solve the problem
     // no matter if there is a portal below the enemy or not.
-    if (check_sb_can_subject_kill_checker(data.check_sb_data, mt.attackable_sqs, dbg_str)) {
+    if (check_sb_can_subject_kill_checker(game_id, data.check_sb_data, mt.attackable_sqs, dbg_str)) {
         return true;
     }
     
@@ -138,7 +142,7 @@ function check_mate_can_subject_save_king(
         }
     }
     
-    if (check_sb_can_subject_block_path(data.check_sb_data, moves_with_portals, dbg_str)) {
+    if (check_sb_can_subject_block_path(game_id, data.check_sb_data, moves_with_portals, dbg_str)) {
         return true;
     }
     

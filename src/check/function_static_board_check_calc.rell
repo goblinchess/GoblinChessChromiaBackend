@@ -41,6 +41,7 @@ function check_sb_get_all_check_paths(data: check_stat_board_calculator_data): s
 // --------------------------------------------------------------------------------------
 
 function check_sb_constructor(
+    game_id: integer,
     king_pos: integer, 
     checking_team_move_trees: list<move_tree> // All move trees of the checking team (i.e. not the defending team)
 ): check_stat_board_calculator_data {
@@ -49,7 +50,7 @@ function check_sb_constructor(
     val data = check_stat_board_calculator_data(king_pos, checking_attackers);
 
     for(tree: move_tree in checking_team_move_trees) {
-        check_sb_add_checking_piece_move_tree(data, tree);
+        check_sb_add_checking_piece_move_tree(game_id, data, tree);
     }
 
     return data;
@@ -62,14 +63,14 @@ function check_sb_constructor(
 // (The "relevant" squares are when the opposing piece checks the king.
 // We save these in the data.attackers_check_paths collection)
 // --------------------------------------------------------------------------------------
-function check_sb_add_checking_piece_move_tree(data: check_stat_board_calculator_data, checking_piece_moves: move_tree) {
+function check_sb_add_checking_piece_move_tree(game_id: integer, data: check_stat_board_calculator_data, checking_piece_moves: move_tree) {
     val attack_paths = list<path_base>();
     
     // Check all attack squares
     for (pos in checking_piece_moves.attackable_sqs) {
         if (pos == data.king_pos) {
             // Found a check, must save this
-            val path = move_tree_build_active_path_from_destination(checking_piece_moves, pos);
+            val path = move_tree_build_active_path_from_destination(game_id, checking_piece_moves, pos);
             attack_paths.add(path!!); // Cannot be null
         }
     }
@@ -80,9 +81,9 @@ function check_sb_add_checking_piece_move_tree(data: check_stat_board_calculator
         if (attack_paths.size() > 1) {
             // Don't understand how a single piece can attack via two routes
             // There should be no overlapping of the move tree?
-            log("ERROR: Found piece at " + checking_piece_moves.start_pos + " who can check via multiple paths");
+            log("game_id: "+game_id+" - ERROR: Found piece at " + checking_piece_moves.start_pos + " who can check via multiple paths");
         } else {
-            log("check_add_checking_piece_move_tree() - Found " + checking_piece_moves.start_pos +" who can check via " + path_debug(check_path) + ".");
+            log("game_id: "+game_id+" - Found " + checking_piece_moves.start_pos +" who can check via " + path_debug(check_path) + ".");
         }
         
         val new_ca = checking_attacker_build( checking_piece_moves.start_pos, check_path);
@@ -93,10 +94,10 @@ function check_sb_add_checking_piece_move_tree(data: check_stat_board_calculator
 // --------------------------------------------------------------------------------------
 // Can the subject kill the checker?
 // --------------------------------------------------------------------------------------
-function check_sb_can_subject_kill_checker(data: check_stat_board_calculator_data, subject_attacks: set<integer>, dbg_str: text): boolean {
+function check_sb_can_subject_kill_checker(game_id: integer, data: check_stat_board_calculator_data, subject_attacks: set<integer>, dbg_str: text): boolean {
     if (check_sb_is_multi_check(data)) {
         // A single subject can never take out multiple attackers
-        log("check_can_subject_kill_checker() - Too many attackers, no help possible");
+        log("game_id: "+game_id+ " - Too many attackers, no help possible");
         return false;
     }
     
@@ -105,10 +106,10 @@ function check_sb_can_subject_kill_checker(data: check_stat_board_calculator_dat
     // Can we take out the checker?
     for (pos in subject_attacks) {
         if (pos == checker.attacker_pos) {
-            log("check_can_subject_kill_checker() - Yes, the " + dbg_str + " can try to capture the checker at " + checker.attacker_pos);
+            log("game_id: "+ game_id+" - Yes, the " + dbg_str + " can try to capture the checker at " + checker.attacker_pos);
             return true;
         } else {
-            log("check_can_subject_kill_checker() - No, the " + dbg_str + " cannot, by going to " + pos + ", capture the checker at " + checker.attacker_pos);
+            log("game_id: "+ game_id+" - No, the " + dbg_str + " cannot, by going to " + pos + ", capture the checker at " + checker.attacker_pos);
         }
     }
     return false;  // This escape method failed.
@@ -117,10 +118,10 @@ function check_sb_can_subject_kill_checker(data: check_stat_board_calculator_dat
 // --------------------------------------------------------------------------------------
 // Can the subject block the checker's path?
 // --------------------------------------------------------------------------------------
-function check_sb_can_subject_block_path(data: check_stat_board_calculator_data, subject_moves: set<integer>, dbg_str: text): boolean {
+function check_sb_can_subject_block_path(game_id: integer, data: check_stat_board_calculator_data, subject_moves: set<integer>, dbg_str: text): boolean {
     if (check_sb_is_multi_check(data)) {
         // A single subject can never block multiple attackers
-        log("check_can_subject_block_path() - Too many attackers, no help possible");
+        log("game_id: "+game_id+ " - Too many attackers, no help possible");
         return false;
     }
     
@@ -133,10 +134,10 @@ function check_sb_can_subject_block_path(data: check_stat_board_calculator_data,
     // Can we block any mid-path position?
     for (pos in subject_moves) {
         if (mid_positions.contains(pos)) {
-            log("check_can_subject_block_path() - Yes, the " + dbg_str + " can block the checker at " + checker.attacker_pos);
+            log("game_id: "+game_id+" - Yes, the " + dbg_str + " can block the checker at " + checker.attacker_pos);
             return true;
         } else {
-            log("check_can_subject_block_path() - No, the " + dbg_str + " cannot, by going to " + pos + ", block the checker at  " + checker.attacker_pos);
+            log("game_id: "+game_id+" - No, the " + dbg_str + " cannot, by going to " + pos + ", block the checker at  " + checker.attacker_pos);
         }
     }
     return false;  // This escape method failed.

@@ -8,7 +8,7 @@ function card_skip_inner(
     // -----------    
     // A. Verication
     // -----------    
-    log("Skip Card Beign, game: " + game_id + " last turn: " + last_seen_turn );
+    log("game_id: " + game_id +" - Skip Card Beign, last turn: " + last_seen_turn );
 
     // 1. Check player entity
     val minimal_game: minimal_game_result? = minimal_game_data_get(caller_pubkey);
@@ -35,8 +35,8 @@ function card_skip_inner(
 
     // B.3. Create the events
     for (reverted in reverted_list) {
-        card_event_create_remove_enchantment(minimal_game.game, new_turn, reverted.orig_card, reverted.enchanted_piece);
+        card_event_create_remove_enchantment(game_id, minimal_game.game, new_turn, reverted.orig_card, reverted.enchanted_piece);
     }
 
-    log("/Skip Card End, game: " + game_id + ", new turn type: " + new_turn_type);
+    log("game_id: " + game_id +" - /Skip Card End, new turn type: " + new_turn_type);
 }

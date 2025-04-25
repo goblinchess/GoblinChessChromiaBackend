@@ -35,12 +35,12 @@ function rnd_validation_create_player_rnd_nr(
 // the seed (s)he used (before that we don't have the seed).
 // ------------------------------------------------------------------
 function rnd_validation_of_player(
+    game_id: integer,
     pg: player_game,
-    org_seed: integer, // Client's seed, unique for each game/player
-    game_id: integer // Just for debugging
+    org_seed: integer // Client's seed, unique for each game/player
 ): text? {
 
-    log("rnd_validation_of_player() - Begin, game_id " + game_id);
+    log("game_id: "+game_id+" - Begin");
 
     var curr_seed = org_seed;
 
@@ -65,7 +65,7 @@ function rnd_validation_of_player(
     for(card_hist in cards) {
         val calculated_type = card_map[card_hist.draw_order_nr];
         if (calculated_type != card_hist.card_type) {
-            val err_msg = "The nr " + card_hist.draw_order_nr + 
+            val err_msg = "game_id: "+game_id+" - The nr " + card_hist.draw_order_nr + 
                 " drawn should have been a " + calculated_type + " but client played type: " + card_hist.card_type;
             log(err_msg);
 
@@ -80,7 +80,7 @@ function rnd_validation_of_player(
         }
     }
 
-    log("rnd_validation_of_player() - Cards validated, game_id " + game_id);
+    log("game_id: "+game_id+" - Cards validated");
 
 
     // --------------------------
@@ -119,7 +119,7 @@ function rnd_validation_of_player(
         idx++;
     }
 
-    log("rnd_validation_of_player() - Everything successfully validated, game_id " + game_id);
+    log("game_id: "+game_id+" - Everything successfully validated");
     return null; // No errors
 }
 

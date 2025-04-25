@@ -25,13 +25,13 @@ function board_debug_print(game_id: integer, turn_nr: integer, board_all: board_
                     } else if (piece.alignment == alignment.NEUTRAL) {
                         out += "n ";
                     } else {
-                        log("ERROR: Unknown align at " + pos);
+                        log("game_rowid: "+game_id+ " - ERROR: Unknown align at " + pos);
                         out += "? ";
                     }
                 } else if (board_all.board_obstacles.contains(pos)) {
                     out += "o ";
                 } else {
-                    log("ERROR: Unknown piece at " + pos);
+                    log("game_rowid: "+game_id+ " - ERROR: Unknown piece at " + pos);
                     out += "? ";
                 }
             }

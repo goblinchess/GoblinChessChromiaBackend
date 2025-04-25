@@ -13,6 +13,7 @@
 // b) If a pawn gets an old vulnerable path as an argument, it might CONSUME it, i.e. attacking
 //    the mid-section of the path. 
 function pawn_all_valid_moves(
+    game_id: integer,
     board_positions: board_positions_all,
     pos: integer,
     align: alignment,
@@ -22,8 +23,8 @@ function pawn_all_valid_moves(
     
     // Get moves based on alignment
     val (mt, new_vulnerable_paths) = when (align) {
-        alignment.WHITE -> pawn_all_valid_white_moves(board_positions, pos, pre_tree, pre_vuln_ctxt);
-        alignment.BLACK -> pawn_all_valid_black_moves(board_positions, pos, pre_tree, pre_vuln_ctxt);
+        alignment.WHITE -> pawn_all_valid_white_moves(game_id, board_positions, pos, pre_tree, pre_vuln_ctxt);
+        alignment.BLACK -> pawn_all_valid_black_moves(game_id, board_positions, pos, pre_tree, pre_vuln_ctxt);
         else -> pawn_all_valid_neutral_moves(board_positions, pos, pre_tree, pre_vuln_ctxt);
     };
     
@@ -44,6 +45,7 @@ function pawn_all_valid_moves(
 }
 
 function pawn_all_valid_white_moves(
+    game_id: integer,
     board_positions: board_positions_all,
     pos: integer,
     pre_tree: pre_tree,
@@ -74,7 +76,7 @@ function pawn_all_valid_white_moves(
         val left_forward = square_pos(x = x - 1, y = y + 1);
         val left_forward_int = forward_pos_int - 1;
         
-        if (pawn_is_attackable_black_or_neutral(board_positions, left_forward, pre_vuln_ctxt)) {
+        if (pawn_is_attackable_black_or_neutral(game_id, board_positions, left_forward, pre_vuln_ctxt)) {
             pawn_add_attack(pos, left_forward_int, pre_tree);
         } else if (board_is_white_piece_at(board_positions, left_forward)) {
             pre_tree.protected_sqs.add(left_forward_int); // Only for mate calc
@@ -83,7 +85,7 @@ function pawn_all_valid_white_moves(
         val right_forward = square_pos(x = x + 1, y = y + 1);
         val right_forward_int = forward_pos_int + 1;
         
-        if (pawn_is_attackable_black_or_neutral(board_positions, right_forward, pre_vuln_ctxt)) {
+        if (pawn_is_attackable_black_or_neutral(game_id, board_positions, right_forward, pre_vuln_ctxt)) {
             pawn_add_attack(pos, right_forward_int, pre_tree);
         } else if (board_is_white_piece_at(board_positions, right_forward)) {
             pre_tree.protected_sqs.add(right_forward_int); // Only for mate calc
@@ -100,6 +102,7 @@ function pawn_all_valid_white_moves(
 }
 
 function pawn_all_valid_black_moves(
+    game_id: integer,
     board_positions: board_positions_all,
     pos: integer,
     pre_tree: pre_tree,
@@ -127,7 +130,7 @@ function pawn_all_valid_black_moves(
         val left_forward = square_pos(x = x - 1, y = y - 1);
         val left_forward_int = forward_pos_int - 1;
         
-        if (pawn_is_attackable_white_or_neutral(board_positions, left_forward, pre_vuln_ctxt)) {
+        if (pawn_is_attackable_white_or_neutral(game_id, board_positions, left_forward, pre_vuln_ctxt)) {
             pawn_add_attack(pos, left_forward_int, pre_tree);
         } else if (board_is_black_piece_at(board_positions, left_forward)) {
             pre_tree.protected_sqs.add(left_forward_int); // Only for mate calc
@@ -136,7 +139,7 @@ function pawn_all_valid_black_moves(
         val right_forward = square_pos(x = x + 1, y = y - 1);
         val right_forward_int = forward_pos_int + 1;
 
-        if (pawn_is_attackable_white_or_neutral(board_positions, right_forward, pre_vuln_ctxt)) {
+        if (pawn_is_attackable_white_or_neutral(game_id, board_positions, right_forward, pre_vuln_ctxt)) {
             pawn_add_attack(pos, right_forward_int, pre_tree);
         } else if (board_is_black_piece_at(board_positions, right_forward)) {
             pre_tree.protected_sqs.add(right_forward_int); // Only for mate calc
@@ -173,6 +176,7 @@ function pawn_all_valid_neutral_moves(
 //   something on the square behind the obstacle.
 // -----------------------------------------------
 function pawn_all_jump_over_moves(
+    game_id: integer,
     board_positions: board_positions_all,
     pos_int: integer,
     align: alignment
@@ -381,25 +385,28 @@ function pawn_inner_double_step(
 // ----------------------------
 
 function pawn_is_attackable_black_or_neutral(
+    game_id: integer,
     board_positions: board_positions_all,
     pos: square_pos,
     pre_vuln_ctxt: pre_vuln_context
 ): boolean {
-    return pawn_is_attackable(board_positions, pos, pre_vuln_ctxt, true);
+    return pawn_is_attackable(game_id, board_positions, pos, pre_vuln_ctxt, true);
 }
 
 function pawn_is_attackable_white_or_neutral(
+    game_id: integer,
     board_positions: board_positions_all,
     pos: square_pos,
     pre_vuln_ctxt: pre_vuln_context
 ): boolean {
-    return pawn_is_attackable(board_positions, pos, pre_vuln_ctxt, false);
+    return pawn_is_attackable(game_id, board_positions, pos, pre_vuln_ctxt, false);
 }
 
 // --------------------------------------------------------------------
 // Returns "true" if there is an attackable piece on the given square 
 // --------------------------------------------------------------------
 function pawn_is_attackable(
+    game_id: integer,
     board_positions: board_positions_all,
     new_pos: square_pos,
     pre_vuln_ctxt: pre_vuln_context,
@@ -418,7 +425,7 @@ function pawn_is_attackable(
             // Check if enemy is still occupying the path destination
             // (they could have potentially been moved away)
             if (pawn_is_attackable_player_align_plus_neutral(board_positions, dest, check_black)) {
-                log("Found a vulnerable mid square " + new_pos_int + ", with piece still at destination " + dest);
+                log("game_id: "+game_id+ " - Found a vulnerable mid square " + new_pos_int + ", with piece still at destination " + dest);
 
                 // Add the mid square and found piece to the context
                 val maybe_under_attack: with_pos_and_alignment? = board_get_at(board_positions, dest_int);
@@ -426,7 +433,7 @@ function pawn_is_attackable(
                 return true;
             } else {
                 // Investigate, doesn't have to be an error, but would indeed be an unusual event.
-                log("Error?: Found a vuln mid square at " + new_pos_int + ", but cannot find the piece at dest: " + dest);
+                log("game_id: "+game_id+ " - Error?: Found a vuln mid square at " + new_pos_int + ", but cannot find the piece at dest: " + dest);
                 return false;
             }
         }

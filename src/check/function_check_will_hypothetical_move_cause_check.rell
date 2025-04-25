@@ -24,6 +24,7 @@
 // 1. If this causes check
 // 2. If this is a castle move
 function will_hypothetical_move_cause_check(
+    game_id: integer,
     selected_path: path_base,
     chr_to_move: with_pos_and_alignment,
     align_of_mover: alignment,
@@ -39,6 +40,7 @@ function will_hypothetical_move_cause_check(
     // 1. Build hypothetical situation
     // ------------------------
     val hypothetical_check_calc_data = whm_build_check_calc_inner(
+        game_id,
         chr_to_move, 
         align_of_mover, 
         pos_start, 
@@ -59,6 +61,7 @@ function will_hypothetical_move_cause_check(
     // ------------------------
     if (is_king_move and not check) {  // Must be a king move for this to be relevant
         check = whm_check_if_potential_castle_gives_check_inner(
+            game_id,
             selected_path, 
             chr_to_move, 
             mating_team, 
@@ -71,6 +74,7 @@ function will_hypothetical_move_cause_check(
 
 // Returns the calculator data
 function whm_build_check_calc_inner(
+    game_id: integer,
     piece_to_move: with_pos_and_alignment,
     align_of_mover: alignment,
     pos_start: integer,
@@ -84,7 +88,7 @@ function whm_build_check_calc_inner(
         // 1.b) Ignore portals
         // Don't go through the portal here, since we don't know if the portal will be used.
         return check_sb_build_hypothetical_king_move(
-            piece_to_move, pos_start, pos_dest, mating_team, board_pos_all
+            game_id, piece_to_move, pos_start, pos_dest, mating_team, board_pos_all
         );
     } else {
         // 1.a) Use portals
@@ -100,16 +104,17 @@ function whm_build_check_calc_inner(
             // we must first remove that opponent (since it's being killed before the subject travels through the portal).
             val status_of_portal_entry = board_get_square_status_int(board_pos_all, pos_dest);
             if (square_status_is_piece(status_of_portal_entry)) {
-                log("Stepped on (own) portal entry at " + pos_dest + " -> " + portal.exit_pos + ", that is ALSO blocked by " + status_of_portal_entry + " piece.");
+                log("game_id: "+game_id+ " - Stepped on (own) portal entry at " + pos_dest + " -> " + portal.exit_pos + ", that is ALSO blocked by " + status_of_portal_entry + " piece.");
                 count_enemy_at_pos_as_dead = pos_dest; // The blocking enemy will be killed here (by the subject) BEFORE we step into the portal.
             } else {
-                log("Stepped on (own) portal entry: "  + pos_dest + " -> "  + portal.exit_pos);
+                log("game_id: "+game_id+ " - Stepped on (own) portal entry: "  + pos_dest + " -> "  + portal.exit_pos);
             }
             actual_dest = portal.exit_pos;
         }
         
         // Moving a subject
         return check_sb_build_hypothetical_subject_move(
+            game_id,
             piece_to_move, 
             pos_start, 
             actual_dest, 
@@ -126,6 +131,7 @@ function whm_build_check_calc_inner(
 // the pass-through squares are free from check.
 // -------------------------------------------------------------------
 function whm_check_if_potential_castle_gives_check_inner(
+    game_id: integer,
     selected_path: path_base,
     chr_to_move: with_pos_and_alignment,
     mating_team: character_team,
@@ -133,12 +139,13 @@ function whm_check_if_potential_castle_gives_check_inner(
 ): boolean {
     var check = false;  // We only get here we don't have check
     
-    log("whm_check_if_potential_castle_gives_check_inner() - King move.");
+    log("game_id: "+game_id+ " - King move.");
     when (selected_path.path_type) {
         path_type.GROUND_CASTLE_MOVE -> {
-            log("whm_check_if_potential_castle_gives_check_inner() - This is a castle move");
+            log("game_id: "+game_id+ " - This is a castle move");
             val mid_positions = path_get_mid_positions(selected_path);
             check = whm_is_check_on_the_way_to_castle(
+                game_id,
                 mid_positions, 
                 chr_to_move, 
                 selected_path.path[0],
@@ -147,7 +154,7 @@ function whm_check_if_potential_castle_gives_check_inner(
             );
         }
         else -> {
-            print("whm_check_if_potential_castle_gives_check_inner() - Normal king move: " + selected_path.path_type);
+            print("game_id: "+game_id+ " - Normal king move: " + selected_path.path_type);
         }
     }
     
@@ -160,16 +167,17 @@ function whm_check_if_potential_castle_gives_check_inner(
 // It's not often we castle, so no need to speed up this logic.
 // ----------------------------------------------------------------
 function whm_is_check_on_the_way_to_castle(
+    game_id: integer,
     mid_positions: list<integer>,
     chr_to_move: with_pos_and_alignment,
     pos_start: integer,
     mating_team: character_team,
     board_positions: board_positions_all
 ): boolean {
-    print("whm_is_check_on_the_way_to_castle() - Castling move with " + mid_positions.size() + " mid positions to go.");
+    print("game_id: "+game_id+ " - Castling move with " + mid_positions.size() + " mid positions to go.");
     
     if (mid_positions.empty()) {
-        require(false, "Error: King should have mid squares when castling. King pos: " + pos_start); 
+        require(false, "game_id: "+game_id+ " - Error: King should have mid squares when castling. King pos: " + pos_start); 
         return false;
     }
     
@@ -182,11 +190,11 @@ function whm_is_check_on_the_way_to_castle(
         //       the attacked square had a portal on it that the king could use.
         // ----------------------------------------------------------------
         val hypo_check_calc_data = check_sb_build_hypothetical_king_move(
-            chr_to_move, pos_start, mid_pos, mating_team, board_positions
+            game_id, chr_to_move, pos_start, mid_pos, mating_team, board_positions
         );
         
         if (check_sb_is_check(hypo_check_calc_data)) {
-            log("whm_is_check_on_the_way_to_castle() - Found check on: " + mid_pos);
+            log("game_id: "+game_id+ " - Found check on: " + mid_pos);
             return true;
         }
     }

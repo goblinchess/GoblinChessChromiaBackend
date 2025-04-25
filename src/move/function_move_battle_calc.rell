@@ -28,6 +28,7 @@ function move_calc_and_verify_battle_result(
         // This is the real battle calculation,
         // it doesn't hurt to call it here, since it won't store anything.
         battle_res = calculate_chaos_attack_result(
+            game_id = game_id,
 
             // Defender
             def_hp = opp_vuln.remaining_hit_points,
@@ -54,6 +55,7 @@ function move_calc_and_verify_battle_result(
     } else {
         // This is the real battle calculation.
         battle_res = calculate_classic_attack_result(
+            game_id = game_id,
             def_hp = opp_vuln.remaining_hit_points,
             def_defense = opp_vuln.defence
         );
@@ -63,7 +65,7 @@ function move_calc_and_verify_battle_result(
         require(rnd_numbers.size() == 0, "No random numbers expected in classic mode, id:" + game_id);
     }
 
-    log("move_calc_battle_result() - " + battle_result_dbg(battle_res));
+    log("game_id: " + game_id + " - " + battle_result_dbg(battle_res));
 
     // ----------------
     // Verify the result types and the damage points.

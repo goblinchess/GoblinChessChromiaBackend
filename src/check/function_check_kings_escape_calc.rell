@@ -22,9 +22,10 @@
 // Factory
 // ---------------------------------------------------
 
-function king_escape_builder(king: with_pos_and_alignment, mating_team: character_team, board_all: board_positions_all): king_escape_data {
+function king_escape_builder(game_id: integer, king: with_pos_and_alignment, mating_team: character_team, board_all: board_positions_all): king_escape_data {
     
     val (king_mt: move_tree?, king_mt_jump: move_tree?) = rules_get_all_valid_moves(
+        game_id,
         board_all,
         piece_type.KING,
         false, // Don't need to consider enchanted jump since 1) spell is already been consumed here, or 2) would be cast next turn (and we are mated before that) 
@@ -37,10 +38,11 @@ function king_escape_builder(king: with_pos_and_alignment, mating_team: characte
     // We SHOULDN'T have to add castling moves here, since castle is never a way to get out of check/mate.
     // (Reasoning: if the king cannot take one step in the direction of the rook, it also cannot castle)
     if (king_mt_jump != null and king_mt_jump.moves_all.size() > 0) {
-        log("Error: We don't expect the king to jump");
+        log("game_id: "+game_id+ " - Error: We don't expect the king to jump");
     }
 
     return king_escape_constructor(
+        game_id = game_id,
         king_pos = king.pos,
         king_move_tree = king_mt!!,
         mating_team = mating_team,
@@ -49,7 +51,7 @@ function king_escape_builder(king: with_pos_and_alignment, mating_team: characte
 }
 
 
-function king_escape_constructor(king_pos: integer, king_move_tree: move_tree, mating_team: character_team, board_all: board_positions_all) {
+function king_escape_constructor(game_id: integer, king_pos: integer, king_move_tree: move_tree, mating_team: character_team, board_all: board_positions_all) {
 
     val empty_squares = list<integer>();
     for (pos in king_move_tree.moves_all) {
@@ -61,7 +63,7 @@ function king_escape_constructor(king_pos: integer, king_move_tree: move_tree, m
         if (board_all.board_obstacles.contains(pos)) {
             // WE DON'T WANT THE KING TO ESCAPE CHESS BY ATTACKING AN OBSTACLE
             // SINCE IT WILL LIKELY FAIL AND THE KING REMAINS IN CHECK FOR A LONG TIME.
-            log("king_escape_constructor() - Not adding obstacle at " + pos + " as possible escape route.");
+            log("game_id: "+game_id+ " - Not adding obstacle at " + pos + " as possible escape route.");
         } else {
             opponent_squares.add(pos);
         }
@@ -85,21 +87,21 @@ function king_escape_constructor(king_pos: integer, king_move_tree: move_tree, m
 // else returns "null".
 // This corresponds to 1) & 2) in the mate rules above. 
 // ---------------------------------------------------
-function king_escape_find_first_without_help(data: king_escape_data, king: with_pos_and_alignment): (integer?, boolean) {
+function king_escape_find_first_without_help(game_id: integer,  data: king_escape_data, king: with_pos_and_alignment): (integer?, boolean) {
 
     // King is in check
-    log("king_escape_find_first_without_help() - King is in check at: " + king.pos);
+    log("game_id: "+game_id+ " - King is in check at: " + king.pos);
 
     for (empty_square in data.empty_squares) {
-        if (king_escape_can_go_to_square(data, empty_square, king)) {
-            log("king_escape_find_first_without_help() - King can escape to empty:e: " + empty_square);
+        if (king_escape_can_go_to_square(game_id, data, empty_square, king)) {
+            log("game_id: "+game_id+ " - King can escape to empty:e: " + empty_square);
             return (empty_square, false);
         }
     }
     
     for (opponent_square in data.opponent_squares) {
-        if (king_escape_can_go_to_square(data, opponent_square, king)) {
-            log("king_escape_find_first_without_help() -  King can escape via attack at: " + opponent_square);
+        if (king_escape_can_go_to_square(game_id, data, opponent_square, king)) {
+            log("game_id: "+game_id+ " -  King can escape via attack at: " + opponent_square);
             return (opponent_square, true);
         }
     }
@@ -108,9 +110,10 @@ function king_escape_find_first_without_help(data: king_escape_data, king: with_
 }
 
 // Returns true if "pos" is a square that the king can go to.
-function king_escape_can_go_to_square(data: king_escape_data, target_pos: integer, king: with_pos_and_alignment): boolean {
+function king_escape_can_go_to_square(game_id: integer, data: king_escape_data, target_pos: integer, king: with_pos_and_alignment): boolean {
     
     val hypothetical_stat_board_check_data = check_sb_build_hypothetical_king_move(
+        game_id = game_id,
         king = king,
         king_pos_start = king.pos,
         king_pos_dest = target_pos,

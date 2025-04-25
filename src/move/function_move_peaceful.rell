@@ -27,7 +27,7 @@ function move_peaceful_inner(
     val p_dbg = "type: " + m_args.piece_type_str + " (from: " + m_args.from_position + " to: " + m_args.to_position + ")";
 
     val game_id = m_args.game_id;
-    log("Move Peaceful Begin: last_turn: " + m_args.last_seen_turn, ", piece " + p_dbg + ", flags: " + dbg + ", game_id: " + game_id);
+    log("game_id: " + game_id + " - Move Peaceful Begin: last_turn: " + m_args.last_seen_turn, ", piece " + p_dbg + ", flags: " + dbg );
     
     // ----------------
     // A.1. Check player entity
@@ -105,6 +105,7 @@ function move_peaceful_inner(
 
         //log ("Move A.6.b.1 - calc move trees ");
         val (ground_m_tree: move_tree?, jump_m_tree: move_tree?) = rules_get_all_valid_moves(
+            game_id,
             board_positions_all, 
             p_type,
             is_enchanted_jump,
@@ -119,11 +120,11 @@ function move_peaceful_inner(
         m_tree = move_tree_merge(ground_m_tree, jump_m_tree);
         require(m_tree != null, "Failed merge?");
 
-        val found_move = move_tree_get_pos_status(m_tree, m_args.to_position);
+        val found_move = move_tree_get_pos_status(game_id, m_tree, m_args.to_position);
         require(found_move > 0, "Illegal move: " + p_dbg + ", id:" + game_id);
         require(found_move == 1, "Reported peaceful move is attacking move: " + p_dbg + ", id:" + game_id);
 
-        selected_path = move_tree_build_active_path_from_destination(m_tree, m_args.to_position);
+        selected_path = move_tree_build_active_path_from_destination(game_id, m_tree, m_args.to_position);
     }
     require(selected_path != null, "Failed to build active path from destination: " + p_dbg + ", id:" + game_id);
 
@@ -141,6 +142,7 @@ function move_peaceful_inner(
     //log ("Move A.7 - Verify if this move will get us into check ");
     val p_wpaa = with_pos_and_alignment(m_args.from_position, my_color);
     val get_into_check = will_hypothetical_move_cause_check(
+            game_id,
             selected_path,
             p_wpaa,
             my_color,
@@ -152,7 +154,7 @@ function move_peaceful_inner(
     // The client should have stopped this move from happening.
     require(not get_into_check, "Move puts us into check: " + p_dbg + ", id:" + game_id);
 
-    log("Move Peaceful passed verification, piece " + p_dbg + ", flags: " + dbg + ", game_id: " + game_id);
+    log("game_id: " + game_id + " - Move Peaceful passed verification, piece " + p_dbg + ", flags: " + dbg );
 
     // ----------------------------------------------    
     // B. Updates 
@@ -189,13 +191,13 @@ function move_peaceful_inner(
 
     // B.4.c Promotions
     // (Must happen after the portal travel, if a pawn travels to an exit at the final rank)
-    promote_all_pawns_at_final_rank(board_positions_all, our_team, my_color, end_args);
+    promote_all_pawns_at_final_rank(game_id, board_positions_all, our_team, my_color, end_args);
 
     // ----------------
     // 5. Check/stale/mate
     // ----------------
     // B.5 Verify if we just won via checkmate?
-    val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args);
+    val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args);
 
     // B.6 Create move event
     val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_check); 
@@ -219,7 +221,7 @@ function move_peaceful_inner(
         game_update_turn_and_check_status(minimal_game, new_turn, is_check);
     }
 
-    log("/Move Peaceful End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + 
-        ", is_game_over: " + is_game_over + ", opp in check: " + is_check + ", game_id: " + game_id );
+    log("game_id: " + game_id + " - /Move Peaceful End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + 
+        ", is_game_over: " + is_game_over + ", opp in check: " + is_check );
 }
 
