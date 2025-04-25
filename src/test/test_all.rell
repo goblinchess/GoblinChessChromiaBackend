@@ -824,7 +824,7 @@ function test_full_game() {
     // 4= .  .  .  .  .  .  .  . 
     // 3= .  p  Kn .  .  .  P  .
     // 2= -  .  Pk P  P  P  .  P // <--- prev: Pawn moved through new portal a2->f6
-    // 1= R  .  B  Q  K  B  Kn R // <--- next: Rook a8 x a1
+    // 1= R  .  B  Q  K  B  Kn R // <--- next: Rook a8 x a1 (shouldn't cause resurrection)
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -845,7 +845,7 @@ function test_full_game() {
         log("what at f6: null");
     }
 
-    log("Turn 4(22): Black playes Resurrect");
+    log("Turn 4(22): Black plays Resurrect");
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "RESURRECT", 5, [], list<rnd_data>())).sign(black_player).run();
     last_seen_turn += 1;
 
@@ -878,20 +878,20 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 5 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= -  kn b  q  k  b  kn r // <--- prev: Rook a8 x a1
+    // 8= -  kn b  q  k  b  kn r // <--- prev: Rook a8 x a1 (shouldn't cause resurrection)
     // 7= .  p  p  p  p  p  p  p
     // 6= .  .  .  .  .  P  .  .
     // 5= .  .  .  .  .  .  .  .
     // 4= .  .  .  .  .  .  .  . 
     // 3= .  p  Kn .  .  .  P  . // <--- next: Pawn takes on c2 x b3 (shouldn't cause resurrection)
     // 2= .  .  Pk P  P  P  .  P // <--- next: Pawn takes on c2 x b3 (shouldn't cause resurrection)
-    // 1= r  .  B  Q  K  B  Kn R // <--- prev: Rook a8 x a1
+    // 1= r  .  B  Q  K  B  Kn R // <--- prev: Rook a8 x a1 (shouldn't cause resurrection)
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
 
-    log("Turn 5(25): White skips spell.");
-    rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    log("Turn 5(25): White also plays Resurrect.");
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "RESURRECT", 5, [], list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 5(26): White captuers pawn c2->b3, but no resurrection (Note: pawn is KNIGHTED).");
@@ -1064,9 +1064,9 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 7 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= .  kn b  q  k  b  kn r // <-- next: Queen d8 x f6
+    // 8= @  kn b  q  k  b  kn r // <-- next: Queen d8 x f6 (will cause resurrection)
     // 7= .  p  p  p  .  p  .  p
-    // 6= .  .  .  .  .  P  p  . // <-- next: Queen d8 x f6
+    // 6= .  .  .  .  .  P  p  . // <-- next: Queen d8 x f6 (will cause resurrection)
     // 5= .  .  .  .  p  .  .  .
     // 4= Kn .  .  .  .  .  .  . 
     // 3= .  Pk .  .  .  .  P  . 
@@ -1080,7 +1080,7 @@ function test_full_game() {
     rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
-    log ("Turn 7(41): Black captuers rook a8->a1");
+    log ("Turn 7(41): Black captures pawn d8->f6, causing resurrection.");
     val d8 = 59;
 
     m_args = move_arguments(
@@ -1099,7 +1099,13 @@ function test_full_game() {
         damage_points = 7 
     );
 
-    rell.test.tx(move_attack(m_args, att_args, list<rnd_data>(), check_args)).sign(black_player).run();
+    end_args = move_end_events_arguments(
+        used_portals = list<integer>(),
+        resurrection_pos = a8, // First free position at first rank
+        promotions = list<integer>()
+    );
+
+    rell.test.tx(move_attack(m_args, att_args, list<rnd_data>(), check_args, end_args)).sign(black_player).run();
     last_seen_turn += 1;
 
     log ("Turn 7(42): Skip neutral.");
@@ -1107,9 +1113,9 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 8 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= .  kn b  -  k  b  kn r // <-- prev: Queen d8 x f6
+    // 8= p  kn b  -  k  b  kn r // <-- prev: pawn resurrected at a8.
     // 7= .  p  p  p  .  p  .  p
-    // 6= .  .  .  .  .  q  p  . // <-- prev: Captured by Queen d8 x f6
+    // 6= .  .  .  .  .  q  p  . // <-- prev: Captured by Queen d8 x f6 (will cause resurrection)
     // 5= .  .  .  .  p  .  .  .
     // 4= Kn .  .  .  .  .  .  . 
     // 3= .  Pk .  .  .  .  P  . // <-- next: Instead KNIGHTED pawn goes b3 x a1, causing the rook to resurrect.
@@ -1126,7 +1132,7 @@ function test_full_game() {
     // --------------------
     // Failed White moves
     // --------------------
-    log("Turn 8(43): Move Fail . Bishop cannot move c1 -> b2 to put king in check!");
+    log("Turn 8(44): Move Fail . Bishop cannot move c1 -> b2 to put king in check!");
     val c1 = 2; // c1 (correct)
 
     m_args = move_arguments(
@@ -1161,7 +1167,7 @@ function test_full_game() {
 
     // Attack data, mandatory for attacks.
     att_args = move_attack_arguments (
-        attacked_position = b3, 
+        attacked_position = a1, 
         attack_result_type_str = "KILL", 
         defender_defense_points = 3, 
         damage_points = 7 
@@ -1183,7 +1189,7 @@ function test_full_game() {
 
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 8 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= .  kn b  .  k  b  kn r
+    // 8= p  kn b  .  k  b  kn r
     // 7= .  p  p  p  .  p  .  p
     // 6= .  .  .  .  .  q  p  . 
     // 5= .  .  .  .  p  .  .  . // <-- next: pawn e5 -> e4

@@ -1,0 +1,45 @@
+
+
+function board_debug_print(game_id: integer, turn_nr: integer, board_all: board_positions_all): text {
+    var out = "\n";
+
+    out += "+-------------------+\n";
+    out += "|Game: " + game_id + " (t: " + turn_nr + ")\n";
+    out += "+-------------------+\n";
+    for (rev_y in range(0, 8)) {
+        val y = 7 - rev_y;
+        val rank = y + 1;
+        out += "|" + rank + "= ";
+        for (x in range(0, 8)) {
+            val pos_sq = square_pos(x, y);
+            val pos: integer = pos_to_int(pos_sq);
+            if (board_is_empty(board_all, pos)) {
+                out += ". ";
+            } else {
+                if (board_all.board_characters.contains(pos)) {
+                    val piece = board_all.board_characters[pos];
+                    if (piece.alignment == alignment.WHITE) {
+                        out += "w ";
+                    } else if (piece.alignment == alignment.BLACK) {
+                        out += "b ";
+                    } else if (piece.alignment == alignment.NEUTRAL) {
+                        out += "n ";
+                    } else {
+                        log("ERROR: Unknown align at " + pos);
+                        out += "? ";
+                    }
+                } else if (board_all.board_obstacles.contains(pos)) {
+                    out += "o ";
+                } else {
+                    log("ERROR: Unknown piece at " + pos);
+                    out += "? ";
+                }
+            }
+        }
+        out += "|\n";
+    }
+    out += "+-------------------+\n";
+    out += "|   a b c d e f g h |\n";
+    out += "+-------------------+";
+    return out;
+}

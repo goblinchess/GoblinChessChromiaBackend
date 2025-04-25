@@ -1,6 +1,7 @@
 
  TODO Client: 
 -------------
+- Test Portal: open a portal for pawn in front of king, so that portal will put the king in check.
 - Create a C# Chromia client.
  
 
@@ -9,8 +10,9 @@ Client Done:
 
  TODO Node: 
 -------------
+- Run resurrect test (why did 56->0 fail?)
+- Run test on discoverd check via Portal.
 - Add death event.
-- Run resurrect test.
 
  1. Finish the game when mate
     

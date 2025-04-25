@@ -18,11 +18,13 @@ function move_verify_opponent_piece(
 
     var opp_vuln: vulnerable_data? = vuln_get_data_from_pos(minimal_game.game, att_args.attacked_position);
     if (opp_vuln == null) {
+        log("game_id: " + game_id + ". No vulnerable piece on attacked position: " + att_args.attacked_position + ", but that's ok (en passant etc).");
         // If we cannot find the opponent at the attacked position,
         // there MUST be a vulnerable path, or client sent us wrong data.
         return move_verify_opp_vuln_context_inner(game_id, att_args, minimal_game, opp_vuln_ctxt, v_path_opp_vuln);
     } else {
         // Found the vulnerable.
+        log("game_id: " + game_id + ". Found vulnerable piece on attacked position: " + att_args.attacked_position + ".");
 
         // We can attack neutral pieces.
         require(opp_vuln.align != attacker_align, "Expected opponent piece to NOT have the same alignment as the attacker " + opp_vuln.align + ", id:" + game_id);

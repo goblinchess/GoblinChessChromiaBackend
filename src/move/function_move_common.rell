@@ -25,6 +25,8 @@ function move_debug_str(m_args: move_arguments, check_args: move_check_arguments
 // Sometimes we want to update the position of a vulnerable, 
 // AND update the board at the same time.
 function move_common_change_piece_position(
+    game_id: integer,
+    turn_nr: integer,
     a: alive, 
     wpaa: with_pos_and_alignment,
     from_position: integer, 
@@ -41,6 +43,10 @@ function move_common_change_piece_position(
     if (our_team != null) {
         team_move_character_from_to(our_team, from_position, to_position);
     }
+
+    // Good place to print new board state to log (before something crashes)
+    val dbg_board =board_debug_print(game_id, turn_nr, board_positions_all);
+    log(dbg_board);
 }
 
 
@@ -134,6 +140,8 @@ function move_cleanup_after_move(is_enchanted_jump: boolean, opp_vuln_ctxt: pre_
 // Both (1) and (2) should go through the portal.
 // -----------------------------------------------------------------------
 function move_common_use_all_unblocked_portals(
+    game_id: integer,
+    turn_nr: integer,
     game,
     curr_turn: turn, 
     board_positions_all,
@@ -157,6 +165,8 @@ function move_common_use_all_unblocked_portals(
 
             // Character is ours, use the portal
             val hist_portal = move_common_use_portal_depending_on_piece_type(
+                        game_id,
+                        turn_nr,
                         game,
                         curr_turn,
                         board_positions_all,
@@ -196,6 +206,8 @@ function move_common_use_all_unblocked_portals(
 // If the character is a king, we should only use the portal if the destination isn't attacked.
 // -----------------------------------------------------------------------
 function move_common_use_portal_depending_on_piece_type(
+    game_id: integer,
+    turn_nr: integer,
     game,
     curr_turn: turn, 
     board_positions_all,
@@ -238,7 +250,7 @@ function move_common_use_portal_depending_on_piece_type(
 
     if (use_portal) {
         // Move the piece through the portal
-        move_common_change_piece_position(piece_data.vuln.a, piece_wpaa, portal.entry_pos, portal.exit_pos, board_positions_all, our_team);
+        move_common_change_piece_position(game_id, turn_nr, piece_data.vuln.a, piece_wpaa, portal.entry_pos, portal.exit_pos, board_positions_all, our_team);
         
         return move_event_portal_create(game, curr_turn, portal, piece_data.p);
     } else {

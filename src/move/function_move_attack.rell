@@ -127,7 +127,6 @@ function move_attack_inner(
     val portals: list<owned_portal> = portal_get_all_by_owner(minimal_game.player_game, my_color);
     val board_positions_all = board_positions_all_constructor(minimal_game.game, board, portals);
 
-
     //log ("Move A.6.1 - calc move trees ");
     val (ground_m_tree: move_tree?, jump_m_tree: move_tree?) = rules_get_all_valid_moves(
             board_positions_all, 
@@ -202,14 +201,14 @@ function move_attack_inner(
 
     if (attacker_still_alive) {
         // B.3 Same as for peaceful move
-        move_common_change_piece_position(p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position, board_positions_all, our_team);
+        move_common_change_piece_position(game_id, curr_turn, p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position, board_positions_all, our_team);
     }
 
     // ----------------
     // 4. Apply end_args
     // ----------------
     // B.4.a Use all unblocked portals
-    move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
+    move_common_use_all_unblocked_portals(game_id, curr_turn, minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
 
     // B.4.b Resurrection
     // A resurrection happens on the player's side of the board, close to the player's starting rank.

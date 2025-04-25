@@ -97,7 +97,12 @@ function card_play_inner_core(
     val pick_summary = card_pick_are_valid(minimal_game.game, card_type, card_type_str, expected_pick_types, card_picks, my_color, pick_piece_map);
 
 
-    // A.7. Apply restrictions if we are in check
+    // -----------------------------------------------------------------------------------
+    // A.7.Check/Mate verifications
+    // The general rule is that a player cannot put his own king in check during his/her turn.
+    // Our aim is to detect and prevent this, but it's near impossible since many situations.
+    // -----------------------------------------------------------------------------------
+    // A.7.1. Apply restrictions if we are in check
     // If we are in check, there are restriction on what spells we can cast.
     // 
     // -----------------+----------------------------------------------------------------
@@ -127,6 +132,7 @@ function card_play_inner_core(
     // There is a possibility that the player uses the WALL to create self-mate.
     // It's too hard to calculate mate when playing wall, so we're doing this instead. 
     // (Note: the wall can also create self-stalemate, but we don't check for that)
+    // -----------------------------------------------------------------------------------
 
     when (card_type) {
 

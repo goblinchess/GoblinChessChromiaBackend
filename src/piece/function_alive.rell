@@ -83,6 +83,8 @@ function alive_move_from_dead(
 ) {
     val g: game = v_data_in_dead.g;
 
+    log("alive_move_from_dead() - resurrecting old color: " + v_data_in_dead.align + " to new pos: " + new_pos + ", with new color " + new_align);
+
     // 1. Select from DEAD
     val dead_piece: dead = (d: dead)@ {d.vulnerable == v_data_in_dead.v} (d);
 
@@ -97,13 +99,14 @@ function alive_move_from_dead(
     // 3. Remove from DEAD
     delete dead_piece;
 
-    val dead_vuln = v_data_in_dead.v; // <-- Re-using the same vulnerable entity.
+    // Now, the alive status has been updated, it's time to update the vulnerable entity.
+    val resurrected_vuln = v_data_in_dead.v; // <-- Re-using the same vulnerable entity.
 
     // 4. Fix health
-    dead_vuln.remaining_hit_points = v_data_in_dead.start_hit_points;
+    resurrected_vuln.remaining_hit_points = v_data_in_dead.start_hit_points;
 
     // 5. Fix color
-    dead_vuln.color = new_align;
+    resurrected_vuln.color = new_align;
 }
 
 

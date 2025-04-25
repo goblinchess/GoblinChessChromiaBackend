@@ -62,7 +62,7 @@ function move_skip_inner(
     val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
 
     // B.2 Use all unblocked portals
-    val hist_portals: list<portal_event> = move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, null, opp_team, my_color, end_args);
+    val hist_portals: list<portal_event> = move_common_use_all_unblocked_portals(game_id, curr_turn, minimal_game.game, new_turn, board_positions_all, null, opp_team, my_color, end_args);
 
     // ----------------
     // 2. Apply end_args
@@ -73,7 +73,7 @@ function move_skip_inner(
 
     // B.2.a Use all unblocked portals
     // Skip: We need this for skip moves as well, because we might have played the PORTAL card before the skip.
-    move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
+    move_common_use_all_unblocked_portals(game_id, curr_turn, minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
 
     // B.2.b Resurrection
     // (Must happen after the portal travel, so we won't end up blocking a portal exit)

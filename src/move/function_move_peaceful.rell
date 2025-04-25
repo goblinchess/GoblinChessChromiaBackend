@@ -169,7 +169,7 @@ function move_peaceful_inner(
     val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
 
     // B.2 (Really simple for peaceful moves)
-    move_common_change_piece_position(p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position, board_positions_all, our_team);
+    move_common_change_piece_position(game_id, curr_turn, p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position, board_positions_all, our_team);
 
     // B.3 Castle needs to move the rook too
     if (is_castle) {
@@ -181,7 +181,7 @@ function move_peaceful_inner(
     // 4. Apply end_args
     // ----------------
     // B.4.a Use all unblocked portals
-    move_common_use_all_unblocked_portals(minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
+    move_common_use_all_unblocked_portals(game_id, curr_turn, minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
 
     // B.4.b Resurrection
     // (Must happen after the portal travel, so we won't end up blocking a portal exit)

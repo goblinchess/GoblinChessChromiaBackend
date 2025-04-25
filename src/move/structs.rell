@@ -74,8 +74,8 @@ struct move_tree {
 struct move_arguments {
     game_id: integer;
     last_seen_turn: integer; // What turn the client last saw.
-    from_position: integer;
-    to_position: integer;
+    from_position: integer; // Where the piece is currently standing.
+    to_position: integer; // Where the piece will be standing after the move.
     piece_type_str: text; // The type of piece we are moving
     given_is_knighted: boolean; // If the piece is KNIGHTED
 }
@@ -116,7 +116,7 @@ struct move_end_events_arguments {
 
 // Attack data, mandatory for attacks.
 struct move_attack_arguments {
-    attacked_position: integer; // 0-63 DOESN'T HAVE TO BE THE SAME AS THE "TO_POSITION"
+    attacked_position: integer; // 0-63 DOESN'T HAVE TO BE THE SAME AS THE "TO_POSITION". When attacks fail, or en passant, this will be the position of the defending piece.
     attack_result_type_str: text; // The result type of the attack
     defender_defense_points: integer; // The opponent's defense power
     damage_points: integer; // How much we damage the opponent
