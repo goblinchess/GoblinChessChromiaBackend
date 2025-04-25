@@ -95,8 +95,9 @@ entity piece {
 // Using this entity will help when analyzing old games, 
 // since the attack calculation can be avoided.
 entity death_event {
-    key event: event;  // Event is the "base type" for all events
-    vulnerable: vulnerable;
+    key event;  // Event is the "base type" for all events
+    attack_move; // A vulnerable can (so far v1.0) only die from an attack.
+    vulnerable;
 }
 
 

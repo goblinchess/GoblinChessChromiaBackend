@@ -259,9 +259,10 @@ function move_attack_inner(
     val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_check); 
 
     // ----------------
-    // B.7. Create attack_move entity
+    // B.7. Create events
     // ----------------
 
+    // B.7.1 ATTACK_MOVE (event)
     val am = create attack_move(
         move = m,
         attacked_position = att_args.attacked_position,
@@ -269,6 +270,13 @@ function move_attack_inner(
         defender_defense_points = att_args.defender_defense_points,
         damage_points = att_args.damage_points
     );
+
+    // B.7.2 DEATH_EVENT 
+    if (battle_res.result == battle_result_type.KILL) {
+        alive_create_death_event(minimal_game.game, new_turn, am, opp_vuln.v);
+    } else if (battle_res.retaliation_result == battle_result_type.KILL) {
+        alive_create_death_event(minimal_game.game, new_turn, am, p.vuln.v);
+    }
 
     if (is_chaos_mode) {
 
@@ -283,7 +291,7 @@ function move_attack_inner(
 
         when (battle_res.result) {
             battle_result_type.HIT -> {
-                // B.7.chaos.2. Create retaliation entity
+                // B.7.chaos.2. RETALIATION (event)
                 require(ret_args != null, "Internal error: Retaliation args is null, id:" + game_id); // Already checked above.
                 val retaliation_move = create retaliation(
                     attack_move = am,
