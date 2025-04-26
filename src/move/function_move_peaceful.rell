@@ -64,7 +64,7 @@ function move_peaceful_inner(
     // A.5 Get same state
     // ----------------
     // Has this piece an jump enchantment on it?
-    val is_enchanted_jump = move_has_enchanted_jump(minimal_game.player_game, p.p);
+    val is_enchanted_jump = move_has_enchanted_jump(minimal_game.player_game, p.p, m_args.given_is_enchanted_jumper);
 
     val res = move_get_vuln_path(minimal_game.game, opp_color); 
     val opp_vuln_ctxt: pre_vuln_context = res.v_ctxt;

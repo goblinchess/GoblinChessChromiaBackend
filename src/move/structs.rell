@@ -24,7 +24,8 @@ struct move_arguments {
     from_position: integer; // Where the piece is currently standing.
     to_position: integer; // Where the piece will be standing after the move.
     piece_type_str: text; // The type of piece we are moving
-    given_is_knighted: boolean; // If the piece is KNIGHTED
+    given_is_knighted: boolean; // If the piece is KNIGHTED (lasts the entire game)
+    given_is_enchanted_jumper: boolean; // If the piece is an enchanted jumper (only lasts one move)
 }
 
 // ------------------------------------------------------------------------------

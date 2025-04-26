@@ -457,7 +457,8 @@ function test_full_game() {
         from_position = wrong_orig_pos, // <-- Wrong
         to_position = wrong_to_pos,  // <-- Wrong
         piece_type_str = "BISHOP", // <-- Ok
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     var check_args = move_check_arguments(
         is_check = false, 
@@ -480,7 +481,8 @@ function test_full_game() {
         from_position = knight_orig_pos, // <-- Ok
         to_position = knight_to_pos, // <-- Ok
         piece_type_str = "BISHOP",  // <-- Wrong
-        given_is_knighted = false); 
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false); 
 
     failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
@@ -497,7 +499,8 @@ function test_full_game() {
         from_position = knight_orig_pos, // <-- Ok
         to_position = knight_to_wrong_pos, // <-- Wrong
         piece_type_str = "KNIGHT", // <-- Ok
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
@@ -517,7 +520,8 @@ function test_full_game() {
         from_position = bishop_orig_pos, // <-- Ok
         to_position = bishop_to_pos, // <-- Ok, but occupied 
         piece_type_str = "BISHOP",  // <-- Ok
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
@@ -537,7 +541,8 @@ function test_full_game() {
         from_position = knight_orig_pos, // <-- Ok
         to_position = knight_to_pos, // <-- Ok
         piece_type_str = "KNIGHT",  // <-- Ok
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
@@ -572,7 +577,8 @@ function test_full_game() {
         from_position = black_move_1_from, 
         to_position = black_move_1_to, 
         piece_type_str = "PAWN", 
-        given_is_knighted = false); 
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false); 
 
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
@@ -607,7 +613,8 @@ function test_full_game() {
         from_position = 14,
         to_position = 22,
         piece_type_str = "PAWN", 
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
@@ -646,7 +653,8 @@ function test_full_game() {
         from_position = a8,
         to_position = rook_to_wrong_pos, // <-- Wrong, still a frog 
         piece_type_str = "ROOK",  // <-- Wrong, still a frog 
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
     
     failed_move = assert_fails(move_peaceful_inner(black_player.pub, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
@@ -664,7 +672,8 @@ function test_full_game() {
         from_position = a8,
         to_position = rook_to_wrong_pos, // <-- Wrong
         piece_type_str = "FROG",  // <-- Ok
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
  
     failed_move = assert_fails(move_peaceful_inner(black_player.pub, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
@@ -686,7 +695,8 @@ function test_full_game() {
         from_position = a5, // <-- Ok
         to_position = a4, // <-- Ok
         piece_type_str = "PAWN",  // <-- Ok
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
@@ -722,7 +732,8 @@ function test_full_game() {
         from_position = b2, // <-- Ok
         to_position = b4, // <-- Ok
         piece_type_str = "PAWN",  // <-- Ok
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
@@ -757,7 +768,8 @@ function test_full_game() {
         from_position = a4, 
         to_position = b3, // <-- En passant
         piece_type_str = "PAWN",  
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
 
     // Attack data, mandatory for attacks.
@@ -863,7 +875,8 @@ function test_full_game() {
         from_position = a8, 
         to_position = a1, 
         piece_type_str = "ROOK",  
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     // Attack data, mandatory for attacks.
     att_args = move_attack_arguments (
@@ -906,7 +919,8 @@ function test_full_game() {
         from_position = c2, 
         to_position = b3, 
         piece_type_str = "PAWN",  
-        given_is_knighted = true);
+        given_is_knighted = true, 
+        given_is_enchanted_jumper = false);
 
 
     // Attack data, mandatory for attacks.
@@ -951,7 +965,8 @@ function test_full_game() {
         from_position = g7, // <-- Ok
         to_position = g6, // <-- Ok
         piece_type_str = "PAWN",  // <-- Ok
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
@@ -986,7 +1001,8 @@ function test_full_game() {
         from_position = c3, // <-- Ok
         to_position = a4, // <-- Ok
         piece_type_str = "KNIGHT",  // <-- Ok
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
@@ -1022,7 +1038,8 @@ function test_full_game() {
         from_position = e7, // <-- Ok
         to_position = e6, // <-- Ok
         piece_type_str = "PAWN",  // <-- Ok
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
@@ -1057,7 +1074,8 @@ function test_full_game() {
         from_position = d1, // <-- Ok
         to_position = c2, // <-- Ok
         piece_type_str = "QUEEN",  // <-- Ok
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
@@ -1092,7 +1110,8 @@ function test_full_game() {
         from_position = d8, 
         to_position = f6, 
         piece_type_str = "QUEEN",  
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     // Attack data, mandatory for attacks.
     att_args = move_attack_arguments (
@@ -1144,7 +1163,8 @@ function test_full_game() {
         from_position = c1, // <-- Ok
         to_position = b2, // <-- Valid bishop move, but will cause check
         piece_type_str = "BISHOP",  
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
@@ -1165,7 +1185,8 @@ function test_full_game() {
         from_position = b3, 
         to_position = a1, 
         piece_type_str = "PAWN",  
-        given_is_knighted = true);
+        given_is_knighted = true, 
+        given_is_enchanted_jumper = false);
 
 
     // Attack data, mandatory for attacks.
@@ -1216,7 +1237,8 @@ function test_full_game() {
         from_position = f6, // <-- Ok
         to_position = c3, // <-- Ok
         piece_type_str = "QUEEN",  // <-- Ok
-        given_is_knighted = false);
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
 
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
@@ -1227,12 +1249,12 @@ function test_full_game() {
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 9 ++++++++++++++++++++++++++++++++++++++++++++++++++
     // 8= p  kn b  .  k  b  kn r
-    // 7= .  p  p  p  .  p  .  p // <-- next: JUMP on queen c2 -> c6
+    // 7= .  p  p  p  .  p  .  p // <-- next: JUMP on queen c2 -> c7
     // 6= .  .  .  .  p  -  p  . // <-- prev: queen f6 -> c3
     // 5= .  .  .  .  .  .  .  .
     // 4= Kn .  .  .  .  .  .  . // <-- prev: queen f6 -> c3
     // 3= .  -  q  .  .  .  P  . 
-    // 2= .  .  Q  P  P  P  .  P // <-- next: fails to put a PORTAL on d2 (causes check), instead JUMP on queen c2 -> c6
+    // 2= .  .  Q  P  P  P  .  P // <-- next: fails to put a PORTAL on d2 (causes check), instead JUMP on queen c2 -> c7
     // 1= Pk R  B  .  K  B  Kn R 
     // --------------------------
     //    a  b  c  d  e  f  g  h
@@ -1265,6 +1287,92 @@ function test_full_game() {
     log("Turn 9(49): White plays JUMP (on Queen on C2).");
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "JUMP", 3, [c2], list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
+
+    // --------------------
+    // Failed White moves
+    // --------------------
+    log("Turn 9(50): Move Fail. Bishop cannot move f1 -> d3 (Only the enchanted piece can jump)");
+    val f1 = 5; 
+    val d3 = 19;
+
+    m_args = move_arguments(
+        game_id = the_game.game_rowid, 
+        last_seen_turn = last_seen_turn, 
+        from_position = f1, // <-- Ok
+        to_position = d3, // <-- Only valid bishop move if we can jump
+        piece_type_str = "BISHOP",  
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false); // <-- We don't claim to be an enchanted jumper
+
+    failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, check_args,
+        * // Note, this star is what makes it work.
+    ));
+    var move_expeceted_err_msg: text = "Illegal move: type: BISHOP";
+    //log(failed_move.message);
+    assert_true(failed_move.message.starts_with(move_expeceted_err_msg));
+
+    log("Turn 9(50): Move Fail. Bishop cannot move f1 -> d3 (Only the enchanted piece can jump)");
+
+    m_args = move_arguments(
+        game_id = the_game.game_rowid, 
+        last_seen_turn = last_seen_turn, 
+        from_position = f1, // <-- Ok
+        to_position = d3, // <-- Only valid bishop move if we can jump
+        piece_type_str = "BISHOP",  
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = true); // <-- NOT TRUE! It's the Queen that got the enchantment.
+
+    failed_move = assert_fails(move_peaceful_inner(white_player.pub, m_args, null, null, check_args,
+        * // Note, this star is what makes it work.
+    ));
+    move_expeceted_err_msg = "This piece is not an enchanted jumper";
+    //log(failed_move.message);
+    assert_true(failed_move.message.starts_with(move_expeceted_err_msg));
+
+    // --------------------
+    // /Failed White moves
+    // --------------------
+
+    log("Turn 9(50): White makes a successful jump with the Queen c2 -> c7");
+    val c7 = 50;
+
+     m_args = move_arguments(
+        game_id = the_game.game_rowid, 
+        last_seen_turn = last_seen_turn, 
+        from_position = c2, 
+        to_position = c7, 
+        piece_type_str = "QUEEN",  
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = true); // <-- MUST SET FLAG! 
+
+    // Attack data, mandatory for attacks.
+    att_args = move_attack_arguments (
+        attacked_position = c7, 
+        attack_result_type_str = "KILL", 
+        defender_defense_points = 3, 
+        damage_points = 7 
+    );
+
+    rell.test.tx(move_attack(m_args, att_args, list<rnd_data>(), check_args, end_args)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    log ("Turn 9(51): Skip neutral.");
+    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+
+
+    // +++++++++++++++++++++++++++++++++++++++++ Black Move 9 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= p  kn b  .  k  b  kn r
+    // 7= .  p  Q  p  .  p  .  p // <-- prev: JUMP on queen c2 -> c7
+    // 6= .  .  .  .  p  -  p  . 
+    // 5= .  .  .  .  .  .  .  .
+    // 4= Kn .  .  .  .  .  .  . 
+    // 3= .  -  q  .  .  .  P  . 
+    // 2= .  .  -  P  P  P  .  P // <-- prev: JUMP on queen c2 -> c7
+    // 1= Pk R  B  .  K  B  Kn R 
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
 }
 
 

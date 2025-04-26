@@ -72,9 +72,12 @@ entity current_vuln_path {
 
 // A JUMP card has been played this turn.
 //
-// Comment:
-// The interesting thing is that the player DOESN'T have to 
+// Discussion:
+// The reason we don't put this as a field directly on the piece is that
+// it's pretty hard find the enchanted piece and set the field back to false.
+// This is partly due to the fact that the player DOESN'T have to 
 // to move the jumping piece, can pick another piece to move.
+// Also:
 // If the player do indeed pick the jumping piece, 
 // then we'll create a jump_event to signal that normal rules won't apply.
 entity active_jump {

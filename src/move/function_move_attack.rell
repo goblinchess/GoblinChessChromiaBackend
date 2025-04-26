@@ -113,7 +113,10 @@ function move_attack_inner(
     // A.6 Get same state
     // ----------------
     // Has this piece an jump enchantment on it?
-    val is_enchanted_jump = move_has_enchanted_jump(minimal_game.player_game, p.p);
+    val is_enchanted_jump = move_has_enchanted_jump(minimal_game.player_game, p.p, m_args.given_is_enchanted_jumper);
+    if (is_enchanted_jump) { // Kinda unual, worth a log
+        log("game_id: " + game_id + " - Found an enchanted jump on this piece " + p_dbg + ", flags: " + dbg);
+    }
 
     // ----------------
     // A.6. Verify if move is legal

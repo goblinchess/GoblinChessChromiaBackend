@@ -49,9 +49,6 @@ function piece_set_knighted(piece: piece) {
     update piece (.is_knighted = true);
 }
 
-// 5. JUMP 
-function piece_set_jump(piece: piece) {
-}
 // ----------------
 // Removing enchantments
 // ----------------

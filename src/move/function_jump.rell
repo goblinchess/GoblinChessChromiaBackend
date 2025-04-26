@@ -2,10 +2,16 @@
 // Inspectors
 // ----------------
 
-function move_has_enchanted_jump(pg: player_game, p: piece): boolean {
+function move_has_enchanted_jump(pg: player_game, p: piece, given_is_enchanted_jumper: boolean): boolean {
     val found = active_jump@? { pg, p };
 
-    return found != null;
+    if (found != null) {
+        require(given_is_enchanted_jumper, "This piece is enchanted jumper, but the [given_is_enchanted_jumper] flag was not set?"); 
+        return true;
+    } else {
+        require(not given_is_enchanted_jumper, "This piece is not an enchanted jumper, but the [given_is_enchanted_jumper] flag was set?"); 
+        return false;
+    }
 }
 
 // ----------------
@@ -20,7 +26,6 @@ function move_set_jump(owned_by: player_game, card: card, piece: piece) {
         .piece = piece
     );
 }
-
 
 function move_remove_enchanted_jump(owned_by: player_game) {
     delete active_jump@? {.played_by == owned_by};
