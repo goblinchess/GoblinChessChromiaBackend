@@ -426,9 +426,9 @@ function test_full_game() {
     // /Failed White Cards
     // --------------------
 
-    log("Turn 1(1): White playes a card");
-    val black_rook_to_frog = 56; // a8, Turns black rook into frog
-    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "FROG", 1, [black_rook_to_frog], list<rnd_data>())).sign(white_player).run();
+    log("Turn 1(1): White plays FROG (on black rook at a8)");
+    val a8 = 56; // Turns black rook into frog
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "FROG", 1, [a8], list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
 
     // --------------------
@@ -594,7 +594,7 @@ function test_full_game() {
     //    a  b  c  d  e  f  g  h
     // --------------------------
 
-    log("Turn 2(7): White plays Knighted on c3 pawn.");
+    log("Turn 2(7): White plays KNIGHTED (on c3 pawn).");
     val card_picks_knighted = [10]; // Turns c3 pawn into knight
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "KNIGHTED", 2, card_picks_knighted, list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
@@ -643,7 +643,7 @@ function test_full_game() {
     m_args = move_arguments(
         game_id = the_game.game_rowid, 
         last_seen_turn = last_seen_turn, 
-        from_position = black_rook_to_frog,
+        from_position = a8,
         to_position = rook_to_wrong_pos, // <-- Wrong, still a frog 
         piece_type_str = "ROOK",  // <-- Wrong, still a frog 
         given_is_knighted = false);
@@ -661,7 +661,7 @@ function test_full_game() {
     m_args = move_arguments(
         game_id = the_game.game_rowid, 
         last_seen_turn = last_seen_turn, 
-        from_position = black_rook_to_frog,
+        from_position = a8,
         to_position = rook_to_wrong_pos, // <-- Wrong
         piece_type_str = "FROG",  // <-- Ok
         given_is_knighted = false);
@@ -788,7 +788,7 @@ function test_full_game() {
     //    a  b  c  d  e  f  g  h
     // --------------------------
 
-    log("Turn 4(19): White playes Portal at a2->f6");
+    log("Turn 4(19): White playes PORTAL (a2->f6)");
 
     // Bit tricky to figure out what the random number should be to put the exit at f6.
     val a2 = 8;
@@ -849,13 +849,12 @@ function test_full_game() {
         log("what at f6: null");
     }
 
-    log("Turn 4(22): Black plays Resurrect");
+    log("Turn 4(22): Black plays RESURRECT");
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "RESURRECT", 5, [], list<rnd_data>())).sign(black_player).run();
     last_seen_turn += 1;
 
     // The A8 rook was turned into a FROG turn 1, but this enchantment should have been removed by now.
     log ("Turn 4(23): Black captuers rook a8->a1");
-    val a8 = 56;
     val a1 = 0;
 
     m_args = move_arguments(
@@ -894,7 +893,7 @@ function test_full_game() {
     //    a  b  c  d  e  f  g  h
     // --------------------------
 
-    log("Turn 5(25): White also plays Resurrect.");
+    log("Turn 5(25): White also plays RESURRECT.");
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "RESURRECT", 5, [], list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
 
@@ -1228,12 +1227,12 @@ function test_full_game() {
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 9 ++++++++++++++++++++++++++++++++++++++++++++++++++
     // 8= p  kn b  .  k  b  kn r
-    // 7= .  p  p  p  .  p  .  p
+    // 7= .  p  p  p  .  p  .  p // <-- next: JUMP on queen c2 -> c6
     // 6= .  .  .  .  p  -  p  . // <-- prev: queen f6 -> c3
     // 5= .  .  .  .  .  .  .  .
     // 4= Kn .  .  .  .  .  .  . // <-- prev: queen f6 -> c3
     // 3= .  -  q  .  .  .  P  . 
-    // 2= .  .  Q  P  P  P  .  P // <-- next: fails to put a PORTAL on d2 (causes check).
+    // 2= .  .  Q  P  P  P  .  P // <-- next: fails to put a PORTAL on d2 (causes check), instead JUMP on queen c2 -> c6
     // 1= Pk R  B  .  K  B  Kn R 
     // --------------------------
     //    a  b  c  d  e  f  g  h
@@ -1263,6 +1262,9 @@ function test_full_game() {
     val expected_portal_check_msg: text = "Cannot use PORTAL on a piece, so that when it moves to the exit it causes a check";
     assert_true(failed_card.message.starts_with(expected_portal_check_msg));
 
+    log("Turn 9(49): White plays JUMP (on Queen on C2).");
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "JUMP", 3, [c2], list<rnd_data>())).sign(white_player).run();
+    last_seen_turn += 1;
 }
 
 

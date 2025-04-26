@@ -18,7 +18,7 @@ function card_pick_get_by_card_type(c_type: card_type): list<card_pick_type> {
         KNIGHTED -> return [card_pick_type.PIECE_NON_KING_SQUARE];
 
         // Enchanted moves (My pieces only)
-        JUMP -> return [card_pick_type.PIECE_MINE_SQUARE, card_pick_type.ANY_SQUARE]; // The second square is the Jump destination (could be empty or occupied)
+        JUMP -> return [card_pick_type.PIECE_MINE_SQUARE]; // We don't provide the Jump destination (that's done during the move).
         SWITCH_PLACE -> return [card_pick_type.PIECE_MINE_SQUARE, card_pick_type.PIECE_MINE_SQUARE];
 
         // Mine non-king
