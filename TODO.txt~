@@ -10,7 +10,7 @@ Client Done:
 
  TODO Node: 
 -------------
-- Run resurrect test.
+- Run resurrect test (why did 56->0 fail?)
 - Run test on discoverd check via Portal.
 - Add death event.
 

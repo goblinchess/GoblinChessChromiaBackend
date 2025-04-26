@@ -117,6 +117,7 @@ function team_get_all_move_trees_except_for_one(
         } else if (pld.vuln.position == count_enemy_at_pos_as_dead) {
             //log("team_get_all_move_trees_except_for_one() - Excluding the enemy standing on portal entry at " + count_enemy_at_pos_as_dead );
         } else {
+            //log("Adding move tree for " + pld.vuln.position);
             _inner_add_move_tree(game_id, pld, board_all, ret);
         }
     }
@@ -143,6 +144,8 @@ function _inner_add_move_tree(game_id: integer, p: piece_living_data, board_all:
     val merged = move_tree_merge(ground, jumps);
     if (merged != null) {
         ret.add(merged);
+        //val dbg = move_tree_debug_on_board(merged);
+        //log(dbg);
     }
 }
 

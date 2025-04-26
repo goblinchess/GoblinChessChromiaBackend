@@ -20,21 +20,24 @@ function queen_all_valid_moves(
 function queen_follow_path(
     game_id: integer,
     board_positions: board_positions_all, 
-    pos: integer, 
+    starting_pos_int: integer, 
     align: alignment, 
     dir: integer, 
     pre_tree: pre_tree
 ) {
-    val tmp_path = [pos]; // Initialize list with starting position
+    val tmp_path = [starting_pos_int]; // Initialize list with starting position
+
+    val starting_square_pos = pos_from_integer(starting_pos_int);
     var shift = 0;
     var continue_path = true;
     
+    var dbg = "";
     while (shift < 10 and continue_path) {
         shift += 1;
-        val new_pos = pos_calc_from_directional_shift(game_id, pos, shift, dir);
+
+        val new_pos = pos_calc_from_directional_shift(game_id, starting_square_pos, shift, dir);
         require(new_pos != null, "Bug. New position is null");
-        val new_pos_int = pos_to_int(new_pos);
-        continue_path = rule_interpret_path_position(board_positions, align, new_pos_int, tmp_path, pre_tree);
+        continue_path = rule_interpret_path_position(board_positions, align, new_pos, tmp_path, pre_tree);
     }
 }
 
@@ -56,29 +59,28 @@ function queen_all_jump_over_moves(
 function queen_follow_path_jump_over(
     game_id: integer,
     board_positions: board_positions_all, 
-    pos: integer, 
+    starting_pos_int: integer, 
     align: alignment, 
     dir: integer, 
     pre_tree: pre_tree
 ) {
-    val start_pos = pos;
+    val starting_square_pos = pos_from_integer(starting_pos_int);
     var shift = 0;
     var continue_path = true;
     var has_passed_obstacle = false;
     
     while (shift < 10 and continue_path) {
         shift += 1;
-        val new_pos = pos_calc_from_directional_shift(game_id, pos, shift, dir);
-        require(new_pos != null, "Bug. New position is null");
-        val new_pos_int = pos_to_int(new_pos);
+        val new_square_pos = pos_calc_from_directional_shift(game_id, starting_square_pos, shift, dir);
+        require(new_square_pos != null, "Bug. New position is null");
         
         if (not has_passed_obstacle) {
-            val (new_continue_path, new_has_passed_obstacle) = rule_interpret_path_position_pre_obstacle(board_positions, new_pos);
+            val (new_continue_path, new_has_passed_obstacle) = rule_interpret_path_position_pre_obstacle(board_positions, new_square_pos);
             continue_path = new_continue_path;
             has_passed_obstacle = new_has_passed_obstacle;
         } else {
             continue_path = rule_interpret_path_position_post_obstacle(
-                board_positions, align, start_pos, new_pos_int, pre_tree
+                board_positions, align, starting_pos_int, new_square_pos, pre_tree
             );
         }
     }

@@ -54,7 +54,8 @@ function move_verify_opp_vuln_context_inner(
         v_path_opp_vuln: vulnerable?
 ): (opp_vd: vulnerable_data, opp_pld: piece_living_data) {
 
-    val opp_destination_pos = pre_vuln_check_if_pos_part_of_vulnerable_path(opp_vuln_ctxt, att_args.attacked_position);
+    val attacked_square_pos: square_pos = pos_from_integer(att_args.attacked_position);
+    val opp_destination_pos = pre_vuln_check_if_pos_part_of_vulnerable_path(opp_vuln_ctxt, attacked_square_pos);
     require(opp_destination_pos != null, "No opponent piece at position " + att_args.attacked_position + ", id:" + game_id);
 
     require(v_path_opp_vuln != null, "Internal error: We have a vulnerable path but no piece, id:" + game_id);

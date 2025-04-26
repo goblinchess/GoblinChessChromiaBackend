@@ -30,16 +30,16 @@ function frog_all_valid_moves(
 function frog_follow_path(
     game_id: integer,
     board_positions: board_positions_all, 
-    pos: integer, 
+    pos_int: integer, 
     align: alignment, 
     dir: integer, 
     pre_tree: pre_tree
 ) {
-    val tmp_path = [pos]; // Initialize list with starting position
-    val new_pos = pos_calc_from_directional_shift(game_id, pos, 1, dir);
-    require(new_pos != null, "Bug. New position is null");
-    val new_pos_int = pos_to_int(new_pos);
-    rule_interpret_single_step_position(board_positions, align, new_pos_int, tmp_path, pre_tree, false);
+    val square_pos = pos_from_integer(pos_int);
+    val tmp_path = [pos_int]; // Initialize list with starting position
+    val new_square_pos = pos_calc_from_directional_shift(game_id, square_pos, 1, dir);
+    require(new_square_pos != null, "Bug. New position is null");
+    rule_interpret_single_step_position(board_positions, align, new_square_pos, tmp_path, pre_tree, false);
 }
 
 function frog_all_jump_over_moves(
@@ -61,27 +61,26 @@ function frog_all_jump_over_moves(
 function frog_follow_path_jump_over(
     game_id: integer,
     board_positions: board_positions_all, 
-    pos: integer, 
+    starting_pos_int: integer, 
     align: alignment, 
     dir: integer, 
     pre_tree: pre_tree
 ) {
-    val obstacle_pos = pos_calc_from_directional_shift(game_id, pos, 1, dir);
+    val starting_square_pos = pos_from_integer(starting_pos_int);
+    val obstacle_pos = pos_calc_from_directional_shift(game_id, starting_square_pos, 1, dir);
     require(obstacle_pos != null, "Bug. Obstacle position is null");
-    val obstacle_pos_int = pos_to_int(obstacle_pos);
     
     val (continue_path, has_passed_obstacle) = rule_interpret_path_position_pre_obstacle(
         board_positions, obstacle_pos
     );
     
     if (has_passed_obstacle) {
-        val behind_obstacle_pos = pos_calc_from_directional_shift(game_id, obstacle_pos_int, 1, dir);
+        val behind_obstacle_pos = pos_calc_from_directional_shift(game_id, obstacle_pos, 1, dir);
         require(behind_obstacle_pos != null, "Bug. Behind obstacle position is null");
-        val behind_obstacle_pos_int = pos_to_int(behind_obstacle_pos);
         
         // NOTE: We're using the peaceful version here.
         rule_interpret_path_position_post_obstacle_peaceful(
-            board_positions, pos, behind_obstacle_pos_int, pre_tree
+            board_positions, starting_pos_int, behind_obstacle_pos, pre_tree
         );
     }
 }

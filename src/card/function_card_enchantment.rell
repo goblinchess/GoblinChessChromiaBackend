@@ -136,7 +136,7 @@ function card_enchantment_revert_timed_out(g: game, owner: player_game): list<ca
             are.card == c, 
             are.enchanted_piece == p,
             are.remaining_turns <= 0 // Meaning it has timed out.
-        } (are.remaining_turns, replacement_alive = a, card_type = c.card_type, are.enchanted_piece, are = are, card = c);
+        } (are.remaining_turns, replacement_alive = a, card_type = c.card_type, are.enchanted_piece, are = are, card = c, pos = a.position);
 
     for (ae_time_out in ae_time_outs) {
 
@@ -144,6 +144,7 @@ function card_enchantment_revert_timed_out(g: game, owner: player_game): list<ca
         val time_out_card_type = ae_time_out.card_type;
         val replacement_alive = ae_time_out.replacement_alive;
         val enchanted_piece = ae_time_out.enchanted_piece;
+        val position = ae_time_out.pos;
 
         // --------------------
         // 2. Remove the timed out enchantment
@@ -161,9 +162,11 @@ function card_enchantment_revert_timed_out(g: game, owner: player_game): list<ca
         when (time_out_card_type) {
 
             FROG -> {
+                log("game_id: "+g.rowid+" - Ending FROG enchantment on position " + position );
                 piece_bring_back_original_piece(g, owner, replacement_alive, enchanted_piece.vulnerable);
             }
             TURN_TO_STONE -> {
+                log("game_id: "+g.rowid+" - Ending STONE enchantment on  position " + position );
                 piece_bring_back_original_piece(g, owner, replacement_alive, enchanted_piece.vulnerable);
             }
             // Jumps are reverted as part of the move. Not stored in the [active_replacement_enchantment] entity.
@@ -172,7 +175,7 @@ function card_enchantment_revert_timed_out(g: game, owner: player_game): list<ca
             //}
             else -> {
                 //There's nothing else that should time out.
-                log("card_enchantment_revert_timed_out() - ERROR: why did this type time out? " + time_out_card_type);
+                log("game_id: "+g.rowid+" - ERROR: why did this type time out? " + time_out_card_type);
             }
         }
 

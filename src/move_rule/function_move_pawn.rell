@@ -47,7 +47,7 @@ function pawn_all_valid_moves(
 function pawn_all_valid_white_moves(
     game_id: integer,
     board_positions: board_positions_all,
-    pos: integer,
+    starting_pos_int: integer,
     pre_tree: pre_tree,
     pre_vuln_ctxt: pre_vuln_context
 ): (move_tree, list<path_base>) {
@@ -56,17 +56,17 @@ function pawn_all_valid_white_moves(
     // (i.e. they don't exist yet)
     val new_vulnerable_paths = list<path_base>();
     
-    val square_pos = pos_from_integer(pos);
-    val x = square_pos.x;
-    val y = square_pos.y;
+    val starting_square_pos = pos_from_integer(starting_pos_int);
+    val x = starting_square_pos.x;
+    val y = starting_square_pos.y;
     
     if (y < 7) {
         val forward_pos = square_pos(x = x, y = y + 1);  // Moving up for white
-        val forward_pos_int = pos_to_int(forward_pos);
         
         if (board_is_free_at(board_positions, forward_pos)) {
+            val forward_pos_int = pos_to_int(forward_pos);
             pre_tree.moves_harmless.add(forward_pos_int);
-            val tmp_path: list<integer> = [pos, forward_pos_int];
+            val tmp_path: list<integer> = [starting_pos_int, forward_pos_int];
             
             pawn_check_for_double_step_white(x, y, tmp_path, board_positions, pre_tree, new_vulnerable_paths);
             
@@ -74,20 +74,20 @@ function pawn_all_valid_white_moves(
         }
         
         val left_forward = square_pos(x = x - 1, y = y + 1);
-        val left_forward_int = forward_pos_int - 1;
         
         if (pawn_is_attackable_black_or_neutral(game_id, board_positions, left_forward, pre_vuln_ctxt)) {
-            pawn_add_attack(pos, left_forward_int, pre_tree);
+            pawn_add_attack(starting_pos_int, left_forward, pre_tree);
         } else if (board_is_white_piece_at(board_positions, left_forward)) {
+            val left_forward_int = pos_to_int(left_forward);
             pre_tree.protected_sqs.add(left_forward_int); // Only for mate calc
         }
         
         val right_forward = square_pos(x = x + 1, y = y + 1);
-        val right_forward_int = forward_pos_int + 1;
         
         if (pawn_is_attackable_black_or_neutral(game_id, board_positions, right_forward, pre_vuln_ctxt)) {
-            pawn_add_attack(pos, right_forward_int, pre_tree);
+            pawn_add_attack(starting_pos_int, right_forward, pre_tree);
         } else if (board_is_white_piece_at(board_positions, right_forward)) {
+            val right_forward_int = pos_to_int(right_forward);
             pre_tree.protected_sqs.add(right_forward_int); // Only for mate calc
         }
     }
@@ -98,29 +98,29 @@ function pawn_all_valid_white_moves(
         // calculations BEFORE we had time to promote the pawn to queen.
     }
 
-    return (move_tree_build(pos, pre_tree), new_vulnerable_paths);
+    return (move_tree_build(starting_pos_int, pre_tree), new_vulnerable_paths);
 }
 
 function pawn_all_valid_black_moves(
     game_id: integer,
     board_positions: board_positions_all,
-    pos: integer,
+    starting_pos_int: integer,
     pre_tree: pre_tree,
     pre_vuln_ctxt: pre_vuln_context
 ): (move_tree, list<path_base>) {
     val new_vulnerable_paths = list<path_base>();
     
-    val square_pos = pos_from_integer(pos);
-    val x = square_pos.x;
-    val y = square_pos.y;
+    val starting_square_pos = pos_from_integer(starting_pos_int);
+    val x = starting_square_pos.x;
+    val y = starting_square_pos.y;
     
     if (y > 0) {
         val forward_pos = square_pos(x = x, y = y - 1); // Moving down for black
-        val forward_pos_int = pos_to_int(forward_pos);
         
         if (board_is_free_at(board_positions, forward_pos)) {
+            val forward_pos_int = pos_to_int(forward_pos);
             pre_tree.moves_harmless.add(forward_pos_int);
-            val tmp_path: list<integer> = [pos, forward_pos_int];
+            val tmp_path: list<integer> = [starting_pos_int, forward_pos_int];
             
             pawn_check_for_double_step_black(x, y, tmp_path, board_positions, pre_tree, new_vulnerable_paths);
             
@@ -128,20 +128,20 @@ function pawn_all_valid_black_moves(
         }
         
         val left_forward = square_pos(x = x - 1, y = y - 1);
-        val left_forward_int = forward_pos_int - 1;
         
         if (pawn_is_attackable_white_or_neutral(game_id, board_positions, left_forward, pre_vuln_ctxt)) {
-            pawn_add_attack(pos, left_forward_int, pre_tree);
+            pawn_add_attack(starting_pos_int, left_forward, pre_tree);
         } else if (board_is_black_piece_at(board_positions, left_forward)) {
+            val left_forward_int = pos_to_int(left_forward);
             pre_tree.protected_sqs.add(left_forward_int); // Only for mate calc
         }
         
         val right_forward = square_pos(x = x + 1, y = y - 1);
-        val right_forward_int = forward_pos_int + 1;
 
         if (pawn_is_attackable_white_or_neutral(game_id, board_positions, right_forward, pre_vuln_ctxt)) {
-            pawn_add_attack(pos, right_forward_int, pre_tree);
+            pawn_add_attack(starting_pos_int, right_forward, pre_tree);
         } else if (board_is_black_piece_at(board_positions, right_forward)) {
+            val right_forward_int = pos_to_int(right_forward);
             pre_tree.protected_sqs.add(right_forward_int); // Only for mate calc
         }
     }
@@ -152,7 +152,7 @@ function pawn_all_valid_black_moves(
         // calculations BEFORE we had time to promote the pawn to queen.
     }
     
-    return (move_tree_build(pos, pre_tree), new_vulnerable_paths);
+    return (move_tree_build(starting_pos_int, pre_tree), new_vulnerable_paths);
 }
 
 function pawn_all_valid_neutral_moves(
@@ -204,18 +204,15 @@ function pawn_all_jump_over_moves(
                     when (i) {
                         1 -> {
                             val forward_pos2 = square_pos(x = x, y = y + 2);
-                            val forward_pos2_int = pos_to_int(forward_pos2);
-                            pawn_interpret_position_post_obstacle_free(board_positions, pos_int, forward_pos2_int, pre_tree);
+                            pawn_interpret_position_post_obstacle_free(board_positions, pos_int, forward_pos2, pre_tree);
                         }
                         2 -> {
                             val left_forward2 = square_pos(x = x - 2, y = y + 2);
-                            val left_forward2_int = pos_to_int(left_forward2);
-                            pawn_interpret_position_post_obstacle_attack(board_positions, align, pos_int, left_forward2_int, pre_tree);
+                            pawn_interpret_position_post_obstacle_attack(board_positions, align, pos_int, left_forward2, pre_tree);
                         }
                         3 -> {
                             val right_forward2 = square_pos(x = x + 2, y = y + 2);
-                            val right_forward2_int = pos_to_int(right_forward2);
-                            pawn_interpret_position_post_obstacle_attack(board_positions, align, pos_int, right_forward2_int, pre_tree);
+                            pawn_interpret_position_post_obstacle_attack(board_positions, align, pos_int, right_forward2, pre_tree);
                         }
                         else -> require(false, "Invalid obstacle position index" + i);
                     }
@@ -239,18 +236,15 @@ function pawn_all_jump_over_moves(
                     when (i) {
                         1 -> {
                             val forward_pos2 = square_pos(x = x, y = y - 2);
-                            val forward_pos2_int = pos_to_int(forward_pos2);
-                            pawn_interpret_position_post_obstacle_free(board_positions, pos_int, forward_pos2_int, pre_tree);
+                            pawn_interpret_position_post_obstacle_free(board_positions, pos_int, forward_pos2, pre_tree);
                         }
                         2 -> {
                             val left_forward2 = square_pos(x = x - 2, y = y - 2);
-                            val left_forward2_int = pos_to_int(left_forward2);
-                            pawn_interpret_position_post_obstacle_attack(board_positions, align, pos_int, left_forward2_int, pre_tree);
+                            pawn_interpret_position_post_obstacle_attack(board_positions, align, pos_int, left_forward2, pre_tree);
                         }
                         3 -> {
                             val right_forward2 = square_pos(x = x + 2, y = y - 2);
-                            val right_forward2_int = pos_to_int(right_forward2);
-                            pawn_interpret_position_post_obstacle_attack(board_positions, align, pos_int, right_forward2_int, pre_tree);
+                            pawn_interpret_position_post_obstacle_attack(board_positions, align, pos_int, right_forward2, pre_tree);
                         }
                         else -> require(false, "Invalid obstacle position index" + i);
                     }
@@ -268,14 +262,15 @@ function pawn_all_jump_over_moves(
 function pawn_interpret_position_post_obstacle_free(
     board_positions: board_positions_all,
     start_pos: integer,
-    new_pos: integer,
+    new_square_pos: square_pos,
     pre_tree: pre_tree
 ) {
-    val ss = board_get_square_status_int(board_positions, new_pos);
+    val ss = board_get_square_status(board_positions, new_square_pos);
     when (ss) {
         square_status.FREE -> {
-            pre_tree.movable_sqs.add(new_pos);
-            pre_tree.paths.add(path_jump_move_2(start_pos, new_pos));
+            val new_pos_int = pos_to_int(new_square_pos);
+            pre_tree.movable_sqs.add(new_pos_int);
+            pre_tree.paths.add(path_jump_move_2(start_pos, new_pos_int));
         }
         else -> {
              // Could be foe, but we cannot attack
@@ -287,27 +282,30 @@ function pawn_interpret_position_post_obstacle_attack(
     board_positions: board_positions_all,
     align: alignment,
     start_pos: integer,
-    new_pos: integer,
+    new_square_pos: square_pos,
     pre_tree: pre_tree
 ) {
-    val ss = board_get_square_status_int(board_positions, new_pos);
+    val ss = board_get_square_status(board_positions, new_square_pos);
     when (ss) {
         square_status.BLACK_PIECE -> {
+            val new_pos_int = pos_to_int(new_square_pos);
             if (align == alignment.WHITE) {
-                pre_tree.attackable_sqs.add(new_pos);
-                pre_tree.paths.add(path_jump_attack_2(start_pos, new_pos));
+                pre_tree.attackable_sqs.add(new_pos_int);
+                pre_tree.paths.add(path_jump_attack_2(start_pos, new_pos_int));
             }
         }
         square_status.WHITE_PIECE -> {
+            val new_pos_int = pos_to_int(new_square_pos);
             if (align == alignment.BLACK) {
-                pre_tree.attackable_sqs.add(new_pos);
-                pre_tree.paths.add(path_jump_attack_2(start_pos, new_pos));
+                pre_tree.attackable_sqs.add(new_pos_int);
+                pre_tree.paths.add(path_jump_attack_2(start_pos, new_pos_int));
             }
         }
         square_status.NEUTRAL_PIECE, square_status.OBSTACLE -> {
             // Everyone can attack neutral pieces and obstacles
-            pre_tree.attackable_sqs.add(new_pos);
-            pre_tree.paths.add(path_jump_attack_2(start_pos, new_pos));
+            val new_pos_int = pos_to_int(new_square_pos);
+            pre_tree.attackable_sqs.add(new_pos_int);
+            pre_tree.paths.add(path_jump_attack_2(start_pos, new_pos_int));
         }
         else -> {} // Out of board or free, just quit
     }
@@ -319,13 +317,14 @@ function pawn_interpret_position_post_obstacle_attack(
 
 function pawn_add_attack(
     pos: integer,
-    attack_square: integer,
+    attack_square: square_pos,
     pre_tree: pre_tree
 ) {
-    pre_tree.attackable_sqs.add(attack_square);
+    val attack_square_int = pos_to_int(attack_square);
+    pre_tree.attackable_sqs.add(attack_square_int);
     val path = list<integer>();
     path.add(pos);
-    path.add(attack_square);
+    path.add(attack_square_int);
     pre_tree.paths.add(path_base(path = path, path_type = path_type.GROUND_ATTACK));
 }
 
@@ -338,8 +337,8 @@ function pawn_check_for_double_step_white(
     vulnerable_paths: list<path_base>
 ) {
     if (y == 1) {
-        val double_step_pos = path[0] + 16; // Move up two ranks
-        pawn_inner_double_step(double_step_pos, path, board_positions, pre_tree, vulnerable_paths);
+        val double_step = square_pos(x = x, y = y + 2); // Move up two ranks
+        pawn_inner_double_step(double_step, path, board_positions, pre_tree, vulnerable_paths);
     }
 }
 
@@ -352,21 +351,21 @@ function pawn_check_for_double_step_black(
     vulnerable_paths: list<path_base>
 ) {
     if (y == 6) {
-        val double_step_pos = path[0] - 16; // Move down two ranks
-        pawn_inner_double_step(double_step_pos, path, board_positions, pre_tree, vulnerable_paths);
+        val double_step = square_pos(x = x, y = y - 2); // Move down two ranks
+        pawn_inner_double_step(double_step, path, board_positions, pre_tree, vulnerable_paths);
     }
 }
 
 function pawn_inner_double_step(
-    double_step_pos_int: integer,
+    double_step: square_pos,
     path: list<integer>,
     board_positions: board_positions_all,
     pre_tree: pre_tree,
     vulnerable_paths: list<path_base>
 ) {
 
-    val double_step = pos_from_integer(double_step_pos_int);
     if (board_is_free_at(board_positions, double_step)) {
+        val double_step_pos_int = pos_to_int(double_step);
         pre_tree.moves_harmless.add(double_step_pos_int);
         
         val new_path = list<integer>();
@@ -416,10 +415,10 @@ function pawn_is_attackable(
         return true;
     }
     else {
-        val new_pos_int = pos_to_int(new_pos);
-        val dest_int = pre_vuln_check_if_pos_part_of_vulnerable_path(pre_vuln_ctxt, new_pos_int);
+        val dest_int = pre_vuln_check_if_pos_part_of_vulnerable_path(pre_vuln_ctxt, new_pos);
         
         if (dest_int != null) {
+            val new_pos_int = pos_to_int(new_pos); // Is this still dangrous?
             val dest = pos_from_integer(dest_int);
 
             // Check if enemy is still occupying the path destination
@@ -450,13 +449,13 @@ function pawn_is_attackable(
 // -----------------------------------------------------------------
 function pawn_is_attackable_player_align_plus_neutral(
     board_positions: board_positions_all,
-    pos: square_pos,
+    square_pos,
     check_black: boolean
 ): boolean {
     if (check_black) {
-        return board_is_attackable_black_or_neutral_at(board_positions, pos);
+        return board_is_attackable_black_or_neutral_at(board_positions, square_pos);
     } else {
-        return board_is_attackable_white_or_neutral_at(board_positions, pos);
+        return board_is_attackable_white_or_neutral_at(board_positions, square_pos);
     }
 }
 

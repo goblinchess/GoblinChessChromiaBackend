@@ -1,0 +1,4 @@
+import ^.piece.*;
+import ^.move_rule.*;
+import ^.portal.*;
+import ^.*;

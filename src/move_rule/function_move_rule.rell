@@ -8,20 +8,22 @@
 function rule_interpret_path_position(
     board_positions: board_positions_all,
     align: alignment,
-    new_pos: integer,
+    new_pos_struct: square_pos,
     tmp_path: list<integer>,
     pre_tree: pre_tree
 ): boolean {
-    val ss = board_get_square_status_int(board_positions, new_pos);
+    val ss = board_get_square_status(board_positions, new_pos_struct);
     
     when (ss) {
         square_status.FREE -> {
             //log("interpret_path_position() - Free space at " + new_pos);
+            val new_pos = pos_to_int(new_pos_struct); // Safe, since not out of board.
             pre_tree.movable_sqs.add(new_pos);
             tmp_path.add(new_pos);
             return true; // Free space is not blocking, continue on path
         }
         square_status.BLACK_PIECE -> {
+            val new_pos = pos_to_int(new_pos_struct); // Safe, since not out of board.
             if (align == alignment.WHITE or align == alignment.NEUTRAL) {
                 // White can attack
                 //log("interpret_path_position() - White can attack at " + new_pos);
@@ -36,10 +38,10 @@ function rule_interpret_path_position(
             return false;
         }
         square_status.WHITE_PIECE -> {
+            val new_pos = pos_to_int(new_pos_struct); // Safe, since not out of board.
             if (align == alignment.BLACK or align == alignment.NEUTRAL) {
                 // Black can attack
                 //log("interpret_path_position() - Black can attack at " + new_pos);
-                pre_tree.attackable_sqs.add(new_pos);
                 pre_tree.attackable_sqs.add(new_pos);
                 tmp_path.add(new_pos);
                 pre_tree.paths.add(path_base(tmp_path, path_type.GROUND_ATTACK));
@@ -52,6 +54,7 @@ function rule_interpret_path_position(
         }
         square_status.NEUTRAL_PIECE, square_status.OBSTACLE -> {
             // Everyone can attack neutral/obstacle
+            val new_pos = pos_to_int(new_pos_struct); // Safe, since not out of board.
             pre_tree.attackable_sqs.add(new_pos);
             tmp_path.add(new_pos);
             pre_tree.paths.add(path_base(tmp_path, path_type.GROUND_ATTACK));
@@ -71,21 +74,23 @@ function rule_interpret_path_position(
 function rule_interpret_single_step_position(
     board_positions: board_positions_all,
     align: alignment,
-    new_pos: integer,
+    new_square_pos: square_pos,
     tmp_path: list<integer>,
     pre_tree: pre_tree,
     is_jump: boolean
 ) {
     //log ("rule_interpret_single_step_position(" + new_pos + ")");
-    val ss = board_get_square_status_int(board_positions, new_pos);
+    val ss = board_get_square_status(board_positions, new_square_pos);
     
     when(ss) {
         square_status.FREE -> {
+            val new_pos = pos_to_int(new_square_pos); // Safe, since not out of board.
             pre_tree.movable_sqs.add(new_pos);
             tmp_path.add(new_pos);
             _add_move_to_paths(tmp_path, is_jump, pre_tree.paths);
         }
         square_status.BLACK_PIECE -> {
+            val new_pos = pos_to_int(new_square_pos); // Safe, since not out of board.
             if (align == alignment.WHITE or align == alignment.NEUTRAL) {
                 pre_tree.attackable_sqs.add(new_pos);
                 tmp_path.add(new_pos);
@@ -95,6 +100,7 @@ function rule_interpret_single_step_position(
             }
         }
         square_status.WHITE_PIECE -> {
+            val new_pos = pos_to_int(new_square_pos); // Safe, since not out of board.
             if (align == alignment.BLACK or align == alignment.NEUTRAL) {
                 pre_tree.attackable_sqs.add(new_pos);
                 tmp_path.add(new_pos);
@@ -104,6 +110,7 @@ function rule_interpret_single_step_position(
             }
         }
         square_status.NEUTRAL_PIECE, square_status.OBSTACLE -> {
+            val new_pos = pos_to_int(new_square_pos); // Safe, since not out of board.
             pre_tree.attackable_sqs.add(new_pos);
             tmp_path.add(new_pos);
             _add_attack_to_paths(tmp_path, is_jump, pre_tree.paths);
@@ -170,18 +177,20 @@ function rule_interpret_path_position_post_obstacle(
     board_positions: board_positions_all,
     align: alignment,
     start_pos: integer,
-    new_pos: integer,
+    new_pos_struct: square_pos,
     pre_tree: pre_tree
 ): boolean {
-    val ss = board_get_square_status_int(board_positions, new_pos);
+    val ss = board_get_square_status(board_positions, new_pos_struct);
     
     when(ss) {
         square_status.FREE -> {
+            val new_pos = pos_to_int(new_pos_struct); // Safe, since not out of board.
             pre_tree.movable_sqs.add(new_pos);
             pre_tree.paths.add(path_jump_move_2(start_pos, new_pos));
             return true; // Free space is not blocking, continue on path
         }
         square_status.BLACK_PIECE -> {
+            val new_pos = pos_to_int(new_pos_struct); // Safe, since not out of board.
             if (align == alignment.WHITE or align == alignment.NEUTRAL) {
                 // We can attack
                 pre_tree.attackable_sqs.add(new_pos);
@@ -190,6 +199,7 @@ function rule_interpret_path_position_post_obstacle(
             return false;
         }
         square_status.WHITE_PIECE -> {
+            val new_pos = pos_to_int(new_pos_struct); // Safe, since not out of board.
             if (align == alignment.BLACK or align == alignment.NEUTRAL) {
                 // Enemy can attack us
                 pre_tree.attackable_sqs.add(new_pos);
@@ -199,6 +209,7 @@ function rule_interpret_path_position_post_obstacle(
         }
         square_status.NEUTRAL_PIECE, square_status.OBSTACLE -> {
             // Everyone can attack neutral/obstacle
+            val new_pos = pos_to_int(new_pos_struct); // Safe, since not out of board.
             pre_tree.attackable_sqs.add(new_pos);
             pre_tree.paths.add(path_jump_attack_2(start_pos, new_pos));
             return false;
@@ -213,13 +224,14 @@ function rule_interpret_path_position_post_obstacle(
 function rule_interpret_path_position_post_obstacle_peaceful(
     board_positions: board_positions_all,
     start_pos: integer,
-    new_pos: integer,
+    new_square_pos: square_pos,
     pre_tree: pre_tree
 ): boolean {
-    val ss = board_get_square_status_int(board_positions, new_pos);
+    val ss = board_get_square_status(board_positions, new_square_pos);
     
     when(ss) {
         square_status.FREE -> {
+            val new_pos = pos_to_int(new_square_pos); // Safe, since not out of board.
             pre_tree.movable_sqs.add(new_pos);
             pre_tree.paths.add(path_jump_move_2(start_pos, new_pos));
             return true; // Free space is not blocking, continue on path

@@ -394,7 +394,7 @@ function test_full_game() {
 
     var minimal_game: minimal_game_result? = minimal_game_data_get(white_player.pub);
     require (minimal_game != null, "Player is not in a game");
-    val reverted_list: list<card_enchantment_reverted> = card_enchantment_revert_timed_out(minimal_game.game, minimal_game.player_game);
+    var reverted_list: list<card_enchantment_reverted> = card_enchantment_revert_timed_out(minimal_game.game, minimal_game.player_game);
     require (reverted_list.size() == 0, "Shouldn't start with timed out enchantments");
 
     log("Turn 1(1): Card Fail A. No picks for FROG");
@@ -793,16 +793,16 @@ function test_full_game() {
     // Bit tricky to figure out what the random number should be to put the exit at f6.
     val a2 = 8;
     val f6 = 45;
-    val min_portal_empty_squares = 0;
-    val total_empty_squares_on_black_side = 17; // One extra since one pawn crossed to other side
-    val max_portal_empty_squares = total_empty_squares_on_black_side - 1;
-    val portal_rnd_result = 13; // f6. Start counting from rank 5. 0->7 (=8 steps). Rank 4. 8-> 13 (6 steps)
-    val portal_rnd_data = rnd_data(
+    var min_portal_empty_squares = 0;
+    var total_empty_squares_on_black_side = 17; // One extra since one pawn crossed to other side
+    var max_portal_empty_squares = total_empty_squares_on_black_side - 1;
+    var portal_rnd_result = 13; // f6. Start counting from rank 5. 0->7 (=8 steps). Rank 4. 8-> 13 (6 steps)
+    var portal_rnd_data = rnd_data(
         result = portal_rnd_result, 
         min = min_portal_empty_squares, 
         max = max_portal_empty_squares
     );
-    val rnds: list<rnd_data> = [portal_rnd_data];
+    var rnds: list<rnd_data> = [portal_rnd_data];
 
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "PORTAL", 2, [a2, f6], rnds)).sign(white_player).run();
     last_seen_turn += 1;
@@ -998,9 +998,9 @@ function test_full_game() {
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 6 ++++++++++++++++++++++++++++++++++++++++++++++++++
     // 8= .  kn b  q  k  b  kn r
-    // 7= .  p  p  p  p  p  .  p // <--- next: Pawn e7 -> e5
-    // 6= .  .  .  .  .  P  p  .
-    // 5= .  .  .  .  +  .  .  . // <--- next: Pawn e7 -> e5
+    // 7= .  p  p  p  p  p  .  p // <--- next: Pawn e7 -> e6
+    // 6= .  .  .  .  +  P  p  . // <--- next: Pawn e7 -> e6
+    // 5= .  .  .  .  .  .  .  . 
     // 4= Kn .  .  .  .  .  .  . // <--- prev: Knight c3 -> a4
     // 3= .  Pk -  .  .  .  P  . // <--- prev: Knight c3 -> a4
     // 2= .  .  .  P  P  P  .  P 
@@ -1013,15 +1013,15 @@ function test_full_game() {
     rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
-    log ("Turn 6(35): Black moves pawn e7->e5, to avoid being taken.");
+    log ("Turn 6(35): Black moves pawn e7->e6, to avoid being taken.");
     val e7 = 52; 
-    val e5 = 36; 
+    val e6 = 44; 
 
     m_args = move_arguments(
         game_id = the_game.game_rowid, 
         last_seen_turn = last_seen_turn, 
         from_position = e7, // <-- Ok
-        to_position = e5, // <-- Ok
+        to_position = e6, // <-- Ok
         piece_type_str = "PAWN",  // <-- Ok
         given_is_knighted = false);
 
@@ -1035,8 +1035,8 @@ function test_full_game() {
     // +++++++++++++++++++++++++++++++++++++++++ White Move 7 ++++++++++++++++++++++++++++++++++++++++++++++++++
     // 8= .  kn b  q  k  b  kn r
     // 7= .  p  p  p  -  p  .  p // <--- prev: Pawn e7 -> e5
-    // 6= .  .  .  .  .  P  p  .
-    // 5= .  .  .  .  p  .  .  . // <--- prev: Pawn e7 -> e5
+    // 6= .  .  .  .  p  P  p  .
+    // 5= .  .  .  .  .  .  .  . // <--- prev: Pawn e7 -> e5
     // 4= Kn .  .  .  .  .  .  . 
     // 3= .  Pk .  .  .  .  P  . 
     // 2= .  .  +  P  P  P  .  P // <-- next: Queen d1 -> c2 
@@ -1070,8 +1070,8 @@ function test_full_game() {
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 7 ++++++++++++++++++++++++++++++++++++++++++++++++++
     // 8= @  kn b  q  k  b  kn r // <-- next: Queen d8 x f6 (will cause resurrection)
     // 7= .  p  p  p  .  p  .  p
-    // 6= .  .  .  .  .  P  p  . // <-- next: Queen d8 x f6 (will cause resurrection)
-    // 5= .  .  .  .  p  .  .  .
+    // 6= .  .  .  .  p  P  p  . // <-- next: Queen d8 x f6 (will cause resurrection)
+    // 5= .  .  .  .  .  .  .  .
     // 4= Kn .  .  .  .  .  .  . 
     // 3= .  Pk .  .  .  .  P  . 
     // 2= .  .  Q  P  P  P  .  P // <-- prev: Queen d1 -> c2
@@ -1119,8 +1119,8 @@ function test_full_game() {
     // +++++++++++++++++++++++++++++++++++++++++ White Move 8 ++++++++++++++++++++++++++++++++++++++++++++++++++
     // 8= p  kn b  -  k  b  kn r // <-- prev: pawn resurrected at a8.
     // 7= .  p  p  p  .  p  .  p
-    // 6= .  .  .  .  .  q  p  . // <-- prev: Captured by Queen d8 x f6 (will cause resurrection)
-    // 5= .  .  .  .  p  .  .  .
+    // 6= .  .  .  .  p  q  p  . // <-- prev: Captured by Queen d8 x f6 (will cause resurrection)
+    // 5= .  .  .  .  .  .  .  .
     // 4= Kn .  .  .  .  .  .  . 
     // 3= .  Pk .  .  .  .  P  . // <-- next: Instead KNIGHTED pawn goes b3 x a1, causing the rook to resurrect.
     // 2= .  .  Q  P  P  P  .  P // <-- next: We want to verify that White cannot move Bishop c1 -> d2 (causing check).
@@ -1195,10 +1195,10 @@ function test_full_game() {
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 8 ++++++++++++++++++++++++++++++++++++++++++++++++++
     // 8= p  kn b  .  k  b  kn r
     // 7= .  p  p  p  .  p  .  p
-    // 6= .  .  .  .  .  q  p  . 
-    // 5= .  .  .  .  p  .  .  . // <-- next: pawn e5 -> e4
-    // 4= Kn .  .  .  +  .  .  . // <-- next: pawn e5 -> e4 
-    // 3= .  -  .  .  .  .  P  . // <-- prev: KNIGHTED pawn takes rook via b3 x a1.
+    // 6= .  .  .  .  p  q  p  . // <-- next: queen f6 -> c3
+    // 5= .  .  .  .  .  .  .  .
+    // 4= Kn .  .  .  .  .  .  . // <-- next: queen f6 -> c3
+    // 3= .  -  +  .  .  .  P  . // <-- prev: KNIGHTED pawn takes rook via b3 x a1.
     // 2= .  .  Q  P  P  P  .  P 
     // 1= Pk R  B  .  K  B  Kn R // <-- prev: KNIGHTED pawn goes b3 x a1, causing the rook to resurrect at b1.
     // --------------------------
@@ -1208,6 +1208,60 @@ function test_full_game() {
     log ("Turn 8(46): Black skips spell");
     rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
+
+    log ("Turn 8(47): Black moves queen f6 -> c3 (pretty stupid move).");
+
+    m_args = move_arguments(
+        game_id = the_game.game_rowid, 
+        last_seen_turn = last_seen_turn, 
+        from_position = f6, // <-- Ok
+        to_position = c3, // <-- Ok
+        piece_type_str = "QUEEN",  // <-- Ok
+        given_is_knighted = false);
+
+    rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(black_player).run();
+    last_seen_turn += 1;
+    
+    log ("Turn 8(48): Skip neutral.");
+    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    last_seen_turn += 1;
+
+    // +++++++++++++++++++++++++++++++++++++++++ White Move 9 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= p  kn b  .  k  b  kn r
+    // 7= .  p  p  p  .  p  .  p
+    // 6= .  .  .  .  p  -  p  . // <-- prev: queen f6 -> c3
+    // 5= .  .  .  .  .  .  .  .
+    // 4= Kn .  .  .  .  .  .  . // <-- prev: queen f6 -> c3
+    // 3= .  -  q  .  .  .  P  . 
+    // 2= .  .  Q  P  P  P  .  P // <-- next: fails to put a PORTAL on d2 (causes check).
+    // 1= Pk R  B  .  K  B  Kn R 
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    // Bit tricky to figure out what the random number should be to put the exit b6
+    val d2 = 11;
+    val b6 = 41;
+    total_empty_squares_on_black_side = 18; 
+    max_portal_empty_squares = total_empty_squares_on_black_side - 1;
+    portal_rnd_result = 10; // b6. Start counting from rank 5. 0->7 (=8 steps). Rank 4. 8-> 9 (2 steps)
+    portal_rnd_data = rnd_data(
+        result = portal_rnd_result, 
+        min = min_portal_empty_squares, 
+        max = max_portal_empty_squares
+    );
+    rnds= [portal_rnd_data];
+
+    log("Turn 9(49): Card Fail, PORTAL on d2 (causes check).");
+    minimal_game = minimal_game_data_get(white_player.pub);
+    require(minimal_game != null, "Player is not in a game");
+    reverted_list = card_enchantment_revert_timed_out(minimal_game.game, minimal_game.player_game);
+    failed_card = assert_fails(card_play_inner_core(minimal_game, the_game.game_rowid, last_seen_turn, "PORTAL", 1, [d2, b6], rnds, reverted_list,
+        * // Note, this star is what makes it work.
+    ));
+    //log(failed_card.message);
+    val expected_portal_check_msg: text = "Cannot use PORTAL on a piece, so that when it moves to the exit it causes a check";
+    assert_true(failed_card.message.starts_with(expected_portal_check_msg));
 
 }
 

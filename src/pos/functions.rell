@@ -9,6 +9,9 @@ function pos_from_integer(pos: integer): square_pos {
 }
 
 function pos_to_int(pos: square_pos): integer {
+    // Should have been checked before we call this function,
+    // now this is a real error.
+    require(not pos_is_out_of_board(pos), "ERROR: Position is out of board: " + pos);
     return pos.x + (pos.y * 8);
 }
 
@@ -30,12 +33,11 @@ function pos_x_and_y_shift(pos: square_pos, x_shift: integer, y_shift: integer):
 // Returns a new position based on the previous position and a directional shift
 function pos_calc_from_directional_shift(
     game_id: integer,
-    pos: integer, 
+    square_pos: square_pos, 
     shift: integer, 
     dir: integer
     ): square_pos?  {
 
-    val square_pos = pos_from_integer(pos);
     val x_org: integer = square_pos.x;
     val y_org: integer = square_pos.y;
 

@@ -1,0 +1,63 @@
+// ---------------
+// Debug
+// ---------------
+
+// Print the entire trees
+function move_tree_debug(mt: move_tree): text {
+    var str = "(Attack moves: ";
+    for (pos_a in mt.attackable_sqs) {
+        str += pos_a + ", ";
+    }
+    str += ". Peaceful moves: ";
+    for (pos_p in mt.moves_all) {
+        str += pos_p + ", ";
+    }
+    str += ")";
+
+    return str;
+}
+
+// Debug the move tree on a board
+function move_tree_debug_on_board(mt: move_tree): text {
+    var out = "\n";
+
+    out += "+-------------------+\n";
+    for (rev_y in range(0, 8)) {
+        val y = 7 - rev_y;
+        val rank = y + 1;
+        out += "|" + rank + "= ";
+        for (x in range(0, 8)) {
+            val pos_sq = square_pos(x, y);
+            val pos: integer = pos_to_int(pos_sq);
+            var i = 0;
+            if (mt.start_pos == pos) {
+                out += "o ";
+                i++;
+            }
+            if (mt.attackable_sqs.contains(pos)) {
+                out += "x ";
+                i++;
+            }
+            if (mt.moves_normal.contains(pos)) {
+                out += "m ";
+                i++;
+            }
+            if (mt.moves_harmless.contains(pos)) {
+                out += "h ";
+                i++;
+            }
+
+            // If nothing, print "empty" 
+            if (i == 0) {
+                out += ". "; // Empty
+            } else if (i > 1) {
+                out += "????? "; // We have an error?
+            }
+        }
+        out += "|\n";
+    }
+    out += "+-------------------+\n";
+    out += "|   a b c d e f g h |\n";
+    out += "+-------------------+";
+    return out;
+}

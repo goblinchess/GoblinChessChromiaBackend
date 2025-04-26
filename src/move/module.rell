@@ -2,6 +2,7 @@ import ^.turn.*;
 import ^.piece.*;
 import ^.move_rule.*;
 import ^.move_event.*;
+import ^.move_tree.*;
 import ^.dice.*;
 import ^.battle.*;
 import ^.check.*;
