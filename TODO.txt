@@ -13,18 +13,18 @@ Client Done:
 
  TODO Node: 
 -------------
-One the query: add neutal and neutral hijacked.
  
- 1. Finish the game when mate
-    
+- Call the main query in our test.
+
+ 2. Finish the game when mate
+
  4. Use Luck
 
  6. Look in [move] entity before allowing castle.
 
 
 Node DONE:
-1) New query that fetches all opponent's actions.
-2) Make sure JUMP_EVENT gets created when we use the magic jump.
+
 
 
 
