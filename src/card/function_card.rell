@@ -6,9 +6,7 @@ function card_play_inner(
     caller_pubkey: pubkey,
     game_id: integer, 
     last_seen_turn: integer, // What turn the client last saw.
-    card_type_str: text, 
-    card_order_number: integer, // The order number when the card was drawn/generated.
-    card_picks: list<integer>, // The squares picked by the player when playing the card.
+    card_played_data,
     rnd_numbers: list<rnd_data> // If any randomness was used playing this card, the numbers generated goes in here.
 ) {
     // A.1. Check player entity
@@ -28,9 +26,7 @@ function card_play_inner(
         minimal_game, 
         game_id, 
         last_seen_turn, 
-        card_type_str, 
-        card_order_number, 
-        card_picks,
+        card_played_data,
         rnd_numbers,
         reverted_list
     );
@@ -47,15 +43,18 @@ function card_play_inner_core(
     minimal_game: minimal_game_result,
     game_id: integer, 
     last_seen_turn: integer, // What turn the client last saw.
-    card_type_str: text, 
-    card_order_number: integer, // The order number when the card was drawn/generated.
-    card_picks: list<integer>, // The squares picked by the player when playing the card.
+    card_played_data,
     rnd_numbers: list<rnd_data>, // If any randomness was used playing this card, the numbers generated goes in here.
     reverted_list: list<card_enchantment_reverted> // List of reverted enchantments.
 ) {
+    val card_type_str = card_played_data.card_type_str;
+    val card_order_number = card_played_data.card_order_number;
+    val card_picks: list<integer> = card_played_data.card_picks;
+
     // -----------    
     // A. Verication
     // -----------    
+
     log("game_id: " + game_id + "- Play Card Beign, last turn: " + last_seen_turn + ", type: " + card_type_str + ", order number: " + card_order_number );
 
     var new_turn_type = turn_type.BLACK_CARD;

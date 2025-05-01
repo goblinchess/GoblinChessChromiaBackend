@@ -18,25 +18,64 @@ function game_is_classic(gt: game_type) :boolean {
 }
 
 
-// Will find the player, the game and the color 
-// from the player's pubkey
+// Will find the player, the game and the color  from the player's pubkey
+// This works since a player can only have one unfinished game at a time.
 function minimal_game_data_get(caller_pubkey: pubkey) :minimal_game_result? {
     // Return data
-    val res = (p: player, pg: player_game)@?  {
+    val res = (p: player, pg: player_game, g: game)@?  {
         p.signer == caller_pubkey, 
         pg.player == p, 
+        g == pg.game,
         pg.is_finished == false }
-        (player = pg.player, player_game = pg, game = pg.game, game_type = pg.game.game_type, is_white = pg.is_white, in_check = pg.in_check);
+        (player = pg.player, player_game = pg, gme = g, game_type = g.game_type, curr_turn_nr = g.current_turn, is_white = pg.is_white, in_check = pg.in_check);
 
     if (res != null) {
         return minimal_game_result(
             player = res.player,
             player_game = res.player_game,
-            game = res.game,
-            game_type = res.game.game_type,
-            curr_turn_nr = res.game.current_turn,
-            is_white =res.is_white,
-            in_check = res.in_check
+            game = res.gme,
+            game_type = res.game_type,
+            curr_turn_nr = res.curr_turn_nr,
+            in_check = res.in_check,
+            is_white =res.is_white
+        );
+    } else {
+        return null;
+    }
+}
+
+// -------------------------------------
+// Will find the player, the game and the color 
+// from the player's pubkey, even if the game is finished
+//
+// Note:
+// We cannot use the function above, since when fetching the opponent's turn data, 
+// we need to to see finished games since we MUST see the winning move, 
+// event if the opponent just won the game and turned it into "finished".
+// -------------------------------------
+function minimal_game_data_get_even_if_finished(
+    caller_pubkey: pubkey, 
+    game_id: integer // We need this, since the player usually has multiple finished games.
+) :minimal_game_result? {
+    // Return data
+
+    val game_rowid = rowid(game_id);
+    val res = (p: player, pg: player_game, g: game)@?  {
+        p.signer == caller_pubkey, 
+        pg.player == p, // Not stricly needed, but I want to make sure some guy doesn't just ask for a random game.
+        g == pg.game,
+        g.rowid == game_rowid }
+        (player = pg.player, player_game = pg, gme= g, game_type = g.game_type, curr_turn_nr = g.current_turn, is_white = pg.is_white, in_check = pg.in_check);
+
+    if (res != null) {
+        return minimal_game_result(
+            player = res.player,
+            player_game = res.player_game,
+            game = res.gme,
+            game_type = res.game_type,
+            curr_turn_nr = res.curr_turn_nr,
+            in_check = res.in_check,
+            is_white =res.is_white
         );
     } else {
         return null;
@@ -49,8 +88,8 @@ function minimal_game_data_get(caller_pubkey: pubkey) :minimal_game_result? {
 // ----------
 
 // Will update the gome with:
-// 1. New turn number, (actually redundant, since the [turn] entity has been created)
-// 2. is_check = meaning we put the opponent in check.
+// a. New turn number, (actually redundant, since the [turn] entity has been created)
+// b. is_check = meaning we put the opponent in check.
 // 
 // Note: If we were in check in the beginning of this turn, 
 // we don't bother to remove it, since the opponent will 
@@ -156,8 +195,8 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .game = new_game,
         .is_white = true,
         .is_finished = false,
-        .cards_left = 5,
-        .in_check = false
+        .in_check = false,
+        .cards_left = 5
     );
 
     // Create black player_game
@@ -166,8 +205,8 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .game = new_game,
         .is_white = false,
         .is_finished = false,
-        .cards_left = 5,
-        .in_check = false
+        .in_check = false,
+        .cards_left = 5
     );
 
     // The turn before anything has happened

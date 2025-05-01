@@ -82,7 +82,7 @@ function move_skip_inner(
     // B.2.c Promotions
     // Skip: Not common, but if a PORTAL might send a pawn to the final rank. 
     // (Must happen after the portal travel, if a pawn travels to an exit at the final rank)
-    promote_all_pawns_at_final_rank(game_id, board_positions_all, our_team, my_color, end_args);
+    promote_all_pawns_at_final_rank(game_id, minimal_game.game, new_turn, board_positions_all, our_team, my_color, end_args);
 
     // ----------------------------------------------    
     // 3. Check/stale/mate
@@ -95,6 +95,7 @@ function move_skip_inner(
 
     // B.4 Verify if we just won via checkmate?
     val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, null);
+    move_skipped_create(new_turn, is_check);
 
     // ----------------
     // B.4 Is it over?
@@ -113,4 +114,14 @@ function move_skip_inner(
 
     log("game_id: "+game_id+" - /Skip Move End: new turn type: " + new_turn_type + ", is_game_over: " + is_game_over + ", opp in check: " + is_check );
 
+}
+
+// -------------------------------------
+// Create a skipped move
+// -------------------------------------
+function move_skipped_create(new_turn: turn, is_check: boolean) {
+    create skipped_move (
+        .turn = new_turn,
+        .is_check = is_check
+    );
 }

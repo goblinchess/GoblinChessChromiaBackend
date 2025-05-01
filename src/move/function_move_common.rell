@@ -92,11 +92,12 @@ function move_event_creation(
         new_turn: turn,
         piece,
         is_castle: boolean, 
+        is_enchanted_jump: boolean,
         is_check: boolean, 
 ): move
 {
     // Create move entity
-    return create move(
+    val mv = create move(
         turn = new_turn, 
         piece_moved = piece, 
         from_position = m_args.from_position, 
@@ -104,6 +105,12 @@ function move_event_creation(
         is_castle = is_castle,
         is_check = is_check
     );
+
+    if (is_enchanted_jump) {
+        move_event_jump_create(minimal_game.game, new_turn, piece, mv);
+    }
+
+    return mv;
 }
 
 

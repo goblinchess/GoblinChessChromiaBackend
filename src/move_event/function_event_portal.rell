@@ -1,12 +1,23 @@
 
 
 
+// ----------------
+// Inspector
+// ----------------
+
+// Get portal events for the given turn
+function move_event_portal_find_by_turn(t: turn): list<integer> {
+    return (pe: portal_event, e: event, p: portal) @* {
+        e.turn == t,
+        pe.event == e,
+        p == pe.portal
+        } (p.entry_position); // We only care about the entry, the client must figure out where it leads.
+}
+
 
 // ----------------
-// Events
+// Constructor
 // ----------------
-
-
 
 function move_event_portal_create(game, turn, owned_portal, piece): portal_event {
 
@@ -16,3 +27,5 @@ function move_event_portal_create(game, turn, owned_portal, piece): portal_event
     // New portal event
     return create portal_event(new_event, owned_portal.portal, piece);
 }
+
+

@@ -1,5 +1,11 @@
 
 
+struct card_played_data {
+    card_type_str: text;  // Type of card played
+    card_order_number: integer; // The order number when the card was drawn/generated, starting from 0.
+    card_picks: list<integer>; // The squares picked by the player when playing the card.
+}
+
 // Holds info about a reverted enchantment.
 struct card_enchantment_reverted {
     orig_card: card; // The card that caused the enchantment.

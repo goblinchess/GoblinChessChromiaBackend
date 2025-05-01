@@ -73,6 +73,35 @@ function test_random_new_numbers_list() {
 }
 
 // ------------------------------------------
+// Color rotation <-> turn number
+// ------------------------------------------
+function test_color_rotation_find_max_turn_nr() {
+    var max_turn_nr = -1;
+
+    max_turn_nr = color_rotation_find_max_turn_nr(0);
+    assert_equals(max_turn_nr, 3);
+
+    max_turn_nr = color_rotation_find_max_turn_nr(1);
+    assert_equals(max_turn_nr, 3);
+
+    max_turn_nr = color_rotation_find_max_turn_nr(2);
+    assert_equals(max_turn_nr, 3);
+    
+    max_turn_nr = color_rotation_find_max_turn_nr(3);
+    assert_equals(max_turn_nr, 6);
+
+    max_turn_nr = color_rotation_find_max_turn_nr(4);
+    assert_equals(max_turn_nr, 6);
+    
+    max_turn_nr = color_rotation_find_max_turn_nr(5);
+    assert_equals(max_turn_nr, 6);
+    
+    max_turn_nr = color_rotation_find_max_turn_nr(6);
+    assert_equals(max_turn_nr, 9);
+    
+}
+
+// ------------------------------------------
 // This test corresponds to the RandomBoxOnlineTest on the server.
 // You have to manually make sure the number are the same.
 // 
@@ -367,7 +396,9 @@ function test_full_game() {
 
     log(out_str);
 
-    var last_seen_turn = 0;
+    // Before the game begins, we haven't seen any turns, so we say that the [last_seen_turn] is 0.
+    // But, remember that there IS a turn in the database with number 0 (= the FRESH_GAME turn).
+    var last_seen_turn = 0; 
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 1 ++++++++++++++++++++++++++++++++++++++++++++++++++
     // 8= r  kn b  q  k  b  kn r  
@@ -398,16 +429,24 @@ function test_full_game() {
     require (reverted_list.size() == 0, "Shouldn't start with timed out enchantments");
 
     log("Turn 1(1): Card Fail A. No picks for FROG");
-    val card_picks_none: list<integer> = []; // No picks
-    var failed_card = assert_fails(card_play_inner_core(minimal_game, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_none, list<rnd_data>(), reverted_list,
+    var crd_data = card_played_data(
+        card_type_str = "FROG",
+        card_order_number = 1,
+        card_picks = []
+    );
+    var failed_card = assert_fails(card_play_inner_core(minimal_game, the_game.game_rowid, last_seen_turn, crd_data, list<rnd_data>(), reverted_list,
         * // Note, this star is what makes it work.
     ));
     val expected_no_pick_msg: text = "Expected 1 picks for card FROG but got 0";
     assert_true(failed_card.message.starts_with(expected_no_pick_msg));
 
     log("Turn 1(1): Card Fail B. Out of board pick for FROG");
-    val card_picks_out_of_board = [64]; // Out of board
-    failed_card = assert_fails(card_play_inner_core(minimal_game, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_out_of_board, list<rnd_data>(), reverted_list,
+    crd_data = card_played_data(
+        card_type_str = "FROG",
+        card_order_number = 1,
+        card_picks = [64] // Out of board
+    );
+    failed_card = assert_fails(card_play_inner_core(minimal_game, the_game.game_rowid, last_seen_turn, crd_data, list<rnd_data>(), reverted_list,
         * // Note, this star is what makes it work.
     ));
     val expected_out_of_board_pick: text = "Pick at pos 0 is out of board.";
@@ -415,8 +454,13 @@ function test_full_game() {
     assert_true(failed_card.message.starts_with(expected_out_of_board_pick));
 
     log("Turn 1(1)= Card Fail C. Free square pick for FROG");
-    val card_picks_free = [18]; // = c3, free square
-    failed_card = assert_fails(card_play_inner_core(minimal_game, the_game.game_rowid, last_seen_turn, "FROG", 1, card_picks_free, list<rnd_data>(), reverted_list,
+
+    crd_data = card_played_data(
+        card_type_str = "FROG",
+        card_order_number = 1,
+        card_picks = [18] // = c3, free square
+    );
+    failed_card = assert_fails(card_play_inner_core(minimal_game, the_game.game_rowid, last_seen_turn, crd_data, list<rnd_data>(), reverted_list,
         * // Note, this star is what makes it work.
     ));
     val expected_must_be_piece_msg: text = "Expected pick at pos 0 to be type PIECE_NON_KING_SQUARE but found a free square at position 18.";
@@ -428,7 +472,12 @@ function test_full_game() {
 
     log("Turn 1(1): White plays FROG (on black rook at a8)");
     val a8 = 56; // Turns black rook into frog
-    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "FROG", 1, [a8], list<rnd_data>())).sign(white_player).run();
+    crd_data = card_played_data(
+        card_type_str = "FROG",
+        card_order_number = 1,
+        card_picks = [a8] 
+    );
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, crd_data, list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
 
     // --------------------
@@ -602,7 +651,13 @@ function test_full_game() {
 
     log("Turn 2(7): White plays KNIGHTED (on c3 pawn).");
     val card_picks_knighted = [10]; // Turns c3 pawn into knight
-    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "KNIGHTED", 2, card_picks_knighted, list<rnd_data>())).sign(white_player).run();
+    crd_data = card_played_data(
+        card_type_str = "KNIGHTED",
+        card_order_number = 2,
+        card_picks = card_picks_knighted,
+    );
+
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, crd_data, list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
 
     log("Turn 2(8): White makes a valid move Pawn g2 -> g3");
@@ -816,7 +871,12 @@ function test_full_game() {
     );
     var rnds: list<rnd_data> = [portal_rnd_data];
 
-    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "PORTAL", 2, [a2, f6], rnds)).sign(white_player).run();
+    crd_data = card_played_data(
+        card_type_str = "PORTAL",
+        card_order_number = 2,
+        card_picks = [a2, f6],
+    );
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, crd_data, rnds)).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 4(20): White must skip move (due to portal).");
@@ -862,7 +922,12 @@ function test_full_game() {
     }
 
     log("Turn 4(22): Black plays RESURRECT");
-    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "RESURRECT", 5, [], list<rnd_data>())).sign(black_player).run();
+    crd_data = card_played_data(
+        card_type_str = "RESURRECT",
+        card_order_number = 5,
+        card_picks = [],
+    );
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, crd_data, list<rnd_data>())).sign(black_player).run();
     last_seen_turn += 1;
 
     // The A8 rook was turned into a FROG turn 1, but this enchantment should have been removed by now.
@@ -907,7 +972,12 @@ function test_full_game() {
     // --------------------------
 
     log("Turn 5(25): White also plays RESURRECT.");
-    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "RESURRECT", 5, [], list<rnd_data>())).sign(white_player).run();
+    crd_data = card_played_data(
+        card_type_str = "RESURRECT",
+        card_order_number = 5,
+        card_picks = [],
+    );
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, crd_data, list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 5(26): White captuers pawn c2->b3, but no resurrection (Note: pawn is KNIGHTED).");
@@ -1277,7 +1347,13 @@ function test_full_game() {
     minimal_game = minimal_game_data_get(white_player.pub);
     require(minimal_game != null, "Player is not in a game");
     reverted_list = card_enchantment_revert_timed_out(minimal_game.game, minimal_game.player_game);
-    failed_card = assert_fails(card_play_inner_core(minimal_game, the_game.game_rowid, last_seen_turn, "PORTAL", 1, [d2, b6], rnds, reverted_list,
+
+    crd_data = card_played_data(
+        card_type_str = "PORTAL",
+        card_order_number = 1,
+        card_picks = [d2, b6],
+    );
+    failed_card = assert_fails(card_play_inner_core(minimal_game, the_game.game_rowid, last_seen_turn, crd_data, rnds, reverted_list,
         * // Note, this star is what makes it work.
     ));
     //log(failed_card.message);
@@ -1285,7 +1361,13 @@ function test_full_game() {
     assert_true(failed_card.message.starts_with(expected_portal_check_msg));
 
     log("Turn 9(49): White plays JUMP (on Queen on C2).");
-    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, "JUMP", 3, [c2], list<rnd_data>())).sign(white_player).run();
+
+    crd_data = card_played_data(
+        card_type_str = "JUMP",
+        card_order_number = 3,
+        card_picks = [c2],
+    );
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, crd_data, list<rnd_data>())).sign(white_player).run();
     last_seen_turn += 1;
 
     // --------------------

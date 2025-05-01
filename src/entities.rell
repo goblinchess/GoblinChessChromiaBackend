@@ -34,7 +34,7 @@ entity player_game {
     index game: game;
     key player, game;
     is_white: boolean;
-    mutable in_check: boolean; // If currently in check 
+    mutable in_check: boolean;  // Also in [move]  and [skipped_move], but we need it here since card picks it up.
     mutable is_finished: boolean;
     mutable cards_left: integer; // Should never go negative
 }
@@ -43,8 +43,10 @@ entity player_game {
 entity player_game_stats {
     key player_game: player_game;
     index player: player; // Shortcut FK, not strictly necessary
-    player_won: boolean;
-    player_draw: boolean;
+    is_winner: boolean; // This player won
+    is_draw: boolean; // No player won, it's a draw
+    is_timeout: boolean; // Game ended because of a timeout
+    is_error: boolean; // Game ended because of an error (it's always the client that made the error that lost)
     new_elo_rating: integer;
     player_seed: byte_array; // The personal seed of the player. Only known at the end of the game.
 }
@@ -59,15 +61,26 @@ entity lobby {
 
 
 // -------------------------------------
-// Structs
+// A player makes something illegal, and loses this way (hacked the client?).
+// It's pretty difficult END a game this way, since GoblinChess will return and error message 
+// via "require()" and roll back the data, therefore the error won't get saved to the blockchain.
+// In theory giving the player a new chance to make a legal move,
+// but most likely this won't be possible, and the game will time out.
+//
+// However, if the error is in the validation of the random numbers,
+// the game will indeed end with an error.
 // -------------------------------------
-
-// Board position is a square on the board
-/*
-struct board_position {
-    x: integer;
-    y: integer;
+entity game_error {
+    key game; // There is no game left after an error.
+    key player_game; // The player that made the error.
+    error_type;
+    error_message: text;
 }
-*/
 
-
+enum error_type {
+    ILLEGAL_CARD, // Played a card in an illegal way (cannot really happen, since require() will roll back)
+    ILLEGAL_MOVE, // Moved in an illegal way (cannot really happen, since require() will roll back)
+    TURN_SKIPPED, // Skipped a turn, something wrong with the client's turn count? (cannot really happen, since require() will roll back)
+    RND_VALIDATION_CARD_ERROR, // In the end of the game, when random numbers are validated, a number was wrong. In this case the generated card, before the game started, was wrong.
+    RND_VALIDATION_TURN_ERROR // In the end of the game, when random numbers are validated, a number was wrong. In this case a random number provided during a turn was wrong.
+}

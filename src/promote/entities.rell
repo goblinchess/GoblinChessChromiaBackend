@@ -1,0 +1,8 @@
+
+
+
+entity promotion_event {
+    key event: event; // Event is the "base type" for all events
+    piece: piece; // Promoted piece
+    position: integer; // Position of the piece when it was promoted
+}

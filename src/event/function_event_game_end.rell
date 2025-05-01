@@ -1,0 +1,45 @@
+
+
+// ----------------------------------
+// Inspectors
+// ----------------------------------
+
+function event_game_end_get_from_event(e: event): (is_final: boolean, is_checkmate: boolean, is_stalemate: boolean) {
+
+    val x = (gee: game_end_event) @? {gee.event == e} (gee.is_checkmate, gee.is_stalemate);
+
+    if (x == null) {
+        return (
+            is_final = false, 
+            is_checkmate = false, // Doesn't matter
+            is_stalemate = false // Doesn't matter
+            );
+    } else {
+        return (
+            is_final = true,
+            is_checkmate = x.is_checkmate, 
+            is_stalemate = x.is_stalemate
+            );
+    }
+
+}
+
+// ----------------------------------
+// Constructors
+// ----------------------------------
+
+function event_game_end_create(game, turn, is_checkmate: boolean, is_stalemate: boolean) {
+
+    require(is_checkmate or is_stalemate, "Cannot have both or neither");
+
+    // New event
+    val new_event = turn_create_event(game, turn, event_type.GAME_END_EVENT);
+
+    // Get the most recent turn
+    create game_end_event(
+        .event = new_event,
+        .is_checkmate = is_checkmate,
+        .is_stalemate = is_stalemate
+    );
+}
+

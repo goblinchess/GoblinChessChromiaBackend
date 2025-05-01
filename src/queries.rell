@@ -80,6 +80,57 @@ query in_game (caller_pubkey: pubkey) :in_game_result? {
 }
 
 
+// -------------------------------------
+// Get opponent's (recent) actions
+// 
+// This is a heavy query, since we want to fetch everything that has happened 
+// since the last seen turn. This means:
+// 
+// 1. Opponent's played card (if any),
+// 2. Opponent's move,
+// 3. Neutral move (usually "null" but could be double mave).
+// 
+// If the opponent only played a card, this will return a struct with only the card data,
+// and the client has to keep calling this query while waiting for the opponent to make a move.
+// 
+// See documentation for [opponents_actions_result] for more details how to read the data.
+// 
+// Note on performance:
+// To speed things up, we want to return everything the client needs in one single query.
+// This way, the lag between turns can be kept to a minimum.
+// -------------------------------------
+query get_opponents_recent_actions (
+    caller_pubkey: pubkey,  // Needed to know who is "me" and who is "opponent" for this game.
+    game_id: integer,       // What game are we looking at? Cannot assume the game is "unfinished".
+    last_seen_turn: integer // This is mostly a performance thing. We enforce that the client keeps track of what turn-number it has seen/fetched.
+                            // If the client sends the correct [last_seen_turn] and nothing has happened since then, 
+                            // the node should only have to do one single SELECT to the DB, then return "null".
+): color_rotation_actions? {
+
+    // Get the player's current game
+    val minimal_game: minimal_game_result? = minimal_game_data_get_even_if_finished(caller_pubkey, game_id);
+    if (minimal_game == null) {
+        log("game_id " + game_id + ", game not found, or not owned by the caller.");
+        return null; 
+    } 
+    
+    // Find the latest turn where it was the opponent's move
+    // (This is the current turn if it's the opponent's turn, 
+    // or the previous turn if it's the player's turn)
+    val g = minimal_game.game;
+    val curr_turn_nr = minimal_game.curr_turn_nr;
+    if (curr_turn_nr == last_seen_turn) return null; // No new turns, quit.
+
+    // We won't allow the caller to fetch his own moves this way, too expensive and likely a bug.
+    require(curr_turn_nr <= (last_seen_turn + 3), "game_id " + game_id + ". The maximum turns your opponent can make is 3. You provided last_seen_turn: " + 
+        last_seen_turn + " which is too old, since current turn_nr is " + curr_turn_nr + ". Do you have a bug?");
+    
+    // Get everything that happened since last seen turn
+    return color_rotation_get_all_actions(game_id, minimal_game, last_seen_turn);
+ 
+}
+
+
 
 
 

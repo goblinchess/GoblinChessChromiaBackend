@@ -38,8 +38,8 @@ enum card_type {
 // we can be sure the seed doesn't leak to the other player.
 // -------------------------------------
 entity card {
+    key turn: turn; // The turn the card was played (can only play one card per turn, so it's unique)
     index played_by: player_game;
-    turn: turn; // The turn the card was played
     card_type: card_type;
     draw_order_nr: integer; // The order number when the card was drawn.
 }

@@ -32,6 +32,21 @@ function resurrect_find_potential(player_game: player_game, current_turn: intege
     }
 }
 
+// Did anybody resurrect this turn?
+// If so return the resurrected position.
+function resurrect_find_by_turn(t: turn): integer? {
+    val resurrection_result = (re: resurrection_event, e: event) @? {
+        e.turn == t,
+        re.event == e
+        } (new_pos = re.resurrect_pos); 
+    
+    if (resurrection_result == null) {
+        return null;
+    } else {
+        return resurrection_result.new_pos;
+    }
+}
+
 // ---------------------------
 // Creation 
 // ---------------------------

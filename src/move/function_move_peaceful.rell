@@ -5,7 +5,7 @@ function move_peaceful_inner(
     caller_pubkey: pubkey,
     m_args: move_arguments,
 
-    // Treat castle as special case
+    // Treat castle as special case, since only peaceful moves can castle.
     castle_rook_from: integer?, // If this is a castle, the rook's starting position.
     castle_rook_to: integer?, // If this is a castle, the rook's ending position.
 
@@ -191,7 +191,7 @@ function move_peaceful_inner(
 
     // B.4.c Promotions
     // (Must happen after the portal travel, if a pawn travels to an exit at the final rank)
-    promote_all_pawns_at_final_rank(game_id, board_positions_all, our_team, my_color, end_args);
+    promote_all_pawns_at_final_rank(game_id, minimal_game.game, new_turn, board_positions_all, our_team, my_color, end_args);
 
     // ----------------
     // 5. Check/stale/mate
@@ -200,7 +200,7 @@ function move_peaceful_inner(
     val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args);
 
     // B.6 Create move event
-    val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_check); 
+    val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_enchanted_jump, is_check); 
 
     // ----------------
     // B.7 Is it over?

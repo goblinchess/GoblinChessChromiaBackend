@@ -6,7 +6,12 @@
 // -------------------------------------
 
 // -------------------------------------
-// Represents different types of turns in the game
+// Represents different types of "turns" in the game
+// 
+// First some definitions:
+// - A "color rotation" is everything that happens during black's or white's "turn".
+// - A color rotation has 3 "turns", which is the smallest unity of time in the game.
+//   When a player "does something", it will generate a new "turn".
 //
 // What are the SKIPPED turns?
 // The idea here is that we must create a turn EVEN if nothing happens.
@@ -43,7 +48,7 @@ enum turn_type {
 // Represents a single turn in the game
 entity turn {
     index created_by: player_game;
-    index game: game;
+    index game;
     number: integer; // Turn number within the game
     key game, number;
     turn_type: turn_type;
@@ -54,6 +59,9 @@ entity current_turn {
     key game: game;
     mutable current_turn: turn;
 }
+
+
+
 
 
 

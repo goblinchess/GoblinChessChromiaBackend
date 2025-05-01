@@ -1,0 +1,22 @@
+
+
+
+// Fetch everything from the card that was played the given turn and return it.
+function card_played_data_get(turn: turn, turn_type: turn_type, turn_nr: integer, minimal_game: minimal_game_result): card_played_data {
+    
+    // Find the card played during this turn
+    val card_res = (c: card) @ { c.turn == turn } 
+        (c.card_type, c.draw_order_nr, crd = c);
+    
+    // Get all picks for this card, ordered by order_number
+    val picks: list<integer> = (cp: card_pick) @* {
+        cp.card == card_res.crd
+    } (cp.picked_square, @omit @sort cp.order_number); 
+    
+    // Return the complete card played data
+    return card_played_data(
+        card_type_str = card_res.card_type.name,
+        card_order_number = card_res.draw_order_nr,
+        card_picks = picks 
+    );
+}

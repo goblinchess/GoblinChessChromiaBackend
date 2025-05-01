@@ -185,6 +185,8 @@ function piece_get_living_data_from_align(g: game, given_align: alignment) :list
 // ------------------------------------------------------------
 
 // Promote a piece (only pawn for v1.0) to queen.
+// 
+// We don't create the event here, so don't forget to create it!
 function piece_promote(p: piece) {
     p.active_type = piece_type.QUEEN; // GoblinChess only allows promotion to queen. This is 
 }

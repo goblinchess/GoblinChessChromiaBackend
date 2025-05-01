@@ -1,0 +1,286 @@
+
+
+// We played a card this turn, so we must fetch everything and return it.
+// 
+function move_full_data_get(
+    game_id: integer, 
+    is_skipped_move: boolean,
+    t: turn, 
+    turn_type, 
+    turn_nr: integer, 
+    minimal_game: minimal_game_result
+): move_full_data {
+
+
+    // ------------------------------------------------------------------------------
+    // Events.
+    // ------------------------------------------------------------------------------
+    // Here is (almost) everything that happened on this turn,
+    val events: list<event_data> = event_get_from_turn(t);
+
+    var is_death_event = false;
+    var is_enchanted_jumper = false;
+    var is_promotion_event = false;
+    var is_portal_event = false;
+    var is_resurrection_event = false;
+    var curr_game_end_event: event? = null;
+
+
+    // Let's save some DB calls by not trying to fetch things that didn't happen!
+    // Begin with sorting the events in categories.
+    for (event_data in events) {
+        when (event_data.event_type) {
+            event_type.DEATH_EVENT -> {
+                is_death_event = true;
+            }
+            event_type.ENCHANTED_JUMP_MOVE -> {
+                // We could go look in the event table, but that's not really needed
+                is_enchanted_jumper = true;
+            }
+            event_type.PROMOTION_EVENT -> {
+                is_promotion_event = true;
+            }
+            event_type.PORTAL_EVENT -> {
+                is_portal_event = true;
+            }
+            event_type.RESURRECT_TAKES_EFFECT -> {
+                is_resurrection_event = true;
+            }
+            event_type.GAME_END_EVENT -> {
+                curr_game_end_event = event_data.e;
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------------
+    // 1. Basic
+    // Get the basic move data from the move entity
+    // ------------------------------------------------------------------------------
+    // Can be null for skipped moves
+    var is_check = false;
+    var m_data: opponents_move_data? = null;
+    var att_args: move_attack_arguments? = null;
+    var chaos_args: move_chaos_mode_arguments? = null;
+    var ret_args: move_retaliation_arguments? = null;
+
+    if (is_skipped_move) {
+        // ------------------------------------------
+        // 1. a) Skipped move
+        // ------------------------------------------
+        // Only thing we need for skipped moves is the "is_check" status
+        val ms_res = (sm: skipped_move) @ { // <-- Exactly one hit required
+            sm.turn == t
+        } (
+            chk = sm.is_check
+        );
+
+        is_check = ms_res.chk;
+
+    } else {
+        // ------------------------------------------
+        // 1. b) Normal move
+        // ------------------------------------------
+        val m_res = (m: move, p: piece, v: vulnerable) @ { // <-- Exactly one hit required
+            m.turn == t,
+            m.piece_moved == p,
+            p.vulnerable == v} 
+        (
+            from_position = m.from_position, // 0-63
+            to_position = m.to_position, // 0-63
+            is_castle = m.is_castle,
+            is_check = m.is_check,
+            is_knighted = p.is_knighted,
+            mv = m,
+            pc = p,
+            vln = v
+        );
+
+        // Return the move data
+        m_data =  opponents_move_data(
+            from_position = m_res.from_position,
+            to_position = m_res.to_position,
+            is_castle = m_res.is_castle, // We could have solved this via "rook_from" and "rook_to" but we didn't save that in the [move] entity.
+            given_is_knighted = m_res.is_knighted,
+            given_is_enchanted_jumper = is_enchanted_jumper
+        );
+        is_check = m_res.is_check;
+
+        // 2. Get the attack arguments if this was an attack
+        val (att_args_out, am_out) = move_full_data_inner_get_attack_args(t, m_res.mv);
+        var am: attack_move? = am_out;
+        att_args = att_args_out;
+
+        // 3. Get chaos mode arguments
+        if (att_args != null and not game_is_classic(minimal_game.game_type)) {
+            // This is an attack AND CHAOS MODE
+            require(am != null, "If we don't have the attack_move entity we have a bug.");
+            chaos_args = move_full_data_inner_get_chaos_mode_args(game_id, t, m_res.mv, am);
+
+            // 4. Retaliation 
+            if (att_args.attack_result_type_str == "HIT") {
+                // Only case where we have retaliation
+                ret_args = move_full_data_inner_get_retaliation_args(game_id, t, m_res.mv, am);
+            }
+        }
+    }
+    
+    // 5. Get check arguments
+    var check_data = move_full_data_inner_get_check_args(curr_game_end_event, is_check);
+
+    // 6. Get end-events 
+    var end_args: move_end_events_arguments? = null;
+    if (is_promotion_event or is_portal_event or is_resurrection_event) {
+        end_args = move_full_data_inner_get_end_events_args(t, is_promotion_event, is_portal_event, is_resurrection_event);
+    }
+    
+    
+    // Return the complete move_full_data
+    return move_full_data(
+        turn_nr = turn_nr,
+        m_data = m_data,
+        check_data = check_data,
+        att_args = att_args,
+        end_args = end_args,
+        chaos_args = chaos_args,
+        ret_args = ret_args
+    );
+}
+
+
+
+// ------------------------------------------------------------------------------
+// 2. Attack?
+// Get the attack arguments if this was an attack
+// ------------------------------------------------------------------------------
+function move_full_data_inner_get_attack_args(t: turn, m: move): (move_attack_arguments?, attack_move?) {
+    
+    // Check if it's an attack move
+    val res = (am: attack_move) @? {am.move == m} (
+         ap = am.attacked_position, // 0-63 DOESN'T HAVE TO BE THE SAME AS THE "TO_POSITION"
+         rt = am.result_type,
+         df = am.defender_defense_points,
+         dp = am.damage_points,
+         am_entity = am
+    );
+    if (res == null) return (null, null);
+    
+    // Return the attack arguments
+    var maa = move_attack_arguments(
+        attacked_position = res.ap,
+        attack_result_type_str = res.rt.name,
+        defender_defense_points = res.df,
+        damage_points = res.dp
+    );
+    return (maa, res.am_entity);
+}
+
+
+// ------------------------------------------------------------------------------
+// 3. Chaos mode?
+// Get chaos mode arguments
+// ------------------------------------------------------------------------------
+function move_full_data_inner_get_chaos_mode_args(game_id: integer, t: turn, m: move, am: attack_move): move_chaos_mode_arguments? {
+    
+    // Get chaos mode arguments
+    val res = (cma: chaos_mode_args) @? {cma.attack_move == am} (
+        can_retaliate = cma.defender_can_retaliate,
+        flash = cma.is_flash_attack,
+        luck = cma.is_luck
+    );
+    if (res == null) {
+        log("game_id: " + game_id + " ERROR: Didn't we just check for chaos mode? Why no entity?");
+        return null;
+    }
+    
+    return move_chaos_mode_arguments(
+        defender_can_retaliate = res.can_retaliate,
+        is_flash_attack = res.flash,
+        is_luck = res.luck
+    );
+}
+
+// ------------------------------------------------------------------------------
+// 4. Retaliation?
+// Get retaliation arguments
+// ------------------------------------------------------------------------------
+function move_full_data_inner_get_retaliation_args(game_id: integer, t: turn, m: move, am: attack_move): move_retaliation_arguments? {
+    
+    // Get retaliation entity
+    val res = (r: retaliation) @? {r.attack_move == am} (
+        rt = r.result_type,
+        adp = r.attacker_defence_points,
+        dp = r.damage_points
+    );
+
+    if (res == null) return null;  // Ok, not all hits have retaliation
+    
+    return move_retaliation_arguments(
+        retaliation_result_type_str = res.rt.name,
+        attacker_defence_points = res.adp,
+        damage_points = res.dp
+    );
+}
+
+
+// ------------------------------------------------------------------------------
+// 5. Check?
+// Get check arguments
+// ------------------------------------------------------------------------------
+function move_full_data_inner_get_check_args(e: event?, is_move_a_check: boolean): check_data {
+    
+
+    if (e != null) {
+        val (is_final, is_checkmate, is_stalemate) = event_game_end_get_from_event(e);
+
+        // Final move
+        return check_data(
+            is_check = is_move_a_check,
+            is_checkmate = is_checkmate,
+            is_stalemate = is_stalemate,
+        );
+    } else {
+        // Not the final move.
+        return check_data(
+            is_check = is_move_a_check,
+            is_checkmate = false, 
+            is_stalemate = false, 
+        );
+    }
+}
+
+// ------------------------------------------------------------------------------
+// 6. End events?
+// Get end events arguments (portals, resurrections, promotions)
+// ------------------------------------------------------------------------------
+function move_full_data_inner_get_end_events_args(
+    t: turn, 
+    is_promotion_event: boolean, // Must use boolean, since there might be many events.
+    is_portal_event: boolean, // Must use boolean, since there might be many events.
+    is_resurrection_event: boolean 
+): move_end_events_arguments? {
+
+    // 1. Get portal events for this turn
+    var used_portals = list<integer>();
+    if (is_portal_event) {
+        used_portals = move_event_portal_find_by_turn(t);
+    }
+    
+    // 2. Get a resurrection position if there was a resurrection
+    var resurrection_pos: integer? = null;
+    if (is_resurrection_event) {
+        resurrection_pos = resurrect_find_by_turn(t);
+    }
+
+    // 3. Get all promotions that happened this turn
+    var promotions = list<integer>();
+    if (is_promotion_event) {
+        promotions = promote_find_from_turn(t);
+    }
+    
+    return move_end_events_arguments(
+            used_portals = used_portals,
+            resurrection_pos = resurrection_pos,
+            promotions = promotions
+    );
+    
+}

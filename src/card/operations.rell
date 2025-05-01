@@ -24,9 +24,7 @@ operation skip_card(
 operation play_card(
     game_id: integer, 
     last_seen_turn: integer, // What turn the client last saw.
-    card_type_str: text, 
-    card_order_number: integer, // The order number when the card was drawn/generated, starting from 0.
-    card_picks: list<integer>, // The squares picked by the player when playing the card.
+    card_played_data,
     rnd_numbers: list<rnd_data> // If any randomness was used playing this card, the numbers generated goes in here.
 ) {
     val current_signers = op_context.get_signers();
@@ -36,9 +34,7 @@ operation play_card(
         caller_pubkey,
         game_id, 
         last_seen_turn, 
-        card_type_str, 
-        card_order_number, 
-        card_picks,
+        card_played_data,
         rnd_numbers
     );
 }

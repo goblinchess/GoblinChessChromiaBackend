@@ -24,9 +24,8 @@ entity rnd_nr_from_player {
 // We keep track of when this fails.
 // It might not be hacks but bugs.
 entity rnd_validation_err {
-    key player_game; // Unique, there's max one error per player/game. 
-    turn; // We don't reference the [player_rnd_nr] since the error might be caused by a card.
-    error_msg: text; // Used for debugging by dev team.
+    key game_error; // Unique, we stop after the first validation error.
+    key rnd_nr_from_player;
 }
 
 /*

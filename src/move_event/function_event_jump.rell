@@ -1,0 +1,21 @@
+
+// ----------------
+// Inspector
+// ----------------
+
+function move_event_jump_find_by_event(e: event): boolean {
+    val found = jump_event@? {e};
+    return found != null;
+}
+
+// ----------------
+// Constructor
+// ----------------
+
+function move_event_jump_create(game, turn, piece, move): jump_event {
+    // New event
+    val new_event = turn_create_event(game, turn, event_type.ENCHANTED_JUMP_MOVE);
+
+    // New jump event
+    return create jump_event(new_event, piece, move);
+}

@@ -1,0 +1,23 @@
+
+
+
+// Get all events for a given turn
+function event_get_from_turn(t: turn): list<event_data> {
+
+    val res_list = list<event_data>();
+
+    val results =  (e: event) @* { .turn == t } (
+        e_type = e.event_type,
+        evnt = e
+    );
+
+    for (res in results) {
+        val data = event_data(
+            event_type = res.e_type,
+            e = res.evnt
+        );
+        res_list.add(data);
+    }
+
+    return res_list;
+} 

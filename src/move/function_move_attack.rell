@@ -249,7 +249,7 @@ function move_attack_inner(
 
     // B.4.c Promotions
     // (Must happen after the portal travel, if a pawn travels to an exit at the final rank)
-    promote_all_pawns_at_final_rank(game_id, board_positions_all, our_team, my_color, end_args);
+    promote_all_pawns_at_final_rank(game_id, minimal_game.game, new_turn, board_positions_all, our_team, my_color, end_args);
 
     // ----------------
     // 5. Check/stale/mate
@@ -259,7 +259,7 @@ function move_attack_inner(
 
     // B.6 Turn and static move
     val is_castle = false; // Must be false for attacks
-    val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_check); 
+    val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_enchanted_jump, is_check); 
 
     // ----------------
     // B.7. Create events

@@ -24,6 +24,12 @@ entity move {
     is_check: boolean;
 }
 
+// Even a skipped move has a lot of data, portal travels and potential check mate.
+entity skipped_move {
+    index turn: turn; // The turn when this move was skipped
+    is_check: boolean; // Note: even if a switch happens during play card, it's during the skipped move we do the check/stale/mate calculation.
+}
+
 // A move that is an attack (perhaps a capture)
 // In Chaos mode attacks can fail, where the attacker ends up at a new position.
 entity attack_move {

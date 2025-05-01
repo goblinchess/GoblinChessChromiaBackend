@@ -28,6 +28,15 @@ struct move_arguments {
     given_is_enchanted_jumper: boolean; // If the piece is an enchanted jumper (only lasts one move)
 }
 
+// Almost the same as above, but this is a query response.
+struct opponents_move_data {
+    from_position: integer; // Where the piece is currently standing.
+    to_position: integer; // Where the piece will be standing after the move.
+    is_castle: boolean; // If the move is a castling move
+    given_is_knighted: boolean; // If the piece is KNIGHTED (lasts the entire game)
+    given_is_enchanted_jumper: boolean; // If the piece is an enchanted jumper (only lasts one move)
+}
+
 // ------------------------------------------------------------------------------
 // Check and mate etc
 // We don't want to REQUIRE the client to send these, since we want to allow
@@ -86,5 +95,34 @@ struct move_retaliation_arguments {
     damage_points: integer; // How much the retaliation damaged the attacker
 }
 
+// ------------------------------------------------------------------------------
+// Returned when the client asks for the full move data.
+// (We use this struct no matter if attack or just move)
+// ------------------------------------------------------------------------------
+struct move_full_data {
 
+    turn_nr: integer; // What turn this was
+
+    // Only have move data if this isn't a skipped move
+    m_data: opponents_move_data?;
+
+    // If this move caused check/stale/mate/timeout?
+    check_data: check_data;
+
+    // Only if this is an attack
+    att_args: move_attack_arguments? = null;
+
+    // Only if we have events that happened after the move
+    end_args: move_end_events_arguments? = null;
+
+    // ----------------------
+    // Needed for chaos mode
+    // ----------------------
+
+    // Chaos mode arguments
+    chaos_args: move_chaos_mode_arguments? = null;
+
+    // Only used if there is retaliation.
+    ret_args: move_retaliation_arguments? = null;
+}
 

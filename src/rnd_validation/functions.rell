@@ -36,6 +36,7 @@ function rnd_validation_create_player_rnd_nr(
 // ------------------------------------------------------------------
 function rnd_validation_of_player(
     game_id: integer,
+    g: game,
     pg: player_game,
     org_seed: integer // Client's seed, unique for each game/player
 ): text? {
@@ -67,16 +68,17 @@ function rnd_validation_of_player(
         if (calculated_type != card_hist.card_type) {
             val err_msg = "game_id: "+game_id+" - The nr " + card_hist.draw_order_nr + 
                 " drawn should have been a " + calculated_type + " but client played type: " + card_hist.card_type;
+
             log(err_msg);
 
             // Save the error
-            create rnd_validation_err(
-                player_game = pg,
-                turn = card_hist.turn,
-                error_msg = err_msg
-            );
+            val new_error = create game_error (
+                .game =  g, 
+                .player_game = pg, 
+                .error_type = error_type.RND_VALIDATION_CARD_ERROR,  // Unique for this case
+                .error_message = err_msg);
 
-            return err_msg; // No need to go on, one error is enough
+            return err_msg;
         }
     }
 
@@ -107,10 +109,16 @@ function rnd_validation_of_player(
             log(err_msg);
 
             // Save the error
+            val new_error = create game_error (
+                .game =  g, 
+                .player_game = pg, 
+                .error_type = error_type.RND_VALIDATION_TURN_ERROR, // <-- we can connect the rnd_nr to a turn.
+                .error_message = err_msg);
+
+            // Save the connection between the error and the rnd_nr
             create rnd_validation_err(
-                player_game = pg,
-                turn = res.turn,
-                error_msg = err_msg
+                game_error = new_error,
+                rnd_nr_from_player = res.playa_rnd_nr
             );
 
             return err_msg; // No need to go on, one error is enough!

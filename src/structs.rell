@@ -15,20 +15,14 @@ struct in_game_result {
 // Internal use
 // Return mostly a bunch of primary keys     
 struct minimal_game_result {
-    player: player;
-    player_game: player_game;
-    game: game;
-    game_type: game_type;
+    player;
+    player_game;
+    game;
+    game_type;
     curr_turn_nr: integer; // We always check this, so best to store it.
+    in_check: boolean; // Our king is in check.
     is_white: boolean;
-    in_check: boolean; // "true" if currently in check
 }
-
-/*
-struct random_box {
-    base_seed: integer; // The seed we began with (should be same for the entire game)
-    current_seed: integer; // The seed we are currently using
-}*/
 
 // The result of N random numbers with the same max value.
 struct random_results {
@@ -37,3 +31,70 @@ struct random_results {
     new_seed: integer; // Use this to generate more random numbers later
 }
 
+// ------------------------------------------------------------
+// Holds everything that might have happen after the player
+// made their move, which is:
+// 1. The most recent turn number
+// 2. Are we ready to rotate color?
+// 3. The opponent's card played (if any), 
+// 4. The opponent's move.
+// 5. The neutral move (usually null, but for double moves this is important).
+// 
+// NOTE: It's not trivial how to interpret the content of this struct!
+// Why do we have the [rotate_color] flag? It's not strictly needed.
+// (The client could look at the [curr_turn_nr] and calculate the [rotate_color] flag.)
+//
+// Example: If the client recives a struct containing this data: 
+//     a) [card_played_data] is null, 
+//     b) [primary_move] has a value, and 
+//     c) [extra_move] is null.
+// ... it's trivial to figure out that the opponent skipped playing a card but made a move. 
+// But we don't know if the opponent submitted the [extra_move] or not,
+// so we have to look at the [curr_turn_nr] to figure that out.
+// 
+// How do we know the [rotate_color] from this info?
+// Answer: If our last_seen_turn is 3, and the [curr_turn_nr] is 6,
+// we know that the opponent has created 3 turns on the node, 
+// where the [extra_move] was empty (which is the usual case).
+// Using the lingo of this dApp, we have a full "color rotation",
+// which means that the opponent's turn is over, client should urge the player
+// to make a move, start the player's clock etc.
+// ------------------------------------------------------------
+struct color_rotation_actions {
+    // 1. The most recent turn number
+    // The most recent turn number, if this struct is only partly filled with data 
+    // (opponent only played a card), the client must use this when asking for the move.
+    curr_turn_nr: integer; 
+
+    // 2. Rotate color
+    rotate_color: boolean; // True if the current player's turn is over, and the other color should take over.
+
+    // ----------------------
+    // 3. Card data
+    // ----------------------
+    // If the [curr_turn_nr] indicates that opponent has played a card, 
+    // but this is null, then it means that the card was skipped.
+    card_played_data: card_played_data? = null;
+
+    // ----------------------
+    // 4. Move data
+    // ----------------------
+    // If the [curr_turn_nr] indicates that opponent has moved, 
+    // but this is null, then it means that the move was skipped.
+    primary_move: move_full_data? = null;
+
+    // ----------------------
+    // 5. Neutral move
+    // ----------------------
+    // If the [curr_turn_nr] indicates that the neutral move has been completed,
+    // but this is null, then it means that the move was skipped.
+    // Note, for double moves, this will be the second move.
+    extra_move: move_full_data? = null;
+}
+
+
+struct check_data {
+    is_check: boolean; // True if this is a check
+    is_checkmate: boolean; // True if this is a checkmate
+    is_stalemate: boolean; // True if this is a stalemate
+}

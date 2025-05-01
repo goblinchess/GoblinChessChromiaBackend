@@ -1,7 +1,10 @@
 
  TODO Client: 
 -------------
-- Test Portal: open a portal for pawn in front of king, so that portal will put the king in check.
+- Call the "fetch data" method for moves and cards.
+
+- Should we send "is_knighted" and "is_enchanted_jumper" on every call? Is it perhaps too hard to find this info?
+
 - Create a C# Chromia client.
  
 
@@ -10,9 +13,8 @@ Client Done:
 
  TODO Node: 
 -------------
-- Run test on discoverd check via Portal.
-- Add death event.
-
+One the query: add neutal and neutral hijacked.
+ 
  1. Finish the game when mate
     
  4. Use Luck
@@ -20,10 +22,15 @@ Client Done:
  6. Look in [move] entity before allowing castle.
 
 
-DONE:
+Node DONE:
+1) New query that fetches all opponent's actions.
+2) Make sure JUMP_EVENT gets created when we use the magic jump.
 
 
-"Added Resurrect to the test (4: white move ). Verified that we cannot move to put king in check (8: white move)" 
+
+ Videos
+-------------
+ Make an event performance video!
 
 
-
+ConcretePlanningModeOpponentOnline

@@ -25,6 +25,12 @@
 //    the data coming from the node. 
 // ----------------------------------------------------------
 
+
+struct event_data {
+    e: event; // Reference back to the entity
+    event_type;
+}
+
 // This event happens, either:
 // 1. in the beginning of the card turn, OR
 // 2. in the move turn, before we calculate check/stale/mate (only happens for JUMP)

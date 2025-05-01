@@ -1,9 +1,28 @@
 
 
+// ------------------------------------
+// Inspectors
+// ------------------------------------
+
+// Find all promotions that happened a given turn
+function promote_find_from_turn(t: turn): list<integer> {
+    
+    return (pe: promotion_event, e: event) @* {
+        e.turn == t,
+        pe.event == e
+        } (pe.position);
+}
+
+// ------------------------------------
+// Constructors
+// ------------------------------------
+
 // Main function
 // Finds all pawns at the final rank and promotes them to queens.
 function promote_all_pawns_at_final_rank(
     game_id: integer,
+    g: game,
+    t: turn,
     board_all: board_positions_all,
     our_team: character_team,
     align: alignment,
@@ -39,6 +58,8 @@ function promote_all_pawns_at_final_rank(
                 // Promote the pawn
                 promote_pawn_to_queen(
                     game_id,
+                    g,
+                    t,
                     board_all,
                     our_team,
                     pld
@@ -56,10 +77,13 @@ function promote_all_pawns_at_final_rank(
 // Promotes a pawn to a queen, updating the board and team
 // 1. Update the DB is  actually pretty easy since we only have to update the
 // "active_type" of the piece.
-// 2. Update the team means we have to create a new [piece_living_data] struct
+// 2. Create the promotion event
+// 3. Update the team means we have to create a new [piece_living_data] struct
 // -----------------------------------------------------------------------
 function promote_pawn_to_queen(
     game_id: integer,
+    g: game,
+    t: turn,
     board_all: board_positions_all,
     our_team: character_team,
     pawn: piece_living_data
@@ -68,7 +92,17 @@ function promote_pawn_to_queen(
     // 1. Update the piece type to queen in the database
     piece_promote(pawn.p);
 
-    // 2. Update the team means we have to create a new [piece_living_data] struct
+    // New event
+    val new_event = turn_create_event(g, t, event_type.PROMOTION_EVENT);
+
+    // 2. Create the promotion event
+    create promotion_event(
+        .event = new_event,
+        .piece = pawn.p,
+        .position = pawn.vuln.position
+    );
+
+    // 3. Update the team means we have to create a new [piece_living_data] struct
     val updated_pld = piece_living_data(
         vuln = pawn.vuln,
         is_knighted = pawn.is_knighted,
