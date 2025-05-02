@@ -117,5 +117,5 @@ function move_battle_resurrect_of_vulnerable(
     team_character_appears_at(new_team, new_pld!!);
 
     // 4. Event
-    resurrect_create_event(dead_vuln.g, new_turn, old_card, old_pld.p, old_pos, resurrect_pos);
+    life_event_resurrect(dead_vuln.g, new_turn, old_card, old_pld.p, old_pos, resurrect_pos);
 }

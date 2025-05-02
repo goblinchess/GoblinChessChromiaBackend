@@ -1,0 +1,21 @@
+// -------------------------------------
+// Events
+// -------------------------------------
+
+// When an object is removed from the board.
+// Using this entity will help when analyzing old games, 
+// since the attack calculation can be avoided.
+entity death_event {
+    key event;  // Event is the "base type" for all events
+    attack_move; // A vulnerable can (so far v1.0) only die from an attack.
+    vulnerable;
+}
+
+// When the actual resurrection happens
+entity resurrection_event {
+    key event; // Event is the "base type" for all events
+    card;
+    piece; // Piece that was resurrected
+    death_pos: integer; // Where the piece died
+    resurrect_pos: integer; // Where the piece was resurrected
+}

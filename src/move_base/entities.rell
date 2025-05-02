@@ -1,0 +1,48 @@
+// -------------------------------------
+// Moves
+// -------------------------------------
+
+// Describes the move that happened during a turn
+entity move {
+    index turn: turn; // The turn that this move belongs to
+    piece_moved: piece; 
+    from_position: integer; // 0-63
+    to_position: integer; // 0-63
+
+    // Some extra info
+    is_castle: boolean;
+    is_check: boolean;
+}
+
+// Even a skipped move has a lot of data, portal travels and potential check mate.
+entity skipped_move {
+    index turn: turn; // The turn when this move was skipped
+    is_check: boolean; // Note: even if a switch happens during play card, it's during the skipped move we do the check/stale/mate calculation.
+}
+
+// A move that is an attack (perhaps a capture)
+// In Chaos mode attacks can fail, where the attacker ends up at a new position.
+entity attack_move {
+    key move: move;
+    attacked_position: integer; // 0-63 DOESN'T HAVE TO BE THE SAME AS THE "TO_POSITION"
+    result_type: battle_result_type;
+    defender_defense_points: integer; // The opponent's defense power
+    damage_points: integer; // How much we damage the opponent
+}
+
+// In Chaos mode we need extra info about the attack.
+entity chaos_mode_args {
+    key attack_move: attack_move; // Can only happen after an attack move
+    defender_can_retaliate: boolean; // Some objects cannot retaliate (stones, for example)
+    is_flash_attack: boolean; // Jumps for example cannot be retaliated against.
+    is_luck: boolean; // true if attack was lucky and rolled highest score
+}
+
+// In Chaos mode, when an attack doesn't kill the defender, 
+// the defender MIGHT retaliate.
+entity retaliation {
+    key attack_move: attack_move; // Can only happen after an attack move
+    result_type: battle_result_type;
+    attacker_defence_points: integer;  // The attacker's defense power (the attacker is curretly defending himself)
+    damage_points: integer; // How much the retaliation damaged the attacker
+}

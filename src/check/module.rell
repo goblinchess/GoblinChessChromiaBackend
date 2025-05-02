@@ -1,6 +1,7 @@
 import ^.alignment.*;
 import ^.board.*;
+import ^.move_rule.*;
+import ^.portal_simple.*;
+import ^.external_data.*;
 import ^.turn.*;
 import ^.team.*;
-import ^.move_rule.*;
-import ^.portal.*;

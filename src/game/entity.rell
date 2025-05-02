@@ -1,0 +1,77 @@
+// Represents a human player
+entity player {
+    key signer: pubkey; // The public key used to sign transactions. 
+    key name: text; // Player's username
+    mutable games_played: integer;
+    mutable games_won: integer;
+    mutable games_lost: integer;
+    mutable games_drawn: integer;
+    mutable elo_rating: integer;
+}
+
+// Represents game configuration
+enum game_type {
+    SPEED_5_CHAOTIC,
+    SPEED_10_CHAOTIC,
+    SPEED_5_CLASSIC,
+    SPEED_10_CLASSIC
+}
+
+// Represents a game state
+entity game {
+    index white_player: player;
+    index black_player: player;
+    index game_type: game_type;
+    mutable current_turn: integer;  //GAME cannot have a reference to the (current) TURN entity since TURN references GAME, and Rell doesn't allow two-way FKs.
+    mutable is_finished: boolean;
+    mutable is_draw: boolean;
+    created_at: timestamp;
+}
+
+// One for each player in a game 
+entity player_game {
+    index player: player;
+    index game: game;
+    key player, game;
+    is_white: boolean;
+    mutable in_check: boolean;  // Also in [move]  and [skipped_move], but we need it here since card picks it up.
+    mutable is_finished: boolean;
+    mutable cards_left: integer; // Should never go negative
+}
+
+// Will be create after the game is finished
+entity player_game_stats {
+    key player_game: player_game;
+    index player: player; // Shortcut FK, not strictly necessary
+    is_winner: boolean; // This player won
+    is_draw: boolean; // No player won, it's a draw
+    is_timeout: boolean; // Game ended because of a timeout
+    is_error: boolean; // Game ended because of an error (it's always the client that made the error that lost)
+    new_elo_rating: integer;
+    player_seed: byte_array; // The personal seed of the player. Only known at the end of the game.
+}
+
+// -------------------------------------
+// A player makes something illegal, and loses this way (hacked the client?).
+// It's pretty difficult END a game this way, since GoblinChess will return and error message 
+// via "require()" and roll back the data, therefore the error won't get saved to the blockchain.
+// In theory giving the player a new chance to make a legal move,
+// but most likely this won't be possible, and the game will time out.
+//
+// However, if the error is in the validation of the random numbers,
+// the game will indeed end with an error.
+// -------------------------------------
+entity game_error {
+    key game; // There is no game left after an error.
+    key player_game; // The player that made the error.
+    error_type;
+    error_message: text;
+}
+
+enum error_type {
+    ILLEGAL_CARD, // Played a card in an illegal way (cannot really happen, since require() will roll back)
+    ILLEGAL_MOVE, // Moved in an illegal way (cannot really happen, since require() will roll back)
+    TURN_SKIPPED, // Skipped a turn, something wrong with the client's turn count? (cannot really happen, since require() will roll back)
+    RND_VALIDATION_CARD_ERROR, // In the end of the game, when random numbers are validated, a number was wrong. In this case the generated card, before the game started, was wrong.
+    RND_VALIDATION_TURN_ERROR // In the end of the game, when random numbers are validated, a number was wrong. In this case a random number provided during a turn was wrong.
+}

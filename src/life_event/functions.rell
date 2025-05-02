@@ -1,0 +1,62 @@
+
+
+
+// Did anybody resurrect this turn?
+// If so return the resurrected position.
+function life_event_find_resurrect_by_turn(t: turn): integer? {
+    val resurrection_result = (re: resurrection_event, e: event) @? {
+        e.turn == t,
+        re.event == e
+        } (new_pos = re.resurrect_pos); 
+    
+    if (resurrection_result == null) {
+        return null;
+    } else {
+        return resurrection_result.new_pos;
+    }
+}
+
+// ---------------------------
+// Creation 
+// ---------------------------
+
+// Death event
+function life_event_create_death(
+    g: game,
+    t: turn,
+    am: attack_move,
+    v: vulnerable
+) {
+
+    // New event
+    val new_event = turn_create_event(g, t, event_type.DEATH_EVENT);
+
+    create death_event (
+        .event = new_event,
+        .attack_move = am,
+        .vulnerable = v,
+    );
+}
+
+
+
+function life_event_resurrect(
+    g: game,
+    t: turn,
+    card: card,
+    piece: piece,
+    death_pos: integer,
+    resurrect_pos: integer
+) {
+
+    // New event
+    val new_event = turn_create_event(g, t, event_type.RESURRECT_TAKES_EFFECT);
+
+    create resurrection_event (
+        .event = new_event,
+        .card = card,
+        .piece = piece,
+        .death_pos = death_pos,
+        .resurrect_pos = resurrect_pos
+    );
+}

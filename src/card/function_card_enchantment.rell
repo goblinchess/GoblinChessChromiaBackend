@@ -67,7 +67,7 @@ function card_enchantment_create_knighted(game_id: integer, g: game, t: turn, ne
 // This game chose to handle this as if the move turn is enhanced by the JUMP card,
 // meaning we must remeber the played card when it's time to move.
 function card_enchantment_create_jump(game_id: integer, played_by: player_game, new_card: card, picked_piece: piece_living_data) {
-    move_set_jump(played_by, new_card, picked_piece.p);
+    jump_create(played_by, new_card, picked_piece.p);
 }
 
 // ------------------------------------------------------------

@@ -32,49 +32,14 @@ function resurrect_find_potential(player_game: player_game, current_turn: intege
     }
 }
 
-// Did anybody resurrect this turn?
-// If so return the resurrected position.
-function resurrect_find_by_turn(t: turn): integer? {
-    val resurrection_result = (re: resurrection_event, e: event) @? {
-        e.turn == t,
-        re.event == e
-        } (new_pos = re.resurrect_pos); 
-    
-    if (resurrection_result == null) {
-        return null;
-    } else {
-        return resurrection_result.new_pos;
-    }
-}
-
 // ---------------------------
 // Creation 
 // ---------------------------
+
 // Create potential resurrect (Not the actual resurrection, that happens later)
 function resurrect_delayed_create_potential(player_game: player_game, new_card: card) {
     create potential_resurrect (
         .card = new_card, 
         .owned_by = player_game
-    );
-}
-
-function resurrect_create_event(
-    g: game,
-    t: turn,
-    card: card,
-    piece: piece,
-    death_pos: integer,
-    resurrect_pos: integer
-) {
-
-    // New event
-    val new_event = turn_create_event(g, t, event_type.RESURRECT_TAKES_EFFECT);
-
-    create resurrection_event (
-        .event = new_event,
-        .card = card,
-        .piece = piece,
-        .death_pos = death_pos,
-        .resurrect_pos = resurrect_pos
     );
 }

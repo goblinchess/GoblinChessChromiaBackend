@@ -1,0 +1,74 @@
+
+
+// ------------------------------------------------------------------------------
+// Attack?
+// Get the attack arguments if this was an attack
+// ------------------------------------------------------------------------------
+function move_base_get_attack_args(t: turn, m: move): (move_attack_arguments?, attack_move?) {
+    
+    // Check if it's an attack move
+    val res = (am: attack_move) @? {am.move == m} (
+         ap = am.attacked_position, // 0-63 DOESN'T HAVE TO BE THE SAME AS THE "TO_POSITION"
+         rt = am.result_type,
+         df = am.defender_defense_points,
+         dp = am.damage_points,
+         am_entity = am
+    );
+    if (res == null) return (null, null);
+    
+    // Return the attack arguments
+    var maa = move_attack_arguments(
+        attacked_position = res.ap,
+        attack_result_type_str = res.rt.name,
+        defender_defense_points = res.df,
+        damage_points = res.dp
+    );
+    return (maa, res.am_entity);
+}
+
+
+// ------------------------------------------------------------------------------
+// Chaos mode?
+// Get chaos mode arguments
+// ------------------------------------------------------------------------------
+function move_base_get_chaos_mode_args(game_id: integer, t: turn, m: move, am: attack_move): move_chaos_mode_arguments? {
+    
+    // Get chaos mode arguments
+    val res = (cma: chaos_mode_args) @? {cma.attack_move == am} (
+        can_retaliate = cma.defender_can_retaliate,
+        flash = cma.is_flash_attack,
+        luck = cma.is_luck
+    );
+    if (res == null) {
+        log("game_id: " + game_id + " ERROR: Didn't we just check for chaos mode? Why no entity?");
+        return null;
+    }
+    
+    return move_chaos_mode_arguments(
+        defender_can_retaliate = res.can_retaliate,
+        is_flash_attack = res.flash,
+        is_luck = res.luck
+    );
+}
+
+// ------------------------------------------------------------------------------
+// Retaliation?
+// Get retaliation arguments
+// ------------------------------------------------------------------------------
+function move_base_get_retaliation_args(game_id: integer, t: turn, m: move, am: attack_move): move_retaliation_arguments? {
+    
+    // Get retaliation entity
+    val res = (r: retaliation) @? {r.attack_move == am} (
+        rt = r.result_type,
+        adp = r.attacker_defence_points,
+        dp = r.damage_points
+    );
+
+    if (res == null) return null;  // Ok, not all hits have retaliation
+    
+    return move_retaliation_arguments(
+        retaliation_result_type_str = res.rt.name,
+        attacker_defence_points = res.adp,
+        damage_points = res.dp
+    );
+}

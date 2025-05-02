@@ -1,13 +1,19 @@
-import ^.main.*;
-import ^.external_data.*;
-import ^.turn.*;
-import ^.piece.*;
+// Light modules
 import ^.piece_type.*;
-import ^.move_rule.*;
-import ^.move_event.*;
 import ^.move_tree.*;
+import ^.move_rule.*;
 import ^.dice.*;
 import ^.battle.*;
+import ^.external_data.*;
+// Heavy modules
+import ^.move_base.*;
+import ^.game.*;
+import ^.turn.*;
+import ^.jump.*;
+import ^.rnd_validation.*;
+import ^.piece.*;
+import ^.move_event.*;
+import ^.life_event.*;
 import ^.check.*;
 import ^.portal.*;
 import ^.promote.*;

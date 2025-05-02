@@ -106,7 +106,7 @@ function move_full_data_get(
         is_check = m_res.is_check;
 
         // 2. Get the attack arguments if this was an attack
-        val (att_args_out, am_out) = move_full_data_inner_get_attack_args(t, m_res.mv);
+        val (att_args_out, am_out) = move_base_get_attack_args(t, m_res.mv);
         var am: attack_move? = am_out;
         att_args = att_args_out;
 
@@ -114,12 +114,12 @@ function move_full_data_get(
         if (att_args != null and not game_is_classic(minimal_game.game_type)) {
             // This is an attack AND CHAOS MODE
             require(am != null, "If we don't have the attack_move entity we have a bug.");
-            chaos_args = move_full_data_inner_get_chaos_mode_args(game_id, t, m_res.mv, am);
+            chaos_args = move_base_get_chaos_mode_args(game_id, t, m_res.mv, am);
 
             // 4. Retaliation 
             if (att_args.attack_result_type_str == "HIT") {
                 // Only case where we have retaliation
-                ret_args = move_full_data_inner_get_retaliation_args(game_id, t, m_res.mv, am);
+                ret_args = move_base_get_retaliation_args(game_id, t, m_res.mv, am);
             }
         }
     }
@@ -147,79 +147,6 @@ function move_full_data_get(
 }
 
 
-
-// ------------------------------------------------------------------------------
-// 2. Attack?
-// Get the attack arguments if this was an attack
-// ------------------------------------------------------------------------------
-function move_full_data_inner_get_attack_args(t: turn, m: move): (move_attack_arguments?, attack_move?) {
-    
-    // Check if it's an attack move
-    val res = (am: attack_move) @? {am.move == m} (
-         ap = am.attacked_position, // 0-63 DOESN'T HAVE TO BE THE SAME AS THE "TO_POSITION"
-         rt = am.result_type,
-         df = am.defender_defense_points,
-         dp = am.damage_points,
-         am_entity = am
-    );
-    if (res == null) return (null, null);
-    
-    // Return the attack arguments
-    var maa = move_attack_arguments(
-        attacked_position = res.ap,
-        attack_result_type_str = res.rt.name,
-        defender_defense_points = res.df,
-        damage_points = res.dp
-    );
-    return (maa, res.am_entity);
-}
-
-
-// ------------------------------------------------------------------------------
-// 3. Chaos mode?
-// Get chaos mode arguments
-// ------------------------------------------------------------------------------
-function move_full_data_inner_get_chaos_mode_args(game_id: integer, t: turn, m: move, am: attack_move): move_chaos_mode_arguments? {
-    
-    // Get chaos mode arguments
-    val res = (cma: chaos_mode_args) @? {cma.attack_move == am} (
-        can_retaliate = cma.defender_can_retaliate,
-        flash = cma.is_flash_attack,
-        luck = cma.is_luck
-    );
-    if (res == null) {
-        log("game_id: " + game_id + " ERROR: Didn't we just check for chaos mode? Why no entity?");
-        return null;
-    }
-    
-    return move_chaos_mode_arguments(
-        defender_can_retaliate = res.can_retaliate,
-        is_flash_attack = res.flash,
-        is_luck = res.luck
-    );
-}
-
-// ------------------------------------------------------------------------------
-// 4. Retaliation?
-// Get retaliation arguments
-// ------------------------------------------------------------------------------
-function move_full_data_inner_get_retaliation_args(game_id: integer, t: turn, m: move, am: attack_move): move_retaliation_arguments? {
-    
-    // Get retaliation entity
-    val res = (r: retaliation) @? {r.attack_move == am} (
-        rt = r.result_type,
-        adp = r.attacker_defence_points,
-        dp = r.damage_points
-    );
-
-    if (res == null) return null;  // Ok, not all hits have retaliation
-    
-    return move_retaliation_arguments(
-        retaliation_result_type_str = res.rt.name,
-        attacker_defence_points = res.adp,
-        damage_points = res.dp
-    );
-}
 
 
 // ------------------------------------------------------------------------------
@@ -268,7 +195,7 @@ function move_full_data_inner_get_end_events_args(
     // 2. Get a resurrection position if there was a resurrection
     var resurrection_pos: integer? = null;
     if (is_resurrection_event) {
-        resurrection_pos = resurrect_find_by_turn(t);
+        resurrection_pos = life_event_find_resurrect_by_turn(t);
     }
 
     // 3. Get all promotions that happened this turn

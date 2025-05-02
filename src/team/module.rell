@@ -1,6 +1,4 @@
-import ^.main.*;
 import ^.alignment.*;
 import ^.board.*;
+import ^.game.*;
 import ^.piece.*;
-import ^.move.*;
-import ^.move_rule.*;

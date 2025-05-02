@@ -1,8 +1,13 @@
+// Light modules
+import ^.rnd.*;
+import ^.board.*;
+// Heavy modules
+import ^.card_base.*;
 import ^.turn.*;
 import ^.piece.*;
-import ^.move.*;
 import ^.check.*;
 import ^.card_events.*;
 import ^.resurrect.*;
-import ^.rnd.*;
-import ^.board.*;
+import ^.jump.*;
+import ^.portal.*;
+import ^.rnd_validation.*;

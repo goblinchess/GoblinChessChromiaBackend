@@ -1,0 +1,23 @@
+// Sent back to the client
+struct in_game_result {
+    game_rowid: integer;
+    game_type: game_type;
+    is_white: boolean;
+    opponent_pubkey: pubkey;
+    opponent_name: text;
+    opponent_elo: integer;
+    curr_turn_nr: integer; // If the game just started, this will be 0
+    created_at: timestamp; // When the game was created
+}
+
+// Internal use
+// Return mostly a bunch of primary keys     
+struct minimal_game_result {
+    player;
+    player_game;
+    game;
+    game_type;
+    curr_turn_nr: integer; // We always check this, so best to store it.
+    in_check: boolean; // Our king is in check.
+    is_white: boolean;
+}

@@ -1,3 +1,3 @@
 //import ^.card.*;
-import ^.main.*; // All from parent
+import ^.game.*; // All from parent
 import ^.card.*; // Only to get the ActiveDoubleMove 

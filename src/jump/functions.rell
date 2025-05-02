@@ -2,7 +2,7 @@
 // Inspectors
 // ----------------
 
-function move_has_enchanted_jump(pg: player_game, p: piece, given_is_enchanted_jumper: boolean): boolean {
+function jump_has_enchanted(pg: player_game, p: piece, given_is_enchanted_jumper: boolean): boolean {
     val found = active_jump@? { pg, p };
 
     if (found != null) {
@@ -19,7 +19,7 @@ function move_has_enchanted_jump(pg: player_game, p: piece, given_is_enchanted_j
 // ----------------
 
 // When a jump card is played, we need to set up the jump on the board.
-function move_set_jump(owned_by: player_game, card: card, piece: piece) {
+function jump_create(owned_by: player_game, card: card, piece: piece) {
     create active_jump (
         .played_by = owned_by,
         .card = card,
@@ -27,6 +27,6 @@ function move_set_jump(owned_by: player_game, card: card, piece: piece) {
     );
 }
 
-function move_remove_enchanted_jump(owned_by: player_game) {
+function jump_remove_enchanted(owned_by: player_game) {
     delete active_jump@? {.played_by == owned_by};
 }

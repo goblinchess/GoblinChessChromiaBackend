@@ -120,7 +120,7 @@ function move_event_creation(
 function move_cleanup_after_move(is_enchanted_jump: boolean, opp_vuln_ctxt: pre_vuln_context, minimal_game: minimal_game_result, align: alignment) {
     // 1. Enchanted jump (if exists)
     if (is_enchanted_jump) {
-        move_remove_enchanted_jump(minimal_game.player_game);
+        jump_remove_enchanted(minimal_game.player_game);
     }
 
     // 2. Vuln Path (if exists)

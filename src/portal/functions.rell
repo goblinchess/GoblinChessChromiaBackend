@@ -2,9 +2,12 @@
 // Portals
 // ----------------
 
+/*
 function portal_is_owned_by(portal: owned_portal, align: alignment): boolean {
     return portal.owner_alignment == align; // Trivial
+
 }
+*/
 
 
 
@@ -17,6 +20,7 @@ function portal_is_owned_by(portal: owned_portal, align: alignment): boolean {
 // (It's as if the opponent's portals are invisible, 
 // and the movements are inscrutable to the this player)
 // TODO: This might change when we add check/mate calculations.
+/*
 function portal_get_all_by_owner(player_game: player_game, player_align: alignment): list<owned_portal> {
 
     val ps = (p: portal)@* {p.owned_by == player_game} (prtl = p, p.entry_position, p.exit_position);
@@ -31,7 +35,7 @@ function portal_get_all_by_owner(player_game: player_game, player_align: alignme
         res.add(tmp);
     }
     return res;
-}
+}*/
 
 // We put this factory here, since we don't want heavy dependencies in the portal_simple module.
 function portal_simple_get_all_by_owner(player_game: player_game, player_align: alignment): list<portal_simple> {

@@ -1,4 +1,6 @@
-import card.*;
-import turn.*;
-import move.*;
-import rnd_validation.*;
+import ^.game.*;
+import ^.card.*;
+import ^.turn.*;
+import ^.move.*;
+import ^.rnd_validation.*;
+import ^.util.*;

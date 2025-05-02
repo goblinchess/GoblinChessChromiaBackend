@@ -1,0 +1,19 @@
+// -------------------------------------
+// Magic Jump 
+// -------------------------------------
+
+// A JUMP card has been played this turn.
+//
+// Discussion:
+// The reason we don't put this as a field directly on the piece is that
+// it's pretty hard find the enchanted piece and set the field back to false.
+// This is partly due to the fact that the player DOESN'T have to 
+// to move the jumping piece, can pick another piece to move.
+// Also:
+// If the player do indeed pick the jumping piece, 
+// then we'll create a jump_event to signal that normal rules won't apply.
+entity active_jump {
+    key played_by: player_game; // Only one at a time
+    card: card; // The jump card 
+    piece: piece; // The piece that jumps
+}

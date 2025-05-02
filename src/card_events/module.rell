@@ -1,5 +1,5 @@
-import ^.main.*;
+import ^.turn.*; 
+import ^.game.*; 
 import ^.event.*;
-import ^.card.*;
-import ^.turn.*; // Align
+import ^.card_base.*;
 import ^.piece.*;

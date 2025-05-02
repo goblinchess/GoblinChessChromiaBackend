@@ -7,11 +7,4 @@ entity potential_resurrect {
     index owned_by: player_game; // <- The way to find this entity
 }
 
-// When the actual resurrection happens
-entity resurrection_event {
-    key event; // Event is the "base type" for all events
-    card;
-    piece; // Piece that was resurrected
-    death_pos: integer; // Where the piece died
-    resurrect_pos: integer; // Where the piece was resurrected
-}
+

@@ -1,0 +1,79 @@
+// ------------------------------------------------------------
+// Card Inspectors
+// ------------------------------------------------------------
+
+// ------------------------------------------------------------
+// Returns "true" if this card will cause the player to skip their move
+//
+// Explanation:
+// There are 3 spells that will consume the "move" turn of the player
+// who cast the spell: Double Move, Portal, Switch Place.
+// 
+// The motivation for Portal and Switch Place is that these 
+// spells replaces the normal move, so allowing a regular move
+// after playing these cards would effectivly give the player 
+// two moves in a row. 
+//
+// The motivation for Double Move is that it is a "move consuming"
+// card, but it is not a spell, so it should not consume the move
+// turn of the player who cast the spell.
+// ------------------------------------------------------------
+function card_should_skip_move(c_type: card_type): boolean {
+    when (c_type) {
+        PORTAL -> return true; // The portal move replaces the regular move
+        DOUBLE_MOVE -> return true; // Have to skip move before double move
+        SWITCH_PLACE -> return true; // The switch replaces the regular move
+        else -> return false;
+    }
+}
+
+// Given a turn number, return the card type that was played on that turn
+function card_get_type_for_turn_number(t_number: integer): card_type? {
+    return (t: turn, c: card) @? {
+        t.number == t_number,
+        c.turn == t
+    } (c.card_type);
+}
+
+// Takes an index (0-9) and returns the corresponding card_type
+function card_get_type_from_index(idx: integer): card_type {
+    when (idx) {
+        0 -> return card_type.FROG;
+        1 -> return card_type.TURN_TO_STONE;
+        
+        // Enchant change
+        2 -> return card_type.POTION;
+        3 -> return card_type.KNIGHTED;
+        
+        // This-turn-only change
+        4 -> return card_type.JUMP;
+        5 -> return card_type.SWITCH_PLACE;
+        
+        // Immediate Spell affecting the entire board
+        6 -> return card_type.WALL;
+        7 -> return card_type.PORTAL;
+        
+        // Delayed Spell
+        8 -> return card_type.RESURRECT; // Resurrect next killed Enemy
+        9 -> return card_type.DOUBLE_MOVE;
+        else -> {
+            require(false, "V1.0 only has 10 cards: " + idx);
+            return card_type.FROG; // This will never execute due to the require, but needed for return type
+        }
+    }
+}
+
+// Returns all cards played by the given player.
+function card_get_all_played(pg: player_game): list<card_history> {
+    val results = (c: card)@* {
+        c.played_by == pg
+    } (c.card_type, c.draw_order_nr, turn_nr =c.turn.number, c.turn);
+
+    val ret_list = list<card_history>();
+    for(res in results) {
+        val ch = card_history(res.card_type, draw_order_nr = res.draw_order_nr, turn_nr = res.turn_nr, turn = res.turn);
+        ret_list.add(ch);
+    }
+
+    return ret_list;
+}

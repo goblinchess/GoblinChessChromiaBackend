@@ -1,0 +1,123 @@
+// ----------
+// Inspectors
+// ----------
+
+
+function game_is_classic(gt: game_type) :boolean {
+    when (gt) {
+        game_type.SPEED_5_CLASSIC -> return true;
+        game_type.SPEED_10_CLASSIC -> return true;
+        else -> return false;
+    }
+}
+
+
+// Will find the player, the game and the color  from the player's pubkey
+// This works since a player can only have one unfinished game at a time.
+function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
+    // Return data
+    val res = (p: player, pg: player_game, g: game)@?  {
+        p.signer == player_pubkey, 
+        pg.player == p, 
+        g == pg.game,
+        pg.is_finished == false }
+        (player = pg.player, player_game = pg, gme = g, game_type = g.game_type, curr_turn_nr = g.current_turn, is_white = pg.is_white, in_check = pg.in_check);
+
+    if (res != null) {
+        return minimal_game_result(
+            player = res.player,
+            player_game = res.player_game,
+            game = res.gme,
+            game_type = res.game_type,
+            curr_turn_nr = res.curr_turn_nr,
+            in_check = res.in_check,
+            is_white =res.is_white
+        );
+    } else {
+        return null;
+    }
+}
+
+// -------------------------------------
+// Will find the player, the game and the color 
+// from the player's pubkey, even if the game is finished
+//
+// Note:
+// We cannot use the function above, since when fetching the opponent's turn data, 
+// we need to to see finished games since we MUST see the winning move, 
+// event if the opponent just won the game and turned it into "finished".
+// -------------------------------------
+function minimal_game_data_get_even_if_finished(
+    player_pubkey: pubkey, 
+    game_id: integer // We need this, since the player usually has multiple finished games.
+) :minimal_game_result? {
+    // Return data
+
+    val game_rowid = rowid(game_id);
+    val res = (p: player, pg: player_game, g: game)@?  {
+        p.signer == player_pubkey, 
+        pg.player == p, // Not stricly needed, but I want to make sure some guy doesn't just ask for a random game.
+        g == pg.game,
+        g.rowid == game_rowid }
+        (player = pg.player, player_game = pg, gme= g, game_type = g.game_type, curr_turn_nr = g.current_turn, is_white = pg.is_white, in_check = pg.in_check);
+
+    if (res != null) {
+        return minimal_game_result(
+            player = res.player,
+            player_game = res.player_game,
+            game = res.gme,
+            game_type = res.game_type,
+            curr_turn_nr = res.curr_turn_nr,
+            in_check = res.in_check,
+            is_white =res.is_white
+        );
+    } else {
+        return null;
+    }
+}
+
+
+// ----------
+// Updates
+// ----------
+
+// Will update the gome with:
+// a. New turn number, (actually redundant, since the [turn] entity has been created)
+// b. is_check = meaning we put the opponent in check.
+// 
+// Note: If we were in check in the beginning of this turn, 
+// we don't bother to remove it, since the opponent will 
+// update our is_check status in the end of their move.
+function game_update_turn_and_check_status(minimal_game: minimal_game_result, new_turn: turn, is_check: boolean) {
+    // 1. Update game with new turn number
+    update minimal_game.game (.current_turn = new_turn.number);
+
+    // 2. Find opponent [player_game]
+    val opponent_player_game = player_game@ {
+        .game == minimal_game.game,
+        .is_white != minimal_game.is_white 
+    };
+
+    // 3. Update opponent [player_game] with new is_check status
+    update opponent_player_game (.in_check = is_check);
+}
+
+function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkmate: boolean, is_stalemate: boolean) :boolean {
+    if (is_checkmate or is_stalemate) {
+        log("Game Over");
+        if (is_checkmate) {
+            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = false);
+
+            // TODO
+        } else {
+            // Stalemate
+            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = true);
+
+            // TODO
+        }
+
+        return true;
+    } else {
+        return false;
+    }
+}

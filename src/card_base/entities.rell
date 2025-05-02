@@ -1,0 +1,44 @@
+// -------------------------------------
+// Cards
+// -------------------------------------
+// Represents a card type
+enum card_type {
+    // ----------------
+    // a) Enchantments 
+    // ----------------
+    FROG,
+    TURN_TO_STONE,
+    POTION,
+    KNIGHTED,
+    JUMP,
+    // ----------------
+    // b) Something happens on the Board 
+    // ----------------
+    SWITCH_PLACE,
+    WALL,
+    PORTAL,
+    // ----------------
+    // c) Delayed effects
+    // ----------------
+    RESURRECT,
+    DOUBLE_MOVE
+}
+
+// -------------------------------------
+// When a user plays a card, this entity is created.
+// Meaning BEFORE the cards are played the node doesn't know cards the player has.
+//
+// In the end of the game player will reveal his seed, and the node will verify
+// that the cards are indeed the one that should have been randomly generated.
+// The seed used by the client to randomly draw cards is:
+// "seed = player_signature(game timestamp)"
+//
+// Since only the player can sign things using his private key, 
+// we can be sure the seed doesn't leak to the other player.
+// -------------------------------------
+entity card {
+    key turn: turn; // The turn the card was played (can only play one card per turn, so it's unique)
+    index played_by: player_game;
+    card_type: card_type;
+    draw_order_nr: integer; // The order number when the card was drawn.
+}
