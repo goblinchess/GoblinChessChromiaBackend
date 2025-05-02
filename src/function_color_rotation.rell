@@ -103,7 +103,7 @@ function color_rotation_get_all_actions(game_id: integer, minimal_game: minimal_
                 // A move was played, we must gather info
                 primary_move = move_full_data_get(
                     game_id = game_id,  
-                    is_skipped_move = true, 
+                    is_skipped_move = false, 
                     t = recent_turn.trn, 
                     turn_type = recent_turn.turn_type, 
                     turn_nr = recent_turn.nr, 

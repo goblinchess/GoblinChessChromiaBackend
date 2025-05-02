@@ -478,6 +478,17 @@ function test_full_game() {
         card_picks = [a8] 
     );
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, crd_data, list<rnd_data>())).sign(white_player).run();
+
+    // Try to fetch the card.
+    var recent_actions: color_rotation_actions? = get_opponents_recent_actions(white_player.pub, the_game.game_rowid, last_seen_turn);
+    assert_not_null(recent_actions);
+    assert_equals(recent_actions.curr_turn_nr, 1);
+    assert_false(recent_actions.rotate_color);
+    assert_not_null(recent_actions.card_played_data);
+    assert_equals(recent_actions.card_played_data.card_type_str, "FROG");
+    assert_equals(recent_actions.card_played_data.card_order_number, 1);
+    assert_equals(recent_actions.card_played_data.card_picks[0], a8);
+
     last_seen_turn += 1;
 
     // --------------------
@@ -594,10 +605,35 @@ function test_full_game() {
         given_is_enchanted_jumper = false);
 
     rell.test.tx(move_peaceful(m_args, null, null, check_args)).sign(white_player).run();
-    last_seen_turn += 1;
 
     log ("Turn 1(3): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    val temp_last_seen_turn = last_seen_turn + 1; // Don't want to update the real one, since we should fetch two moves soon.
+    rell.test.tx(skip_neutral(the_game.game_rowid, temp_last_seen_turn)).sign(white_player).run();
+
+    // --------------------
+    // Try to fetch the two moves.
+    // --------------------
+    recent_actions = get_opponents_recent_actions(white_player.pub, the_game.game_rowid, last_seen_turn);
+    assert_not_null(recent_actions);
+    assert_equals(recent_actions.curr_turn_nr, 3);
+    assert_true(recent_actions.rotate_color);
+
+    // Primary move
+    assert_not_null(recent_actions);
+    var primary_move: move_full_data? = recent_actions.primary_move;
+    assert_not_null(primary_move);
+    var m_data: opponents_move_data? = primary_move.m_data;
+    assert_not_null(m_data);
+    assert_equals(m_data.from_position, knight_orig_pos);
+    assert_equals(m_data.to_position, knight_to_pos);
+    assert_false(m_data.is_castle);
+    assert_false(m_data.given_is_knighted);
+    assert_false(m_data.given_is_enchanted_jumper);
+
+    // Extra move
+    assert_null(recent_actions.extra_move);
+
+    last_seen_turn += 1;
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ BLack Move 1 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -836,10 +872,41 @@ function test_full_game() {
     );
 
     rell.test.tx(move_attack(m_args, att_args, list<rnd_data>(), check_args)).sign(black_player).run();
-    last_seen_turn += 1;
     
     log ("Turn 3(18): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    val temp_last_seen_turn2 = last_seen_turn + 1; // Don't want to update the real one, since we should fetch two moves soon.
+    rell.test.tx(skip_neutral(the_game.game_rowid, temp_last_seen_turn2)).sign(black_player).run();
+
+    // --------------------
+    // Try to fetch the two moves.
+    // --------------------
+    recent_actions = get_opponents_recent_actions(black_player.pub, the_game.game_rowid, last_seen_turn);
+    assert_not_null(recent_actions);
+    assert_equals(recent_actions.curr_turn_nr, temp_last_seen_turn2 + 1);
+    assert_true(recent_actions.rotate_color);
+
+    // Primary move
+    assert_not_null(recent_actions);
+    primary_move = recent_actions.primary_move;
+    assert_not_null(primary_move);
+    m_data = primary_move.m_data;
+    assert_not_null(m_data);
+    assert_equals(m_data.from_position, a4);
+    assert_equals(m_data.to_position, b3);
+    assert_false(m_data.is_castle);
+    assert_false(m_data.given_is_knighted);
+    assert_false(m_data.given_is_enchanted_jumper);
+    var fetched_att_args: move_attack_arguments? = primary_move.att_args;
+    assert_not_null(fetched_att_args);
+    assert_equals(fetched_att_args.attacked_position, b3); // <-- Not the same as to_position!
+    assert_equals(fetched_att_args.attack_result_type_str, "KILL");
+    assert_equals(fetched_att_args.defender_defense_points, 3);
+    assert_equals(fetched_att_args.damage_points, 7); 
+
+    // Extra move
+    assert_null(recent_actions.extra_move);
+
+    last_seen_turn += 1;
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 4 ++++++++++++++++++++++++++++++++++++++++++++++++++
