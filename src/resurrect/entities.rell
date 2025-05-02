@@ -3,7 +3,7 @@
 // We are now waiting for the player to kill an opponent piece,
 // so that the opponent can be resurrected.
 entity potential_resurrect {
-    key card: card; // The card that generated this (potential) resurrect
+    key card; // The card that generated this (potential) resurrect
     index owned_by: player_game; // <- The way to find this entity
 }
 

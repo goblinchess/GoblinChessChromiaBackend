@@ -1,6 +1,6 @@
 @test module;
 
-import ^^.*; // Import all the things from parent folder 
+import ^^.main.*; // Import all the things from parent folder 
 import ^^.card.*;
 import ^^.piece.*;
 import ^^.move.*;
@@ -67,7 +67,7 @@ function test_random_new_numbers_list() {
         rnd_result(result = 3, type = rnd_nr_type.DICE_ROLL, min = 1, max = 6)
     ];
     val rnd_numbers: list<rnd_data> = build_d6_rnd_data([1, 2, 3, 4, 5, 6]);
-    val new_rnd_numbers = rnd_validation_new_rnd_data_list(rnd_results, rnd_numbers);
+    val new_rnd_numbers = rnd_new_rnd_data_list(rnd_results, rnd_numbers);
     val expected_new_rnd_numbers = build_d6_rnd_data([4, 5, 6]);
     assert_equals(new_rnd_numbers, expected_new_rnd_numbers);
 }
@@ -619,7 +619,6 @@ function test_full_game() {
     assert_true(recent_actions.rotate_color);
 
     // Primary move
-    assert_not_null(recent_actions);
     var primary_move: move_full_data? = recent_actions.primary_move;
     assert_not_null(primary_move);
     var m_data: opponents_move_data? = primary_move.m_data;
@@ -886,7 +885,6 @@ function test_full_game() {
     assert_true(recent_actions.rotate_color);
 
     // Primary move
-    assert_not_null(recent_actions);
     primary_move = recent_actions.primary_move;
     assert_not_null(primary_move);
     m_data = primary_move.m_data;

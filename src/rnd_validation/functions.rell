@@ -131,17 +131,7 @@ function rnd_validation_of_player(
     return null; // No errors
 }
 
-// ----------------------------------
-// If we already have some rnd results, 
-// we want to remove these numbers from the original rnd_numbers list
-// ----------------------------------
-function rnd_validation_new_rnd_data_list(
-    rnd_results: list<rnd_result>, 
-    org_rnd_numbers: list<rnd_data>
-): list<rnd_data> {
-    var o = rnd_results.size();
-    return org_rnd_numbers.sub(o); // Remove the "o" first posts
-}
+
 
 // --------------------------------------------------------------
 // Returns a random position in the given list holding positions.

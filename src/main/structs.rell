@@ -24,12 +24,7 @@ struct minimal_game_result {
     is_white: boolean;
 }
 
-// The result of N random numbers with the same max value.
-struct random_results {
-    results: list<integer>;
-    base_seed: integer; // The seed used to generate the results
-    new_seed: integer; // Use this to generate more random numbers later
-}
+
 
 // ------------------------------------------------------------
 // Holds everything that might have happen after the player

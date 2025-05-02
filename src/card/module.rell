@@ -4,5 +4,5 @@ import ^.move.*;
 import ^.check.*;
 import ^.card_events.*;
 import ^.resurrect.*;
-import ^.rnd_validation.*;
+import ^.rnd.*;
 import ^.board.*;

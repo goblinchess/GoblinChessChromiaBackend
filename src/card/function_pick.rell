@@ -50,7 +50,7 @@ function card_pick_are_valid(
         val expected_p_type: card_pick_type = expected_pick_types[pick_index];
         val given_pos: integer = card_picks[pick_index];
         // Out of board is never allowed
-        require(piece_is_pos_on_board(given_pos), "Pick at pos " + pick_index + " is out of board.");
+        require(pos_is_on_board_int(given_pos), "Pick at pos " + pick_index + " is out of board.");
 
         // Now, check card specific rules
         // Let's see if there is/isn't a piece where we expect one.

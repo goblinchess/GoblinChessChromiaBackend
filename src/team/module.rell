@@ -1,5 +1,6 @@
+import ^.main.*;
+import ^.alignment.*;
+import ^.board.*;
 import ^.piece.*;
 import ^.move.*;
 import ^.move_rule.*;
-import ^.board.*;
-import ^.*;

@@ -20,10 +20,10 @@ function game_is_classic(gt: game_type) :boolean {
 
 // Will find the player, the game and the color  from the player's pubkey
 // This works since a player can only have one unfinished game at a time.
-function minimal_game_data_get(caller_pubkey: pubkey) :minimal_game_result? {
+function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
     // Return data
     val res = (p: player, pg: player_game, g: game)@?  {
-        p.signer == caller_pubkey, 
+        p.signer == player_pubkey, 
         pg.player == p, 
         g == pg.game,
         pg.is_finished == false }
@@ -54,14 +54,14 @@ function minimal_game_data_get(caller_pubkey: pubkey) :minimal_game_result? {
 // event if the opponent just won the game and turned it into "finished".
 // -------------------------------------
 function minimal_game_data_get_even_if_finished(
-    caller_pubkey: pubkey, 
+    player_pubkey: pubkey, 
     game_id: integer // We need this, since the player usually has multiple finished games.
 ) :minimal_game_result? {
     // Return data
 
     val game_rowid = rowid(game_id);
     val res = (p: player, pg: player_game, g: game)@?  {
-        p.signer == caller_pubkey, 
+        p.signer == player_pubkey, 
         pg.player == p, // Not stricly needed, but I want to make sure some guy doesn't just ask for a random game.
         g == pg.game,
         g.rowid == game_rowid }

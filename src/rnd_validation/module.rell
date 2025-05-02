@@ -1,3 +1,4 @@
+import ^.main.*;
+import ^.rnd.*;
 import ^.turn.*;
 import ^.card.*;
-import ^.*;

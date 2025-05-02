@@ -74,7 +74,7 @@ function calculate_chaos_attack_result(
         if (can_retaliate and not flash_attack) {
             // Retaliation 
 
-            val new_rnd_numbers = rnd_validation_new_rnd_data_list(rnd_results, rnd_numbers);
+            val new_rnd_numbers = rnd_new_rnd_data_list(rnd_results, rnd_numbers);
             val retaliation_res = die_set_roll(def_strength, new_rnd_numbers);
             retaliation_die_res_set = retaliation_res[0];
             rnd_results.add_all(retaliation_res[1]); // Don't forget to save the rnds

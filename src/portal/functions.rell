@@ -7,15 +7,7 @@ function portal_is_owned_by(portal: owned_portal, align: alignment): boolean {
 }
 
 
-// Returns "true" if the found portal is in the given list of portals.
-function portal_does_found_match_given(given_portals: list<integer>, found_portal: owned_portal): boolean {
-    for (given_portal in given_portals) {
-        if (given_portal == found_portal.entry_pos) {  // The given portal pos is entry pos.
-            return true;
-        }
-    }
-    return false;
-}
+
 
 // Return a list of all portals owned by the player.
 //
@@ -33,6 +25,23 @@ function portal_get_all_by_owner(player_game: player_game, player_align: alignme
     for (p in ps) {
         val tmp = owned_portal(
             portal = p.prtl,
+            entry_pos = p.entry_position,
+            exit_pos = p.exit_position, 
+            owner_alignment = player_align);
+        res.add(tmp);
+    }
+    return res;
+}
+
+// We put this factory here, since we don't want heavy dependencies in the portal_simple module.
+function portal_simple_get_all_by_owner(player_game: player_game, player_align: alignment): list<portal_simple> {
+
+    val ps = (p: portal)@* {p.owned_by == player_game} (prtl = p.rowid, p.entry_position, p.exit_position);
+
+    val res = list<portal_simple>();
+    for (p in ps) {
+        val tmp = portal_simple(
+            rowid = p.prtl,
             entry_pos = p.entry_position,
             exit_pos = p.exit_position, 
             owner_alignment = player_align);

@@ -1,0 +1,8 @@
+// We need to know the owner of the portal.
+// (Here we don't keep the link to the real entity)
+struct portal_simple {
+    rowid: rowid;
+    entry_pos: integer;
+    exit_pos: integer;
+    owner_alignment: alignment;
+}

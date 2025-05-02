@@ -1,4 +1,4 @@
-import ^.piece.*;
-import ^.move_rule.*;
-import ^.portal.*;
-import ^.*;
+import ^.alignment.*;
+import ^.pre_vuln_context.*;
+import ^.path.*;
+import ^.pos.*;

@@ -1,5 +1,8 @@
+import ^.main.*;
+import ^.external_data.*;
 import ^.turn.*;
 import ^.piece.*;
+import ^.piece_type.*;
 import ^.move_rule.*;
 import ^.move_event.*;
 import ^.move_tree.*;
@@ -10,4 +13,3 @@ import ^.portal.*;
 import ^.promote.*;
 import ^.resurrect.*;
 import ^.team.*;
-import ^.*;

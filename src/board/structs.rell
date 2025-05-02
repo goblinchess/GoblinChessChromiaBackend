@@ -11,5 +11,6 @@ struct board_positions_all {
 
     // List of all portals on the board owned by the current player.
     // TODO: use all portals if we implement check/mate calculations.
-    portals: list<owned_portal> = []; // Keeps track of portals. Portals never go away.
+    portals: list<portal_simple> = []; // Keeps track of portals. Portals never go away.
 }
+

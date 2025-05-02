@@ -1,3 +1,4 @@
-import ^.piece.*; // Align
+import ^.main.*;
+import ^.portal_simple.*;
+import ^.piece.*;
 import ^.card.*;
-import ^.*;

@@ -61,16 +61,6 @@ entity dead {
 // Pieces
 // -------------------------------------
 
-enum piece_type {
-    PAWN,
-    KNIGHT,
-    BISHOP,
-    ROOK,
-    QUEEN,
-    KING,
-    FROG, // Only when enchanted
-    IMMOBILE // Only when enchanted
-}
 
 // A piece is a vulnerable object that "lives" and can move around and (usually) attack.
 // 

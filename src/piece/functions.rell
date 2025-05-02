@@ -4,18 +4,6 @@
 // ------------------------------------------------------------
 // Call this when you want to do something with a piece.
 
-// ------------------------------------------------------------
-// Inspectors
-// ------------------------------------------------------------
-
-function piece_is_pos_out_of_board(pos: integer): boolean {
-    return not piece_is_pos_on_board(pos);
-}
-
-function piece_is_pos_on_board(pos: integer): boolean {
-    return pos > -1 and pos < 64;
-}
-
 
 
 // ------------------------------------------------------------

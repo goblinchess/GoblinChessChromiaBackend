@@ -1,0 +1,11 @@
+
+enum piece_type {
+    PAWN,
+    KNIGHT,
+    BISHOP,
+    ROOK,
+    QUEEN,
+    KING,
+    FROG, // Only when enchanted
+    IMMOBILE // Only when enchanted
+}

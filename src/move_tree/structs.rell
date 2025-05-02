@@ -52,3 +52,14 @@ struct move_tree {
 
 
 }
+
+
+// Before we can build the real MOVE_TREE we need a temporary structure 
+// to collect the moves.
+struct pre_tree {
+    movable_sqs: set<integer> = set<integer>();
+    moves_harmless: set<integer> = set<integer>();
+    attackable_sqs: set<integer> = set<integer>();
+    protected_sqs: set<integer> = set<integer>();
+    paths: list<path_base> = [];
+}

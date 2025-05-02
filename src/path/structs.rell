@@ -1,0 +1,14 @@
+
+enum path_type {
+    GROUND_MOVE,
+    GROUND_ATTACK,
+    GROUND_CASTLE_MOVE,
+    JUMP_MOVE,
+    JUMP_ATTACK
+}
+
+struct path_base {
+    path: list<integer> = [];
+    path_type: path_type;
+}
+

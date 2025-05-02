@@ -1,4 +1,8 @@
+import ^.main.*;
+import ^.external_data.*;
+import ^.event.*; 
 import ^.piece.*; 
+import ^.piece_type.*; 
+import ^.turn.*; 
 import ^.pos.*; 
 import ^.team.*; 
-import ^.*;

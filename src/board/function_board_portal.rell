@@ -10,7 +10,7 @@ function board_portal_is_unblocked_at(
     board_positions_all, 
     pos: integer, 
     align: alignment
-): owned_portal? {
+): portal_simple? {
     val portal = board_portal_find_my_from_entry(board_positions_all, pos, align);
     if (portal != null) {
         // NOT SO FAST. We can only use it if the exit is empty.
@@ -30,9 +30,9 @@ function board_portal_find_my_from_entry(
     board_positions_all, 
     pos: integer, 
     align: alignment
-) {
-    for (portal: owned_portal in board_positions_all.portals) {
-        if (portal_is_owned_by(portal, align)) {
+): portal_simple? {
+    for (portal: portal_simple in board_positions_all.portals) {
+        if (board_portal_is_owned_by(portal, align)) {
             if (portal.entry_pos == pos) {
                 return portal;
             }
@@ -49,11 +49,11 @@ function board_portal_find_my_from_entry(
 function board_portal_find_unblocked_owned_by(
     board_positions_all, 
     my_align: alignment
-): list<owned_portal> {
-    val result = list<owned_portal>();
+): list<portal_simple> {
+    val result = list<portal_simple>();
     
     for (portal in board_positions_all.portals) {
-        if (portal_is_owned_by(portal, my_align)) {
+        if (board_portal_is_owned_by(portal, my_align)) {
             // It's ours
             if(board_is_empty(board_positions_all, portal.exit_pos)) {
                 // Exit is unblocked
@@ -63,4 +63,12 @@ function board_portal_find_unblocked_owned_by(
     }
     
     return result;
+}
+
+
+// --------------------------------------
+// Helper
+// --------------------------------------
+function board_portal_is_owned_by(portal: portal_simple, align: alignment): boolean {
+    return portal.owner_alignment == align; // Trivial
 }

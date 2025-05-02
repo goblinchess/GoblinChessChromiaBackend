@@ -20,7 +20,7 @@ query get_player_by_name(searchName: text) {
 // -------------------------------------
 
 query consume_lobby_entry(
-    player_signer: pubkey, 
+    player_signer: pubkey,  // The player's own pubkey
     curr_ms: timestamp,
     game_type_str: text) :pubkey? {
 
@@ -47,9 +47,11 @@ query consume_lobby_entry_by_name(
 // In Game query
 // -------------------------------------
 
-query in_game (caller_pubkey: pubkey) :in_game_result? {
+query in_game (
+   player_signer: pubkey // The player's own pubkey
+) :in_game_result? {
 
-    val minimal_game: minimal_game_result? = minimal_game_data_get(caller_pubkey);
+    val minimal_game: minimal_game_result? = minimal_game_data_get(player_signer);
 
     if (minimal_game == null) {
         return null;
@@ -100,7 +102,7 @@ query in_game (caller_pubkey: pubkey) :in_game_result? {
 // This way, the lag between turns can be kept to a minimum.
 // -------------------------------------
 query get_opponents_recent_actions (
-    caller_pubkey: pubkey,  // Needed to know who is "me" and who is "opponent" for this game.
+    player_signer: pubkey,  // Player sends their own pubkey (Needed to know who is "me" and who is "opponent" for this game).
     game_id: integer,       // What game are we looking at? Cannot assume the game is "unfinished".
     last_seen_turn: integer // This is mostly a performance thing. We enforce that the client keeps track of what turn-number it has seen/fetched.
                             // If the client sends the correct [last_seen_turn] and nothing has happened since then, 
@@ -108,7 +110,7 @@ query get_opponents_recent_actions (
 ): color_rotation_actions? {
 
     // Get the player's current game
-    val minimal_game: minimal_game_result? = minimal_game_data_get_even_if_finished(caller_pubkey, game_id);
+    val minimal_game: minimal_game_result? = minimal_game_data_get_even_if_finished(player_signer, game_id);
     if (minimal_game == null) {
         log("game_id " + game_id + ", game not found, or not owned by the caller.");
         return null; 

@@ -1,0 +1,10 @@
+
+// Returns "true" if the found portal is in the given list of portals.
+function portal_simple_does_found_match_given(given_portals: list<integer>, found_portal: portal_simple): boolean {
+    for (given_portal in given_portals) {
+        if (given_portal == found_portal.entry_pos) {  // The given portal pos is entry pos.
+            return true;
+        }
+    }
+    return false;
+}

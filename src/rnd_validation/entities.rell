@@ -2,11 +2,7 @@
 // Rnd Result
 // -------------------------------------
 
-enum rnd_nr_type {
-    DICE_ROLL, // The roll of a die (during chaos attack)
-    CARD_PORTAL, // Need random for exit
-    CARD_RESURRECT // Need random for resurrect square
-}
+
 
 // In the end of every turn we store the random numbers 
 // that was sent to us from the player.

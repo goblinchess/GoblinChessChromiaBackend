@@ -75,8 +75,8 @@ function move_peaceful_inner(
 
     //log("A.6.1");
     val board: list<with_pos_and_alignment> = vuln_get_all_as_wpaa(minimal_game.game); 
-    val portals: list<owned_portal> = portal_get_all_by_owner(minimal_game.player_game, my_color);
-    val board_positions_all = board_positions_all_constructor(minimal_game.game, board, portals);
+    val portals: list<portal_simple> = portal_simple_get_all_by_owner(minimal_game.player_game, my_color);
+    val board_positions_all = board_positions_all_constructor(board, portals);
 
 
     // Complex verification (still easier than check mate).

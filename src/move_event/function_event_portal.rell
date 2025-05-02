@@ -19,13 +19,16 @@ function move_event_portal_find_by_turn(t: turn): list<integer> {
 // Constructor
 // ----------------
 
-function move_event_portal_create(game, turn, owned_portal, piece): portal_event {
+function move_event_portal_create(game, turn, ps: portal_simple, piece): portal_event {
 
     // New event
     val new_event = turn_create_event(game, turn, event_type.PORTAL_EVENT);
 
     // New portal event
-    return create portal_event(new_event, owned_portal.portal, piece);
+    return create portal_event(
+        new_event, 
+        ((p: portal)@ {p.rowid == ps.rowid} (p)), // Not sure if this is performant? One or two DB roundtrips?
+        piece);
 }
 
 

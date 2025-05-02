@@ -7,9 +7,8 @@
 
 // Returns a BOARD_POSITIONS_ALL struct.
 function board_positions_all_constructor(
-    game: game, 
     board: list<with_pos_and_alignment>, 
-    portal_list: list<owned_portal>
+    portal_list: list<portal_simple>
 ): board_positions_all {
 
     // 1. Split the board into pieces and obstacles.
@@ -37,7 +36,7 @@ function board_positions_all_constructor(
 // ----------------
 
 function board_is_empty(board_positions_all, pos: integer): boolean {
-    require(piece_is_pos_on_board(pos), "Illegal position: " + pos);
+    require(pos_is_on_board_int(pos), "Illegal position: " + pos);
     
     if (board_positions_all.board_characters.contains(pos)) {
         return false;
@@ -79,7 +78,7 @@ function board_is_attackable_white_or_neutral_at(board_positions_all, pos: squar
 // Getters
 // ----------------
 function board_get_at(board_positions_all, pos: integer): with_pos_and_alignment? {
-    require(piece_is_pos_on_board(pos), "Out of board " + pos);
+    require(pos_is_on_board_int(pos), "Out of board " + pos);
 
     if (board_positions_all.board_characters.contains(pos)) {
         return board_positions_all.board_characters[pos];
@@ -99,7 +98,7 @@ function board_get_square_status(board_positions_all, pos: square_pos): square_s
 }
 
 function board_get_square_status_int(board_positions_all, pos: integer): square_status {
-    if (piece_is_pos_out_of_board(pos)) { 
+    if (pos_is_out_of_board_int(pos)) { 
         return square_status.OUT_OF_BOARD; // Should never happen, since we checked this in [board_get_square_status()]
     }
     

@@ -1,3 +1,5 @@
+import ^.main.*;
+import ^.alignment.*;
+import ^.piece_type.*;
 import ^.turn.*;
 import ^.event.*;
-import ^.*;
