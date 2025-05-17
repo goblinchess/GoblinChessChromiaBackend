@@ -21,17 +21,16 @@ namespace elo {
         player1_rating: integer,
         player2_rating: integer,
     ): (integer, integer) {
-        return update_chess_ratings(player1_rating, player2_rating, false, true);
+        return update_chess_ratings(player1_rating, player2_rating, true);
     }
 
     // Public Function
     // Returns the new ratings after a win
     function update_chess_ratings_on_win(
-        player1_rating: integer,
-        player2_rating: integer,
-        player1_won: boolean
+        winner_old_rating: integer,
+        loser_old_rating: integer
     ): (integer, integer) {
-        return update_chess_ratings(player1_rating, player2_rating, player1_won, false);
+        return update_chess_ratings(winner_old_rating, loser_old_rating, false);
     }
 
 
@@ -62,22 +61,21 @@ namespace elo {
 
     // Helper function to update both players' ratings after a match
     function update_chess_ratings(
-        player1_rating: integer,
-        player2_rating: integer,
-        player1_won: boolean,
+        maybe_winner_rating: integer, // If we have a winner this is it.
+        maybe_loser_rating: integer, // If we have a loser this is it.
         draw: boolean
     ): (integer, integer) {
         
         // This is ugly, but we need it since our power_of function
         // cannot handle negative numbers.
-        val (rating_diff: integer, p1_is_higher: boolean) = get_rate_diff(player1_rating, player2_rating);
+        val (rating_diff: integer, p1_is_higher: boolean) = get_rate_diff(maybe_winner_rating, maybe_loser_rating);
 
         val expected_score = calculate_expected_score(rating_diff);
         if (draw) {
-            return update_draw_ratings(player1_rating, player2_rating, expected_score, p1_is_higher);
+            return update_draw_ratings(maybe_winner_rating, maybe_loser_rating, expected_score, p1_is_higher);
         }
         else {
-            return update_win_ratings(player1_rating, player2_rating, expected_score, player1_won);
+            return update_win_ratings(maybe_winner_rating, maybe_loser_rating, expected_score);
         }
     }
 
@@ -103,25 +101,18 @@ namespace elo {
     }
 
     function update_win_ratings(
-        player1_rating: integer,
-        player2_rating: integer,
-        expected_score: decimal,
-        p1_won: boolean
+        winner_old_rating: integer,
+        loser_old_rating: integer,
+        expected_score: decimal
     ): (integer, integer) {
         // A positive number, added to the winners ELO 
         val points_diff = (K_FACTOR_DEFAULT * (1.0 - expected_score)).to_integer();
         log("win_points_diff: " + points_diff);
 
         // Winner gains as much as the loser loses
-        if (p1_won) {
-            val new_player1_rating = player1_rating + points_diff;
-            val new_player2_rating = player2_rating - points_diff;
-            return (new_player1_rating, new_player2_rating);
-        } else {
-            val new_player1_rating = player1_rating - points_diff;
-            val new_player2_rating = player2_rating + points_diff;
-            return (new_player1_rating, new_player2_rating);
-        }
+        val new_winner_rating = winner_old_rating + points_diff;
+        val new_loser_rating = loser_old_rating - points_diff;
+        return (new_winner_rating, new_loser_rating);
     }
 
     /*

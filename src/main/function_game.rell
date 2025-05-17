@@ -3,17 +3,11 @@
 // Game
 // -------------------------------------
 
-
-
-
-
 // ----------
 // Create Game
 // ----------
 
 // Handles the creation of a game
-
-
 function game_create_via_lobby_inner(opponent_player: player, game_type_str: text): game {
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
@@ -25,6 +19,9 @@ function game_create_via_lobby_inner(opponent_player: player, game_type_str: tex
     val existing_lobby = lobby@? {.player == opponent_player, .game_type == g_type};
     require(existing_lobby != null, "Opponent is not in the lobby");
     
+    // Just before creating the game, we terminate any running games 
+    game_terminate_if_old(caller_player);
+
     val new_game = game_create_random_black_white(caller_player, opponent_player, game_type_str);
 
     // Remove opponent's lobby
@@ -48,9 +45,6 @@ function game_create_random_black_white(caller_player: player, opponent_player: 
     return game_create_inner(white_player, black_player, game_type_str);
 }
 
-
-
-
 // We create the GAME and 
 // one HAND for each player
 function game_create_inner(white_player: player, black_player: player, game_type_str: text): game {
@@ -72,7 +66,6 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .player = white_player,
         .game = new_game,
         .is_white = true,
-        .is_finished = false,
         .in_check = false,
         .cards_left = 5
     );
@@ -82,7 +75,6 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .player = black_player,
         .game = new_game,
         .is_white = false,
-        .is_finished = false,
         .in_check = false,
         .cards_left = 5
     );

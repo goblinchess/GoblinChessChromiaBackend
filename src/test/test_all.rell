@@ -266,9 +266,8 @@ function test_elo_win_1() {
    val player2_rating: integer = 1200;
 
     val (p1: integer, p2: integer) = elo.update_chess_ratings_on_win(
-        player1_rating,
-        player2_rating,
-	    true
+        player1_rating, // 1 is winner
+        player2_rating // Loser
     );
 
     assert_equals(p1, 1216);
@@ -276,17 +275,16 @@ function test_elo_win_1() {
 }
 
 function test_elo_win_2() {
-   val player1_rating: integer = 1300;
-   val player2_rating: integer = 1200;
+   val winner_rating: integer = 1200;
+   val loser_rating: integer = 1300;
 
-    val (p1: integer, p2: integer) = elo.update_chess_ratings_on_win(
-        player1_rating,
-        player2_rating,
-        false
+    val (w: integer, l: integer) = elo.update_chess_ratings_on_win(
+        winner_rating, 
+        loser_rating 
     );
 
-    assert_equals(p1, 1280);
-    assert_equals(p2, 1220);
+    assert_equals(w, 1220);
+    assert_equals(l, 1280);
 }
 
 // ----------------------------------

@@ -1,11 +1,16 @@
 
+Remove unfinished game.
+
  TODO Client: 
 -------------
+
 - Call the "fetch data" method for moves and cards.
 
 - Should we send "is_knighted" and "is_enchanted_jumper" on every call? Is it perhaps too hard to find this info?
 
 - Create a C# Chromia client.
+
+- Use Timeout and put clock on the chess scene.
  
 
 Client Done: 
@@ -14,8 +19,6 @@ Client Done:
  TODO Node: 
 -------------
  
-- Call the main query in our test.
-
  2. Finish the game when mate
 
  4. Use Luck
@@ -27,10 +30,10 @@ Node DONE:
 
 
 
-
  Videos
 -------------
  Make an event performance video!
+ (Main Idea is to explain that making one SQL-call to fetch all events for a turn is the trick)
 
 
-ConcretePlanningModeOpponentOnline
+

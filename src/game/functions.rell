@@ -1,3 +1,4 @@
+
 // ----------
 // Inspectors
 // ----------
@@ -20,7 +21,7 @@ function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
         p.signer == player_pubkey, 
         pg.player == p, 
         g == pg.game,
-        pg.is_finished == false }
+        g.is_finished == false }
         (player = pg.player, player_game = pg, gme = g, game_type = g.game_type, curr_turn_nr = g.current_turn, is_white = pg.is_white, in_check = pg.in_check);
 
     if (res != null) {
@@ -106,12 +107,11 @@ function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkma
     if (is_checkmate or is_stalemate) {
         log("Game Over");
         if (is_checkmate) {
-            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = false);
-
+            _inner_game_terminate_checkmate(minimal_game.game, new_turn.number, minimal_game.player_game);
             // TODO
         } else {
             // Stalemate
-            update minimal_game.game (.current_turn = new_turn.number, .is_finished = true, .is_draw = true);
+            _inner_game_terminate_draw(minimal_game.game, new_turn.number, minimal_game.player_game);
 
             // TODO
         }
@@ -120,4 +120,153 @@ function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkma
     } else {
         return false;
     }
+}
+
+// -------------------------------------
+// Terminate any old game
+//
+// We will look for any old ongoing game and terminate it.
+// 
+// Background/Requirements:
+// Before a player can enter the lobby (s)he must terminate any old (unfinished) game
+// (since there can only be one ongoing game per player).
+//
+// Q1: Why cannot the player just keep playng the unfinished game?
+// A1: Because the client is still too stupid to put everything on the correct place, and this way start 
+//     where the old game left off. Therefore we need to terminate ANY old game we find.
+//     In v2.0 this might change.
+// 
+// Q2: But who should win? 
+// A2: The player (A) who made the last move should win, since we can safely assume the other player (B) "escaped" 
+//     (shut down the computer or something), or else player B would have made a move AFTER player A's last move.
+//     (The correct way to escap is via the "Resign" button, but we must assume some players won't show sportmanship.)
+//
+// Q2.1: But if nobody made a move?
+// A2.1: Then black is the winner and white is the loser (sicne white should have moved).
+// 
+// Q3: Some Chess games allow quitting during the first move without ELO penalty (i.e. was made there was NO game).
+//     Why can't we allow closing of the game early on without ELO penalty?
+// A3: In GoblinChess would means that if either player doesn't like his/her cards they can just leave and 
+//     won't lose rating. This could lead to a majority of games being aborted early on, so we don't allow it.
+// 
+// Q4: What if a player (A) makes a move, quickly shuts down the GoblinChess client, 
+//     starts the client again, and starts a new game? This way the old game is terminated, 
+//     declaring player A as the winner (the last player to make a move).
+// A4: Yes, this could be done, but remember, player A must do all this before player B makes a move.
+//     or else player B will win. Unlikely Player A can cheat this way.
+// -------------------------------------
+
+function game_terminate_if_old(me: player) {
+    val maybe_game = (pg: player_game, g: game, pg_opp: player_game, ct: current_turn, t: turn)@? {
+        pg.player == me,
+        pg.game == g,
+        pg_opp.player != me,
+        pg_opp.game == g,
+        g.is_finished == false,
+        ct.game == g,
+        ct.current_turn == t // yes, even if we are at turn = 0 there will be a [current_turn] row.
+    } (gme = g, 
+        my_pg = pg, opp_pg = pg_opp, 
+        my_p = pg.player, opp_p = pg_opp.player, 
+        my_name = pg.player.name, opp_name = pg_opp.player.name,
+        my_elo = pg.player.elo_rating, opp_elo = pg_opp.player.elo_rating,
+        turn_owner = t.created_by, turn_nr = t.number,
+        black_player = g.black_player);
+
+    if (maybe_game != null) {
+
+        var am_i_winner = false;
+        if (maybe_game.turn_nr == 0) {
+            // See Q2.1 above, we need to find black and make him the winner.
+            // Note: We cannot trust the "turn_owner" here, since it's just the player who created the game (could be black or white).
+            if (maybe_game.black_player == maybe_game.my_p) {
+                am_i_winner = true; // We are black, we should win
+            } else {
+                am_i_winner = false; // We are white, we should lose
+            }
+        } else if (maybe_game.my_pg == maybe_game.turn_owner) {
+            am_i_winner = true; // This player made the last move => this player is the winner
+        } else {
+            am_i_winner = false; // Opponent made the last move, => this player is the loser
+        }
+
+        if (am_i_winner) {
+            _inner_game_terminate_timeout(maybe_game.gme, 
+                maybe_game.my_p, maybe_game.opp_p,
+                maybe_game.my_pg, maybe_game.opp_pg,
+                maybe_game.my_name, maybe_game.opp_name,
+                maybe_game.my_elo, maybe_game.opp_elo
+            );
+        } else {
+            _inner_game_terminate_timeout(maybe_game.gme, 
+                maybe_game.opp_p, maybe_game.my_p, 
+                maybe_game.opp_pg, maybe_game.my_pg, 
+                maybe_game.opp_name, maybe_game.my_name, 
+                maybe_game.opp_elo, maybe_game.my_elo
+            );
+        }
+    }
+}
+
+// -------------------------------------
+// We will never get a chance to validate the random numbers,
+// so we can go ahead and create the [player_game_stats] record
+// immediately, but with empty [player_seed].
+// -------------------------------------
+function _inner_game_terminate_timeout(gme: game, 
+    winner_p: player, loser_p: player, 
+    winner_pg: player_game, loser_pg: player_game, 
+    winner_name: text, loser_name: text, 
+    winner_old_elo: integer, loser_old_elo: integer
+) {
+
+    update gme (.is_finished = true, .is_draw = false);
+
+    // Timeout is just like any other win.
+    val (winner_new_elo, loser_new_elo) = elo.update_chess_ratings_on_win(winner_old_elo, loser_old_elo);
+
+    val created_time = op_context.last_block_time;
+
+    // Create Winner's stats
+    create player_game_stats (
+        .player_game = winner_pg,
+        .game = gme,
+        .player = winner_p,
+        .is_winner = true,
+        .is_draw = false, 
+        .is_timeout = true, 
+        .is_error = false, // Timeout isn't considered an error
+        .new_elo_rating = winner_new_elo, // The new ELO rating after the game.
+        .player_seed = byte_array(''), // Cannot be null, but doesn't matter what it is.
+        .opp_name = loser_name,
+        .opp_elo = loser_old_elo, // Here it only matters what the opponent's ELO was when the game started
+        .created_at = created_time
+    );
+
+    // Create Loser's stats
+    create player_game_stats (
+        .player_game = loser_pg,
+        .game = gme,
+        .player = loser_p,
+        .is_winner = false,
+        .is_draw = false, 
+        .is_timeout = true, 
+        .is_error = false, // Timeout isn't considered an error
+        .new_elo_rating = loser_new_elo, // The new ELO rating after the game.
+        .player_seed = byte_array(''), // Cannot be null, but doesn't matter what it is.
+        .opp_name = winner_name,
+        .opp_elo = winner_old_elo, // Here it only matters what the opponent's ELO was when the game started
+        .created_at = created_time
+    );
+}
+
+// We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
+function _inner_game_terminate_checkmate(gme: game, curr_turn_nr: integer, winner_pg: player_game) {
+    update gme (.current_turn = curr_turn_nr, .is_finished = true, .is_draw = false);
+
+}
+
+// We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
+function _inner_game_terminate_draw(gme: game, curr_turn_nr: integer, winner_pg: player_game) {
+    update gme (.current_turn = curr_turn_nr, .is_finished = true, .is_draw = true);
 }

@@ -11,8 +11,8 @@ query get_player_names() {
     return player@* {} (.name);
 }
 
-query get_player_by_name(searchName: text) {
-    return player@? {.name == searchName};
+query get_player_by_name(search_name: text) {
+    return player@? {.name == search_name} (.signer);
 }
 
 // -------------------------------------
@@ -80,6 +80,59 @@ query in_game (
         );
     }
 }
+
+// -------------------------------------
+// Old games
+//
+// The player wants to see his/her of old games:
+// a) who (s)he played against (elo, name),
+// b) who won,
+// c) what happened to the ELO rating.
+// -------------------------------------
+query get_old_games(
+    player_signer: pubkey
+): list<old_game_stat> {
+    val results =  (p_my: player, pgs_my: player_game_stats)@* {
+        p_my.signer == player_signer,
+        pgs_my.player == p_my
+    } (
+        game_rowid = pgs_my.game.rowid, 
+        @sort_desc crt_at = pgs_my.created_at,
+        opp_name = pgs_my.opp_name,
+        opp_elo = pgs_my.opp_elo,
+        new_elo = pgs_my.new_elo_rating,
+        winner = pgs_my.is_winner,
+        draw = pgs_my.is_draw,
+        timeout = pgs_my.is_timeout,
+        error = pgs_my.is_error
+    ) limit 100;
+
+    val return_list = list<old_game_stat>();
+
+    for (res in results) { 
+
+
+        val ogs = old_game_stat(
+            game_rowid = res.game_rowid.to_integer(),
+            created_at = res.crt_at,
+            // Opponent data
+            opponent_name = res.opp_name,
+            opponent_elo = res.opp_elo,
+            // My data
+            new_elo_rating = res.new_elo,
+            // Neutral
+            is_winner = res.winner,
+            is_draw = res.draw,
+            is_timeout = res.timeout,
+            is_error = res.error
+        );
+
+        return_list.add(ogs);
+    }
+    
+    return return_list;
+}
+
 
 
 // -------------------------------------

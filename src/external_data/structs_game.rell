@@ -1,0 +1,36 @@
+
+// Represents game configuration
+enum game_type {
+    SPEED_5_CHAOTIC,
+    SPEED_10_CHAOTIC,
+    SPEED_5_CLASSIC,
+    SPEED_10_CLASSIC
+}
+
+// Sent back to the client
+struct in_game_result {
+    game_rowid: integer;
+    game_type: game_type;
+    is_white: boolean;
+    opponent_pubkey: pubkey;
+    opponent_name: text;
+    opponent_elo: integer;
+    curr_turn_nr: integer; // If the game just started, this will be 0
+    created_at: timestamp; // When the game was created
+}
+
+// Returned so that the client can see a list of old games
+struct old_game_stat {
+    game_rowid: integer; // To be able to find it later.
+    created_at: integer; // Unix timestamp
+    // Opponent data
+    opponent_name: text; // Name of the opponent
+    opponent_elo: integer;
+    // My data
+    new_elo_rating: integer;
+    // Neutral data
+    is_winner: boolean; // This player won
+    is_draw: boolean; // No player won, it's a draw
+    is_timeout: boolean; // Game ended because of a timeout
+    is_error: boolean; // Game ended because of an error (it's always the client that made the error that lost)
+}

@@ -47,6 +47,9 @@ operation enter_lobby(game_type_str: text) {
 
     if (existing_lobby == null) {
 
+        // Only terminate running games first time we enter the lobby
+        game_terminate_if_old(playa);
+
         create lobby(
         .player = playa,
         .game_type = g_type,
@@ -96,4 +99,9 @@ operation create_game(white_player_name: text, black_player_name: text, game_typ
     val new_game: game = game_create_inner(white_player, black_player, game_type_str);
     log("create_game() - finished, game: " + new_game.rowid.to_integer() + " type: " + game_type_str);
 }
+
+
+
+
+
 

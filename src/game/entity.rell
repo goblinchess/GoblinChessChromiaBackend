@@ -9,13 +9,7 @@ entity player {
     mutable elo_rating: integer;
 }
 
-// Represents game configuration
-enum game_type {
-    SPEED_5_CHAOTIC,
-    SPEED_10_CHAOTIC,
-    SPEED_5_CLASSIC,
-    SPEED_10_CLASSIC
-}
+
 
 // Represents a game state
 entity game {
@@ -23,8 +17,8 @@ entity game {
     index black_player: player;
     index game_type: game_type;
     mutable current_turn: integer;  //GAME cannot have a reference to the (current) TURN entity since TURN references GAME, and Rell doesn't allow two-way FKs.
-    mutable is_finished: boolean;
-    mutable is_draw: boolean;
+    mutable is_finished: boolean; // NOTE: this is set BEFORE we validate the random numbers.
+    mutable is_draw: boolean;     // NOTE: this is set BEFORE we validate the random numbers.
     created_at: timestamp;
 }
 
@@ -35,20 +29,33 @@ entity player_game {
     key player, game;
     is_white: boolean;
     mutable in_check: boolean;  // Also in [move]  and [skipped_move], but we need it here since card picks it up.
-    mutable is_finished: boolean;
     mutable cards_left: integer; // Should never go negative
 }
 
-// Will be create after the game is finished
+// -------------------------------------
+// Will be create after the game is finished, and
+// AFTER we validated the random numbers.
+//
+// Main purpose is for showing history.
+// Ok to duplicate data here, since it will be 
+// fetched often, and the data never changes.
+// For example, we want to know what the opponent's ELO
+// was during this game, not what it is now.
+// -------------------------------------
 entity player_game_stats {
     key player_game: player_game;
+    index game: game; // Shortcut FK, not strictly necessary
     index player: player; // Shortcut FK, not strictly necessary
     is_winner: boolean; // This player won
     is_draw: boolean; // No player won, it's a draw
     is_timeout: boolean; // Game ended because of a timeout
     is_error: boolean; // Game ended because of an error (it's always the client that made the error that lost)
-    new_elo_rating: integer;
+    new_elo_rating: integer; // The new ELO rating after the game.
     player_seed: byte_array; // The personal seed of the player. Only known at the end of the game.
+    // Dupcliated data (only to avoid a large JOIN)
+    opp_name: text; // Name of the opponent
+    opp_elo: integer; // ELO rating of the opponent
+    created_at: timestamp;
 }
 
 // -------------------------------------
