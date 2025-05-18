@@ -58,8 +58,11 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .current_turn = 0, // Starting at 0 means first (actual) turn will be 1.
         .is_finished = false, 
         .is_draw = false,
-        .created_at = op_context.last_block_time
+        .created_at = op_context.last_block_time,
+        .last_move_finished_at = op_context.last_block_time
     );
+
+    val start_time_remaining = game_type_to_time_left(g_type);
 
     // Create white player_game
     val white_player_game = create player_game(
@@ -67,7 +70,8 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .game = new_game,
         .is_white = true,
         .in_check = false,
-        .cards_left = 5
+        .cards_left = 5,
+        .time_left = start_time_remaining
     );
 
     // Create black player_game
@@ -76,7 +80,8 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .game = new_game,
         .is_white = false,
         .in_check = false,
-        .cards_left = 5
+        .cards_left = 5,
+        .time_left = start_time_remaining
     );
 
     // The turn before anything has happened

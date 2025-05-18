@@ -1,0 +1,24 @@
+// -------------------------------------
+// Lobby 
+// -------------------------------------
+
+query consume_lobby_entry(
+    player_signer: pubkey,  // The player's own pubkey
+    curr_ms: timestamp,
+    game_type_str: text) :pubkey? {
+
+    // Get the requesting player
+    val requesting_player = player@{.signer == player_signer};
+    
+    return get_lobby_entry_inner(requesting_player, game_type_str, curr_ms);
+}
+
+query consume_lobby_entry_by_name(
+    player_name: text,
+    curr_ms: timestamp,
+    game_type_str: text) :pubkey? {
+
+    val requesting_player = player@{.name == player_name};
+
+    return get_lobby_entry_inner(requesting_player, game_type_str, curr_ms);
+}

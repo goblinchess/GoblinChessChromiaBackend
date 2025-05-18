@@ -36,4 +36,13 @@ function move_neutral_skip_inner(
     // lots of verification in here.
     val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
     log("game_id: "+game_id+" - /Skip Neutral End: new turn type: " + new_turn_type);
+
+    // ----------------
+    // B.2. Update timeout
+    // ----------------
+    // Skipping the neutral is always the last thing a player does.
+    // So this is when we update the timeout.
+    game_update_time_left(minimal_game);
 }
+
+

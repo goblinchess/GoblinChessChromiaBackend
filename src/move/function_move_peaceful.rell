@@ -165,7 +165,7 @@ function move_peaceful_inner(
     }
 
     // ----------------
-    // 1. Create the turn record
+    // Create the turn record
     // ----------------
     // B.1 Do this FIRST since lots of verification in here.
     val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
@@ -180,7 +180,7 @@ function move_peaceful_inner(
     }
 
     // ----------------
-    // 4. Apply end_args
+    // Apply end_args
     // ----------------
     // B.4.a Use all unblocked portals
     move_common_use_all_unblocked_portals(game_id, curr_turn, minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
@@ -194,7 +194,7 @@ function move_peaceful_inner(
     promote_all_pawns_at_final_rank(game_id, minimal_game.game, new_turn, board_positions_all, our_team, my_color, end_args);
 
     // ----------------
-    // 5. Check/stale/mate
+    // Check/stale/mate
     // ----------------
     // B.5 Verify if we just won via checkmate?
     val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args);
@@ -207,6 +207,11 @@ function move_peaceful_inner(
     // ----------------
     val is_game_over = game_over(minimal_game, new_turn, is_checkmate, is_stalemate);
     if (not is_game_over) {
+
+        // Usally we don't set "time_left" during regular moves, but there is one case where we must make an exception:
+        if (turn_is_last_double_move(new_turn_type)) {
+            game_update_time_left(minimal_game);
+        }
 
         // Cleanup
         move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, my_color);

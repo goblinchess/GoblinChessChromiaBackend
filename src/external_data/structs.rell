@@ -4,3 +4,12 @@ struct check_data {
     is_checkmate: boolean; // True if this is a checkmate
     is_stalemate: boolean; // True if this is a stalemate
 }
+
+struct card_played_data {
+    card_type_str: text;  // Type of card played
+    card_order_number: integer; // The order number when the card was drawn/generated, starting from 0.
+    card_picks: list<integer>; // The squares picked by the player when playing the card.
+}
+
+
+

@@ -1,0 +1,97 @@
+
+// -------------------------------------
+// Games
+// -------------------------------------
+// Here the client can ask about if being in a game, 
+// old games etc.
+// -------------------------------------
+
+// -------------------------------------
+// In Game query
+// -------------------------------------
+
+query in_game (
+   player_signer: pubkey // The player's own pubkey
+) :in_game_result? {
+
+    val minimal_game: minimal_game_result? = minimal_game_data_get(player_signer);
+
+    if (minimal_game == null) {
+        return null;
+    } else {
+        val g_data = game@ {.rowid == minimal_game.game.rowid} (.rowid, .black_player, .white_player, .created_at);
+
+
+        val plays_white = minimal_game.is_white;
+        var opp: player? = null;
+ 
+        if (plays_white) {
+            opp = g_data.black_player;
+        } else {
+            opp = g_data.white_player;
+        }
+
+        return in_game_result(
+            game_rowid = g_data.rowid.to_integer(),
+            game_type = minimal_game.game_type,
+            is_white = plays_white,
+            opponent_pubkey = opp.signer,
+            opponent_name = opp.name,
+            opponent_elo = opp.elo_rating,
+            curr_turn_nr = minimal_game.curr_turn_nr,
+            created_at = g_data.created_at
+        );
+    }
+}
+
+// -------------------------------------
+// Old games
+//
+// The player wants to see his/her of old games:
+// a) who (s)he played against (elo, name),
+// b) who won,
+// c) what happened to the ELO rating.
+// -------------------------------------
+query get_old_games(
+    player_signer: pubkey
+): list<old_game_stat> {
+    val results =  (p_my: player, pgs_my: player_game_stats)@* {
+        p_my.signer == player_signer,
+        pgs_my.player == p_my
+    } (
+        game_rowid = pgs_my.game.rowid, 
+        @sort_desc crt_at = pgs_my.created_at,
+        opp_name = pgs_my.opp_name,
+        opp_elo = pgs_my.opp_elo,
+        new_elo = pgs_my.new_elo_rating,
+        winner = pgs_my.is_winner,
+        draw = pgs_my.is_draw,
+        timeout = pgs_my.is_timeout,
+        error = pgs_my.is_error
+    ) limit 100;
+
+    val return_list = list<old_game_stat>();
+
+    for (res in results) { 
+
+
+        val ogs = old_game_stat(
+            game_rowid = res.game_rowid.to_integer(),
+            created_at = res.crt_at,
+            // Opponent data
+            opponent_name = res.opp_name,
+            opponent_elo = res.opp_elo,
+            // My data
+            new_elo_rating = res.new_elo,
+            // Neutral
+            is_winner = res.winner,
+            is_draw = res.draw,
+            is_timeout = res.timeout,
+            is_error = res.error
+        );
+
+        return_list.add(ogs);
+    }
+    
+    return return_list;
+}

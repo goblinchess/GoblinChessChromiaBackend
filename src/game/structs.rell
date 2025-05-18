@@ -9,5 +9,6 @@ struct minimal_game_result {
     curr_turn_nr: integer; // We always check this, so best to store it.
     in_check: boolean; // Our king is in check.
     is_white: boolean;
+    prev_move_finished_at: timestamp; // When the previous move was finished.
 }
 

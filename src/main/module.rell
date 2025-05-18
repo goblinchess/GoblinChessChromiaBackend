@@ -1,3 +1,4 @@
+import ^.external_data.*;
 import ^.game.*;
 import ^.card.*;
 import ^.turn.*;

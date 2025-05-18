@@ -12,6 +12,15 @@ function game_is_classic(gt: game_type) :boolean {
     }
 }
 
+function game_type_to_time_left(gt: game_type) :integer {
+    when (gt) {
+        game_type.SPEED_5_CHAOTIC -> return 5 * 60 * 1000;
+        game_type.SPEED_5_CLASSIC -> return 5 * 60 * 1000;
+        game_type.SPEED_10_CHAOTIC -> return 10 * 60 * 1000;
+        game_type.SPEED_10_CLASSIC -> return 10 * 60 * 1000;
+    }
+}
+
 
 // Will find the player, the game and the color  from the player's pubkey
 // This works since a player can only have one unfinished game at a time.
@@ -22,7 +31,8 @@ function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
         pg.player == p, 
         g == pg.game,
         g.is_finished == false }
-        (player = pg.player, player_game = pg, gme = g, game_type = g.game_type, curr_turn_nr = g.current_turn, is_white = pg.is_white, in_check = pg.in_check);
+        (player = pg.player, player_game = pg, gme = g, game_type = g.game_type, curr_turn_nr = g.current_turn, 
+        is_white = pg.is_white, in_check = pg.in_check, prev_move_time = g.last_move_finished_at);
 
     if (res != null) {
         return minimal_game_result(
@@ -32,7 +42,8 @@ function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
             game_type = res.game_type,
             curr_turn_nr = res.curr_turn_nr,
             in_check = res.in_check,
-            is_white =res.is_white
+            is_white =res.is_white,
+            prev_move_finished_at = res.prev_move_time
         );
     } else {
         return null;
@@ -60,7 +71,8 @@ function minimal_game_data_get_even_if_finished(
         pg.player == p, // Not stricly needed, but I want to make sure some guy doesn't just ask for a random game.
         g == pg.game,
         g.rowid == game_rowid }
-        (player = pg.player, player_game = pg, gme= g, game_type = g.game_type, curr_turn_nr = g.current_turn, is_white = pg.is_white, in_check = pg.in_check);
+        (player = pg.player, player_game = pg, gme= g, game_type = g.game_type, curr_turn_nr = g.current_turn, 
+        is_white = pg.is_white, in_check = pg.in_check, prev_move_time = g.last_move_finished_at);
 
     if (res != null) {
         return minimal_game_result(
@@ -70,7 +82,8 @@ function minimal_game_data_get_even_if_finished(
             game_type = res.game_type,
             curr_turn_nr = res.curr_turn_nr,
             in_check = res.in_check,
-            is_white =res.is_white
+            is_white =res.is_white,
+            prev_move_finished_at = res.prev_move_time
         );
     } else {
         return null;
@@ -103,17 +116,51 @@ function game_update_turn_and_check_status(minimal_game: minimal_game_result, ne
     update opponent_player_game (.in_check = is_check);
 }
 
+
+// Update the [time_left] field for the player_game entity.
+// We do this at the very last moment, usually when the player 
+// sends the "neutral_skip" move.
+function game_update_time_left(minimal_game: minimal_game_result) {
+    val curr_time_milli_sec = op_context.last_block_time; // Only way for us to measure time.
+    val real_time_consumed_milli_sec =  curr_time_milli_sec - minimal_game.prev_move_finished_at;
+
+    // We give the player two extra seconds per turn, since animations take time, blockchain build etc.
+    val time_consumed_milli_sec = real_time_consumed_milli_sec - 2000; // Doesn't matter if this is negative, a player should be able to GAIN time if fast.
+
+    // TODO: Remove this, too expensive
+    val real_game_time_tot = curr_time_milli_sec - minimal_game.game.created_at;
+    val real_game_time_tot_secs = real_game_time_tot / 1000;
+
+    val real_secs = real_time_consumed_milli_sec / 1000;
+    val secs = time_consumed_milli_sec / 1000;
+    log("Gametime tot: " + real_game_time_tot_secs + ". Player consumed: " + real_secs + " seconds doing this turn, but we reduce it to " + secs + " seconds.");
+
+    // Yes, we could use the timestamp from the [turn], but it's more convenient to 
+    // keep this data in the [game] entity.
+    update minimal_game.game (.last_move_finished_at = curr_time_milli_sec);
+
+    // Update the time left for the player
+    // NOTE: If this becomes negative, it will be the opponent's task to call "timeout" 
+    update minimal_game.player_game (.time_left -= time_consumed_milli_sec);
+}
+
+
+// -------------------------------------
+// First, we don't know who won until we verify the random numbers.
+// Second, remember that this player might deliver the mate AFTER timeout has occurred,
+// so if the opponent challenges this result with a "timeout" claim, the winner might be switched. 
+// => All we know at this point is that the game is over.
+// -------------------------------------
 function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkmate: boolean, is_stalemate: boolean) :boolean {
     if (is_checkmate or is_stalemate) {
         log("Game Over");
         if (is_checkmate) {
             _inner_game_terminate_checkmate(minimal_game.game, new_turn.number, minimal_game.player_game);
-            // TODO
+            game_update_time_left(minimal_game);
         } else {
             // Stalemate
             _inner_game_terminate_draw(minimal_game.game, new_turn.number, minimal_game.player_game);
-
-            // TODO
+            game_update_time_left(minimal_game);
         }
 
         return true;
@@ -152,8 +199,9 @@ function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkma
 // Q4: What if a player (A) makes a move, quickly shuts down the GoblinChess client, 
 //     starts the client again, and starts a new game? This way the old game is terminated, 
 //     declaring player A as the winner (the last player to make a move).
-// A4: Yes, this could be done, but remember, player A must do all this before player B makes a move.
-//     or else player B will win. Unlikely Player A can cheat this way.
+// A4: Yes, this is indeed a threat. But remember, player A must do all this before player B makes a move.
+//     or else player B will win. Unlikely Player A can cheat this way, but we want to make sure that 
+//     the opponent gets at least two minutes to make a move. 
 // -------------------------------------
 
 function game_terminate_if_old(me: player) {

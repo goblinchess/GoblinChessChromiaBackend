@@ -10,6 +10,11 @@ function get_current_turn(game: game): (turn_type: turn_type, number: integer) {
     } (t.turn_type, t.number);
 }
 
+// Returns "true" if this is the last turn of a double move.
+function turn_is_last_double_move(tt: turn_type): boolean {
+    return tt == turn_type.NEUTRAL_MOVE_1_HIJACKED or tt == turn_type.NEUTRAL_MOVE_2_HIJACKED;
+}
+
 // -------------------------------------
 // Creators
 // -------------------------------------
@@ -26,7 +31,8 @@ function turn_create_first(g: game, creatoor: player_game): turn {
         .game = g,
         .number = 0,
         .turn_type = turn_type.FRESH_GAME, // This is the turn BEFORE anything has happened.
-        .created_by = creatoor
+        .created_by = creatoor,
+        .created_at = op_context.last_block_time
     );
 
     // First turn we must create this
@@ -57,7 +63,8 @@ function turn_create(game: game, created_by: player_game, new_turn_type: turn_ty
         .game = game,
         .number = t_number + 1,
         .turn_type = new_turn_type,
-        .created_by = created_by
+        .created_by = created_by,
+        .created_at = op_context.last_block_time
     );
 
     update current_turn@ {game} (.current_turn = new_turn);

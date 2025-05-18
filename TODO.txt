@@ -1,5 +1,8 @@
 
-Remove unfinished game.
+a) Test time-out of old ongoing games.
+b) Test time_left param.
+
+Add timeout to the node.
 
  TODO Client: 
 -------------

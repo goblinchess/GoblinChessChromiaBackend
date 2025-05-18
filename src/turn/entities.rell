@@ -52,6 +52,7 @@ entity turn {
     number: integer; // Turn number within the game
     key game, number;
     turn_type: turn_type;
+    created_at: timestamp;
 }
 
 // Points to the most recent turn for a game

@@ -20,6 +20,7 @@ entity game {
     mutable is_finished: boolean; // NOTE: this is set BEFORE we validate the random numbers.
     mutable is_draw: boolean;     // NOTE: this is set BEFORE we validate the random numbers.
     created_at: timestamp;
+    mutable last_move_finished_at: timestamp; // Updated when the player is completely done with a move. Convenient when calculating remaining time for each player.
 }
 
 // One for each player in a game 
@@ -30,6 +31,7 @@ entity player_game {
     is_white: boolean;
     mutable in_check: boolean;  // Also in [move]  and [skipped_move], but we need it here since card picks it up.
     mutable cards_left: integer; // Should never go negative
+    mutable time_left: integer; // Time left in milliseconds (10 min game => 10 * 60 * 1000 = 600_000)
 }
 
 // -------------------------------------

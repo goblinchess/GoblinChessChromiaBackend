@@ -4,6 +4,37 @@
 // These structs will be used by the (external) client calling the node.
 // ------------------------------------------
 
+// ------------------------------------------------------------------------------
+// Returned when the client asks for the full move data.
+// (We use this struct no matter if attack or just move)
+// ------------------------------------------------------------------------------
+struct move_full_data {
+
+    turn_nr: integer; // What turn this was
+
+    // Only have move data if this isn't a skipped move
+    m_data: opponents_move_data?;
+
+    // If this move caused check/stale/mate/timeout?
+    check_data: check_data;
+
+    // Only if this is an attack
+    att_args: move_attack_arguments? = null;
+
+    // Only if we have events that happened after the move
+    end_args: move_end_events_arguments? = null;
+
+    // ----------------------
+    // Needed for chaos mode
+    // ----------------------
+
+    // Chaos mode arguments
+    chaos_args: move_chaos_mode_arguments? = null;
+
+    // Only used if there is retaliation.
+    ret_args: move_retaliation_arguments? = null;
+}
+
 // Move data, used for attacks too.
 struct move_arguments {
     game_id: integer;
