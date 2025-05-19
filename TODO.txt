@@ -17,6 +17,10 @@ Add timeout to the node.
  
 
 Client Done: 
+1. Add old_games list to the main menu.
+2. Make sure the main menu can scale to 4:3.
+3. Connect the scroller via "Content Size Filter".
+4. enter_lobby is called many times, and must be made unique via Nop.
 
 
  TODO Node: 
@@ -40,3 +44,4 @@ Node DONE:
 
 
 
+800 + 800 + 400 = 2000

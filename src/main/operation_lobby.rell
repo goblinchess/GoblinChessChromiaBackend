@@ -21,6 +21,7 @@ operation enter_lobby(game_type_str: text) {
         // Only terminate running games first time we enter the lobby
         game_terminate_if_old(playa);
 
+        log("enter_lobby");
         create lobby(
         .player = playa,
         .game_type = g_type,
@@ -30,6 +31,23 @@ operation enter_lobby(game_type_str: text) {
     else {
         update existing_lobby (.last_heartbeat = op_context.last_block_time);
     }
+}
+
+
+// Exit all lobby entries. 
+// 
+// This is when the player is kind enough to click the "stop waiting" button,
+// instead of just shutting down the game.
+operation exit_lobby() {
+
+    val current_signers = op_context.get_signers();
+    val current_signer = current_signers[0];
+     
+    val playa = player@ {.signer == current_signer};
+    
+    // Remove caller's lobby
+    log("exit_lobby");
+    delete lobby@* {.player == playa};
 }
 
 // -------------------------------------
