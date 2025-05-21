@@ -21,15 +21,20 @@
 // This way, the lag between turns can be kept to a minimum.
 // -------------------------------------
 query get_opponents_recent_actions (
-    player_signer: pubkey,  // Player sends their own pubkey (Needed to know who is "me" and who is "opponent" for this game).
-    game_id: integer,       // What game are we looking at? Cannot assume the game is "unfinished".
-    last_seen_turn: integer // This is mostly a performance thing. We enforce that the client keeps track of what turn-number it has seen/fetched.
-                            // If the client sends the correct [last_seen_turn] and nothing has happened since then, 
-                            // the node should only have to do one single SELECT to the DB, then return "null".
+    player_signer: pubkey,   // Player sends their own pubkey (Needed to know who is "me" and who is "opponent" for this game).
+    game_id: integer,        // What game are we looking at? Cannot assume the game is "unfinished".
+    last_seen_turn: integer, // This is mostly a performance thing. We enforce that the client keeps track of what turn-number it has seen/fetched.
+                             // If the client sends the correct [last_seen_turn] and nothing has happened since then, 
+                             // the node should only have to do one single SELECT to the DB, then return "null".
+    estimated_time_left_ms: integer  // The amount to time the client THINKS the opponent has left.
+                             // This is used improve performance when detecting timeouts.
+                             // If you send "0" every time we will make a full timeout check every time,
+                             // which is expensive.
 ): color_rotation_actions? {
 
     // Get the player's current game
-    val minimal_game: minimal_game_result? = minimal_game_data_get_even_if_finished(player_signer, game_id);
+    val (minimal_game: minimal_game_result?, my_time_left_ms: integer, opp_time_left_ms: integer) =
+        minimal_game_data_get_even_if_finished(player_signer, game_id);
     if (minimal_game == null) {
         log("game_id " + game_id + ", game not found, or not owned by the caller.");
         return null; 
@@ -43,12 +48,12 @@ query get_opponents_recent_actions (
     if (curr_turn_nr == last_seen_turn) return null; // No new turns, quit.
 
     // We won't allow the caller to fetch his own moves this way, too expensive and likely a bug.
-    val max_turn_nr_of_the_color_rotation = color_rotation_find_max_turn_nr(last_seen_turn);
+    val max_turn_nr_of_the_color_rotation = color_rotation_find_max_turn_nr(last_seen_turn); 
     require(curr_turn_nr <= max_turn_nr_of_the_color_rotation, "game_id " + game_id + ". You provided last_seen_turn: " + 
         last_seen_turn + " which indicates that the maximum turn is " + max_turn_nr_of_the_color_rotation + 
         ". But the current turn_nr is " + curr_turn_nr + ". Did you forget to save a move?");
     
     // Get everything that happened since last seen turn
-    return color_rotation_get_all_actions(game_id, minimal_game, last_seen_turn);
+    return color_rotation_get_all_actions(game_id, minimal_game, last_seen_turn, estimated_time_left_ms, my_time_left_ms, opp_time_left_ms); 
  
 }

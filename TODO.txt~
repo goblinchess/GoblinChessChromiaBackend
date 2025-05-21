@@ -2,8 +2,6 @@
 a) Test time-out of old ongoing games.
 b) Test time_left param.
 
-Add timeout to the node.
-
  TODO Client: 
 -------------
 
@@ -37,6 +35,5 @@ Node DONE:
 -------------
  Make an event performance video!
  (Main Idea is to explain that making one SQL-call to fetch all events for a turn is the trick)
-
 
 

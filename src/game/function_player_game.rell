@@ -1,0 +1,11 @@
+
+
+
+// Return the opponent's [player_game] entity
+// from the minimal_game.
+function player_game_get_opponent(minimal_game: minimal_game_result): player_game {
+    return player_game@ {
+        .game == minimal_game.game,
+        .is_white != minimal_game.is_white 
+    };
+}

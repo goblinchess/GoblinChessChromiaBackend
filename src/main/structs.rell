@@ -11,6 +11,7 @@
 // 3. The opponent's card played (if any), 
 // 4. The opponent's move.
 // 5. The neutral move (usually null, but for double moves this is important).
+// 6. Timeout 
 // 
 // NOTE: It's not trivial how to interpret the content of this struct!
 // Why do we have the [rotate_color] flag? It's not strictly needed.
@@ -62,5 +63,17 @@ struct color_rotation_actions {
     // but this is null, then it means that the move was skipped.
     // Note, for double moves, this will be the second move.
     extra_move: move_full_data? = null;
+
+    // 6. Timeout 
+    // True if the opponent has timed out. 
+    // Remember that it's the caller who has to end the game based on this info, 
+    // by calling the [claim_timeout] operation.
+    opp_timeout: boolean;
+
+    // Amount of time I have for my next move 
+    my_time_left_ms: integer;
+
+    // Amount of time the opponent has for this move
+    opp_time_left_ms: integer;
 }
 

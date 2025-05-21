@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using Chromia;
 using Chromia.Encoding;
 using Dc.Online;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 namespace Dc.ChrSerializable
 {
@@ -28,4 +31,17 @@ namespace Dc.ChrSerializable
         public long CreatedAt; // created_at: timestamp; // When the game was created
 
     }
+
+    public class X {
+
+                // This holds one entire row (= stats for one old game)
+        public Transform Layout_OldGamesTable; // This is the parent object for the "old games" table rows, i.e. the "table".
+        public GameObject Prefab_RowOldGame; // Dev must set this in Unity GUI
+
+        private void _fillRowWithData() {
+            
+        }
+    }
+
+
 }

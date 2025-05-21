@@ -478,7 +478,7 @@ function test_full_game() {
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, crd_data, list<rnd_data>())).sign(white_player).run();
 
     // Try to fetch the card.
-    var recent_actions: color_rotation_actions? = get_opponents_recent_actions(white_player.pub, the_game.game_rowid, last_seen_turn);
+    var recent_actions: color_rotation_actions? = get_opponents_recent_actions(white_player.pub, the_game.game_rowid, last_seen_turn, 50000);
     assert_not_null(recent_actions);
     assert_equals(recent_actions.curr_turn_nr, 1);
     assert_false(recent_actions.rotate_color);
@@ -611,7 +611,7 @@ function test_full_game() {
     // --------------------
     // Try to fetch the two moves.
     // --------------------
-    recent_actions = get_opponents_recent_actions(white_player.pub, the_game.game_rowid, last_seen_turn);
+    recent_actions = get_opponents_recent_actions(white_player.pub, the_game.game_rowid, last_seen_turn, 44000);
     assert_not_null(recent_actions);
     assert_equals(recent_actions.curr_turn_nr, 3);
     assert_true(recent_actions.rotate_color);
@@ -877,7 +877,7 @@ function test_full_game() {
     // --------------------
     // Try to fetch the two moves.
     // --------------------
-    recent_actions = get_opponents_recent_actions(black_player.pub, the_game.game_rowid, last_seen_turn);
+    recent_actions = get_opponents_recent_actions(black_player.pub, the_game.game_rowid, last_seen_turn, 40000);
     assert_not_null(recent_actions);
     assert_equals(recent_actions.curr_turn_nr, temp_last_seen_turn2 + 1);
     assert_true(recent_actions.rotate_color);
