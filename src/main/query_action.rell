@@ -33,12 +33,16 @@ query get_opponents_recent_actions (
 ): color_rotation_actions? {
 
     // Get the player's current game
-    val (minimal_game: minimal_game_result?, my_time_left_ms: integer, opp_time_left_ms: integer) =
-        minimal_game_data_get_even_if_finished(player_signer, game_id);
+    val (minimal_game: minimal_game_result?, opp_timeout_data: opponent_timeout_data?, my_tot_time_left_ms: integer) =
+        minimal_game_and_timeout_data_get_even_if_finished(player_signer, game_id, estimated_time_left_ms);
     if (minimal_game == null) {
         log("game_id " + game_id + ", game not found, or not owned by the caller.");
         return null; 
     } 
+    if (opp_timeout_data == null) {
+        log("game_id " + game_id + ", ERROR opp_timeout_data not found. Internal error.");
+        return null; // Should never happen, since we just checked minimal_game.
+    }
     
     // Find the latest turn where it was the opponent's move
     // (This is the current turn if it's the opponent's turn, 
@@ -54,6 +58,6 @@ query get_opponents_recent_actions (
         ". But the current turn_nr is " + curr_turn_nr + ". Did you forget to save a move?");
     
     // Get everything that happened since last seen turn
-    return color_rotation_get_all_actions(game_id, minimal_game, last_seen_turn, estimated_time_left_ms, my_time_left_ms, opp_time_left_ms); 
+    return color_rotation_get_all_actions(game_id, minimal_game, last_seen_turn, opp_timeout_data, my_tot_time_left_ms); 
  
 }

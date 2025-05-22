@@ -1,0 +1,104 @@
+
+// -------------------------------------
+// There are two terms:
+// "ended" - the game is over, but we have not enough info to be certain who won.
+// "terminated" - the game is over, and we know who won.
+// "full terminated" - the game is over, and we know who won, and we have written the stats.
+// -------------------------------------
+
+// -------------------------------------
+// End the game
+// -------------------------------------
+
+// -------------------------------------
+// 1. This will "end" the game (we don't know who won until we verify the random numbers),
+// 2. Remember that this player might deliver the mate AFTER timeout has occurred,
+// so if the opponent challenges this result with a "timeout" claim, the winner might be switched. 
+// => All we know at this point is that the game is over.
+// -------------------------------------
+function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkmate: boolean, is_stalemate: boolean) :boolean {
+    if (is_checkmate or is_stalemate) {
+        log("Game Over");
+        if (is_checkmate) {
+            _inner_game_end_checkmate(minimal_game.game, new_turn.number, minimal_game.player_game);
+            game_update_time_left(minimal_game);
+        } else {
+            // Stalemate
+            _inner_game_end_draw(minimal_game.game, new_turn.number, minimal_game.player_game);
+            game_update_time_left(minimal_game);
+        }
+
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
+function _inner_game_end_checkmate(gme: game, curr_turn_nr: integer, winner_pg: player_game) {
+    update gme (.current_turn = curr_turn_nr, .is_finished = true, .is_draw = false);
+
+}
+
+// We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
+function _inner_game_end_draw(gme: game, curr_turn_nr: integer, winner_pg: player_game) {
+    update gme (.current_turn = curr_turn_nr, .is_finished = true, .is_draw = true);
+}
+
+// -------------------------------------
+// Terminate the game
+// -------------------------------------
+
+// -------------------------------------
+// FULL terminate the game as a timeout WITHOUT any timeout checks.
+//
+// We will never get a chance to validate the random numbers,
+// so we can go ahead and create the [player_game_stats] record
+// immediately, but with empty [player_seed].
+// -------------------------------------
+function _inner_game_terminate_full_timeout(gme: game, 
+    winner_p: player, loser_p: player, 
+    winner_pg: player_game, loser_pg: player_game, 
+    winner_name: text, loser_name: text, 
+    winner_old_elo: integer, loser_old_elo: integer
+) {
+
+    update gme (.is_finished = true, .is_draw = false);
+
+    // Timeout is just like any other win.
+    val (winner_new_elo, loser_new_elo) = elo.update_chess_ratings_on_win(winner_old_elo, loser_old_elo);
+
+    val created_time = op_context.last_block_time;
+
+    // Create Winner's stats
+    create player_game_stats (
+        .player_game = winner_pg,
+        .game = gme,
+        .player = winner_p,
+        .is_winner = true,
+        .is_draw = false, 
+        .is_timeout = true, 
+        .is_error = false, // Timeout isn't considered an error
+        .new_elo_rating = winner_new_elo, // The new ELO rating after the game.
+        .player_seed = byte_array(''), // Cannot be null, but doesn't matter what it is.
+        .opp_name = loser_name,
+        .opp_elo = loser_old_elo, // Here it only matters what the opponent's ELO was when the game started
+        .created_at = created_time
+    );
+
+    // Create Loser's stats
+    create player_game_stats (
+        .player_game = loser_pg,
+        .game = gme,
+        .player = loser_p,
+        .is_winner = false,
+        .is_draw = false, 
+        .is_timeout = true, 
+        .is_error = false, // Timeout isn't considered an error
+        .new_elo_rating = loser_new_elo, // The new ELO rating after the game.
+        .player_seed = byte_array(''), // Cannot be null, but doesn't matter what it is.
+        .opp_name = winner_name,
+        .opp_elo = winner_old_elo, // Here it only matters what the opponent's ELO was when the game started
+        .created_at = created_time
+    );
+}

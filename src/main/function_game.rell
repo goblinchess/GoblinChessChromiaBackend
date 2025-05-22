@@ -20,7 +20,8 @@ function game_create_via_lobby_inner(opponent_player: player, game_type_str: tex
     require(existing_lobby != null, "Opponent is not in the lobby");
     
     // Just before creating the game, we terminate any running games 
-    game_terminate_if_old(caller_player);
+    val can_go_on = game_timeout_any_player_if_possible(caller_player);
+    require(can_go_on, "Cannot create game, since you are in an existing game that has not been timed out yet.");
 
     val new_game = game_create_random_black_white(caller_player, opponent_player, game_type_str);
 
@@ -59,7 +60,7 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .is_finished = false, 
         .is_draw = false,
         .created_at = op_context.last_block_time,
-        .last_move_finished_at = op_context.last_block_time
+        .last_color_rotation_at = op_context.last_block_time
     );
 
     val start_time_remaining = game_type_to_time_left(g_type);
@@ -71,7 +72,8 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .is_white = true,
         .in_check = false,
         .cards_left = 5,
-        .time_left = start_time_remaining
+        .total_time_left = start_time_remaining,
+        .last_heartbeat = op_context.last_block_time
     );
 
     // Create black player_game
@@ -81,7 +83,8 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .is_white = false,
         .in_check = false,
         .cards_left = 5,
-        .time_left = start_time_remaining
+        .total_time_left = start_time_remaining,
+        .last_heartbeat = op_context.last_block_time
     );
 
     // The turn before anything has happened

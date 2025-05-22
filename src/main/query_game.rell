@@ -8,6 +8,8 @@
 
 // -------------------------------------
 // In Game query
+//
+// Returns a hodge-podge of data about the game.
 // -------------------------------------
 
 query in_game (
@@ -95,3 +97,4 @@ query get_old_games(
     
     return return_list;
 }
+

@@ -306,6 +306,48 @@ function test_ten_to_the_power_of() {
     assert_true(result2 > 99.999);
 }
 
+function test_game_timeout_calc() {
+
+    val game_id = 1;
+
+    // First we need to get the current time
+    val curr_time_ms: timestamp = 0; // Only for test.
+
+    val less_than_a_minute_ms = 59* 1000;
+    val more_than_a_minute_ms = 61* 1000;
+    val ten_minutes_ms = 10*60*1000;
+
+    // Not timed out yet
+    var otd = opponent_timeout_data(
+        estimated_time_left_ms = 1000, // 1000 = 1 sec should trigger a timeout check.
+        opp_last_heartbeat = curr_time_ms - less_than_a_minute_ms, // Not timed out yet, since 59 sec old heartbeat
+        last_color_rotation_at = curr_time_ms - more_than_a_minute_ms, // The last time the color rotation was completed 61 sec ago.
+        opp_tot_time_left_since_color_rotation_ms = ten_minutes_ms, // The opponent has 10 minutes left when the "move" (= color rotation) began.
+    );
+    var result = game_timeout_calc(game_id, otd, true);
+    assert_equals(result, false);
+
+    // Timed out due to old heartbeat
+    otd = opponent_timeout_data(
+        estimated_time_left_ms = 1000, // 1000 = 1 sec should trigger a timeout check.
+        opp_last_heartbeat = curr_time_ms - more_than_a_minute_ms, // Timed out due to old heartbeat, since 61 sec ago.
+        last_color_rotation_at = curr_time_ms - more_than_a_minute_ms, // The last time the color rotation was completed 61 sec ago.
+        opp_tot_time_left_since_color_rotation_ms = ten_minutes_ms, // The opponent has 10 minutes left when the "move" (= color rotation) began.
+    );
+    result = game_timeout_calc(game_id, otd, true);
+    assert_equals(result, true);
+
+    // Timed out due to total time gone
+    otd = opponent_timeout_data(
+        estimated_time_left_ms = 1000, // 1000 = 1 sec should trigger a timeout check.
+        opp_last_heartbeat = curr_time_ms - less_than_a_minute_ms, // Not timed out yet, since 59 sec old heartbeat.
+        last_color_rotation_at = curr_time_ms - more_than_a_minute_ms, // The last time the color rotation was completed 61 sec ago.
+        opp_tot_time_left_since_color_rotation_ms = less_than_a_minute_ms, // The opponent has 59 sec left when the "move" (= color rotation) began.
+    );
+    result = game_timeout_calc(game_id, otd, true);
+    assert_equals(result, true);
+
+}
 
 // ----------------------------------
 // Game

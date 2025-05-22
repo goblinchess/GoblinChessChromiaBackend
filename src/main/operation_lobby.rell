@@ -18,10 +18,14 @@ operation enter_lobby(game_type_str: text) {
 
     if (existing_lobby == null) {
 
-        // Only terminate running games first time we enter the lobby
-        game_terminate_if_old(playa);
+        // Background/Requirements:
+        // Before a player can enter the lobby (s)he must terminate any old (unfinished) game
+        // (since there can only be one ongoing game per player).
+        // However, if this fails we won't allow the player to enter the lobby.
+        val all_clear: boolean = game_timeout_any_player_if_possible(playa);
+        require(all_clear, "Cannot enter lobby, since you are in an existing game that has not been timed out yet.");
 
-        log("enter_lobby");
+        log("player_id = " + playa.rowid.to_integer() + " - enter_lobby");
         create lobby(
         .player = playa,
         .game_type = g_type,
@@ -29,6 +33,7 @@ operation enter_lobby(game_type_str: text) {
         );
     }
     else {
+        // Don't even log it, this will happen often
         update existing_lobby (.last_heartbeat = op_context.last_block_time);
     }
 }
@@ -46,48 +51,10 @@ operation exit_lobby() {
     val playa = player@ {.signer == current_signer};
     
     // Remove caller's lobby
-    log("exit_lobby");
+    log("player_id = " + playa.rowid.to_integer() + " - exit_lobby");
     delete lobby@* {.player == playa};
 }
 
-// -------------------------------------
-// Game Creation
-// -------------------------------------
-
-// --------
-// Via lobby
-// --------
-
-// Usually players find each other in the lobby
-// Here we send the opponent player name and the game type
-operation create_game_via_lobby_by_name(opp_player_name: text, game_type_str: text) {
-    val opponent_player = player@{.name == opp_player_name};
-    val new_game: game = game_create_via_lobby_inner(opponent_player, game_type_str);
-    log("create_game_via_lobby_by_name() - finished, game: " + new_game.rowid.to_integer() + " type: " + game_type_str + " opp player: " + opp_player_name);
-}
-
-// Here we send the opponent player pubkey and the game type
-operation create_game_via_lobby(opp_player: pubkey, game_type_str: text) {
-    val opponent_player = player@{.signer == opp_player};
-    val new_game: game = game_create_via_lobby_inner(opponent_player, game_type_str);
-    log("create_game_via_lobby() - finished, game: " + new_game.rowid.to_integer() + " type: " + game_type_str);
-}
-
-// --------
-// Direct
-// --------
-
-// Create a new game between two players
-// Could be a challange
-operation create_game(white_player_name: text, black_player_name: text, game_type_str: text) {
-    require(white_player_name != black_player_name, "Players must be different");
-    
-    val white_player = player@{white_player_name};
-    val black_player = player@{black_player_name};
-
-    val new_game: game = game_create_inner(white_player, black_player, game_type_str);
-    log("create_game() - finished, game: " + new_game.rowid.to_integer() + " type: " + game_type_str);
-}
 
 
 

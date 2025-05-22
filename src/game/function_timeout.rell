@@ -1,0 +1,265 @@
+// -------------------------------------
+// Timeout
+// -------------------------------------
+// Rules: 
+// 1. If the total time (5/10 minutes) has passed, the game CAN be timed out.
+// 2. If a player hasn't made a move within a minute, AND has failed to send the
+//    "I'm still here" message, the game CAN be timed out.
+//   
+// Motivation: A major problem is that the node doesn't have any good 
+// way to know if the clients are alive or not. 
+// 
+// Example E:
+// Assume that player A is matched with player B in the lobby. 
+// Player B doesn't like his cards and simply shuts down the client.
+// Player A is stuck waiting for B's first move, but nothing happens and 
+// A is too irritated to even wait for the 1 min timout win, so A 
+// restarts the client to find a new game in the lobby. 
+// 
+// Two things can happen here:
+// E.1. B ha been inactive more than 60 seconds when A enters the lobby.
+//      Player A will cause existing game to be terminated as a win. 
+// E.2. B ha been inactive less than 60 seconds when A enters the lobby.
+//      Player A CANNOT start a new game since there is no way to finish the old one.
+//      In this case A has to wait so that 60 seconds have passed 
+//      before entering the lobby.
+// -------------------------------------
+
+// -------------------------------------
+// Inspectors
+// -------------------------------------
+
+
+// -------------------------------------
+// Returns "true" if the given player has spent too much time (can be timed out).
+// Will only work if for the player who is currently holding the turn.
+//
+// There are two cases:
+// 1. The player's last heartbeat is more than 60 seconds ago.
+// 2. The player's total game-time is out.
+// -------------------------------------
+function game_timeout_calc( game_id: integer, otd: opponent_timeout_data, is_test: boolean = false): boolean {
+
+    if (otd.estimated_time_left_ms > 3000) {
+        return false; // This is to save system resources, if the client's own calculation says we have time left we don't even try.
+    }
+
+    // Get current time
+    // Note: it's hard to get the current time from a query, 
+    // since we cannot use [op_context.last_block_time] here.
+    var curr_time_ms: timestamp = 0; // For test we cannot get the block.
+    if (not is_test) {
+        curr_time_ms = block @ {} (.timestamp, @omit @sort_desc .block_height ) limit 1;
+    }
+
+    if (game_timeout_heartbeat_calc(curr_time_ms, otd.opp_last_heartbeat)) { 
+        log("game_id " + game_id + " TIMEOUT: more than one minute since last heartbeat (" + (curr_time_ms - otd.opp_last_heartbeat) + " ms)");
+        return true;
+    } else { 
+        // How much time has the opponent consumed since my last turn (= since last color rotation)?
+        val opp_time_consumed_ms =  curr_time_ms -  otd.last_color_rotation_at;
+
+        if (opp_time_consumed_ms >  otd.opp_tot_time_left_since_color_rotation_ms) {
+            log("game_id " + game_id + " TIMEOUT: opp time consumed > opp time left (" + opp_time_consumed_ms + " > " + otd.opp_tot_time_left_since_color_rotation_ms + ")");
+            return true;
+        } else {
+            log("game_id " + game_id + " opp time consumed < opp time left (" + opp_time_consumed_ms + " < " + otd.opp_tot_time_left_since_color_rotation_ms + ")");
+        }
+    }
+    return false;
+}
+
+// Returns "true" if the opponent has timed out due to inactivity.
+// (i.e. not sent a heartbeat in more than 60 seconds).
+function game_timeout_heartbeat_calc(curr_time_ms: timestamp, opp_last_heartbeat: timestamp): boolean {
+    val time_since_last_heartbeat_ms = curr_time_ms - opp_last_heartbeat;
+    return time_since_last_heartbeat_ms > 60000;
+}
+
+// -------------------------------------
+// Update
+// -------------------------------------
+
+// Sets the [last_heartbeat] timestamp to the current block time.
+// Prevents the opponent from calling timeout on this player.
+function game_timeout_set_player_alive(pg: player_game) {
+    pg.last_heartbeat = op_context.last_block_time; // Usually happens twice every second, so good enough.
+}
+
+
+// -------------------------------------
+// game_timeout_if_possible
+//
+// Will terminate any old game the player might be in.
+// Returns "true" if there was no old game, or if the old game was terminated.
+// Returns "false" if we have an ongoing game that cannot be terminated.
+//
+// Q1: Why cannot the player just keep playng the unfinished game?
+// A1: Because the client is still too stupid to put everything on the correct place, and this way start 
+//     where the old game left off. Therefore we need to terminate ANY old game we find.
+//     In v2.0 this might change.
+// 
+// Q2: But who should win? 
+// A2: The player (A) who made the last move should win, but only if the opponent (B) hasn't taken action or 
+//     sent "I'm alive" message for 60 seconds. 
+//     We want to detect bad players who escape the game (shut down the computer or something). 
+//     The correct way to escap is via the "Resign" button, but we must assume some players won't show sportmanship.
+//
+// Q2.1: But if nobody made a move?
+// A2.1: Then black is the winner and white is the loser (sicne white should have moved).
+// 
+// Q3: Some Chess games allow quitting during the first move without ELO penalty (i.e. was made there was NO game).
+//     Why can't we allow closing of the game early on without ELO penalty?
+// A3: In GoblinChess would means that if either player doesn't like his/her cards they can just leave and 
+//     won't lose rating. This could lead to a majority of games being aborted early on, so we don't allow it.
+// -------------------------------------
+
+function game_timeout_any_player_if_possible(me: player): boolean {
+    val maybe_game = (pg: player_game, g: game, pg_opp: player_game, ct: current_turn, t: turn)@? {
+        pg.player == me,
+        pg.game == g,
+        pg_opp.player != me,
+        pg_opp.game == g,
+        g.is_finished == false,
+        ct.game == g,
+        ct.current_turn == t // yes, even if we are at turn = 0 there will be a [current_turn] row.
+    } (gme = g, 
+        my_pg = pg, opp_pg = pg_opp, 
+        my_p = pg.player, opp_p = pg_opp.player, 
+        my_name = pg.player.name, opp_name = pg_opp.player.name,
+        my_elo = pg.player.elo_rating, opp_elo = pg_opp.player.elo_rating,
+        turn_owner = t.created_by, turn_nr = t.number,
+        black_player = g.black_player);
+
+    if (maybe_game == null) {
+        return true; // No old game found, nothing to do, were good.
+    } else {
+
+        var am_i_winner = game_timeout_did_i_make_the_last_move(
+            maybe_game.turn_nr, 
+            maybe_game.black_player, 
+            maybe_game.my_p, 
+            maybe_game.my_pg, 
+            maybe_game.turn_owner);
+
+
+        if (am_i_winner) {
+            if (game_timeout_heartbeat_calc(op_context.last_block_time, maybe_game.opp_pg.last_heartbeat)) {
+                // Opponent is inactive, and we are the winner, so we terminate the game fully.
+                _inner_game_terminate_full_timeout(maybe_game.gme, 
+                    maybe_game.my_p, maybe_game.opp_p,
+                    maybe_game.my_pg, maybe_game.opp_pg,
+                    maybe_game.my_name, maybe_game.opp_name,
+                    maybe_game.my_elo, maybe_game.opp_elo
+                );
+                return true;
+            } else {
+                return false; // Opponent is active, must abort everything.
+            }
+        } else {
+            // We're the loser and we terminate this game without even checking for timeout.
+            //
+            // Discussion: 
+            // One could argue that this isn't in the player's best interest. 
+            // Doing self-harm is typically not the way of blockchain, 
+            // since blockchain users - according to game theory -
+            // would not trigger any action that's bad for them.
+            // But here we must assume that the player simply wants to play,
+            // EVEN if (s)he will lose rating on this old one (which we cannot return to).
+            _inner_game_terminate_full_timeout(maybe_game.gme, 
+                maybe_game.opp_p, maybe_game.my_p, 
+                maybe_game.opp_pg, maybe_game.my_pg, 
+                maybe_game.opp_name, maybe_game.my_name, 
+                maybe_game.opp_elo, maybe_game.my_elo
+            );
+            return true;
+        }
+    }
+}
+
+function game_timeout_did_i_make_the_last_move(
+    turn_nr: integer, 
+    black_player: player, 
+    my_p: player, 
+    my_pg: player_game, 
+    turn_owner: player_game
+): boolean {
+    if (turn_nr == 0) {
+        // See Q2.1 above, we need to find black and make him the winner.
+        // Note: We cannot trust the "turn_owner" here, since it's just the player who created the game (could be black or white).
+        if (black_player == my_p) {
+            return true; // We are black, we should win
+        } else {
+            return false; // We are white, we should lose
+        }
+    } else if (my_pg == turn_owner) { 
+        return true; // This player made the last move => this player is the winner
+    } else {
+        return false; // Opponent made the last move, => this player is the loser
+    }
+}
+
+
+// Here we end the game if the OPPONENT has timed out 
+// (no matter if we timed out first).
+// It's a solid strategy to expect the client to only do things 
+// that's in their best interest.
+function game_timout_claim(me: player) {
+    val maybe_game = (pg: player_game, g: game, pg_opp: player_game, ct: current_turn, t: turn)@? {
+        pg.player == me,
+        pg.game == g,
+        pg_opp.player != me,
+        pg_opp.game == g,
+        g.is_finished == false,
+        ct.game == g,
+        ct.current_turn == t // yes, even if we are at turn = 0 there will be a [current_turn] row.
+    } (gme = g, 
+        my_pg = pg, opp_pg = pg_opp, 
+        my_p = pg.player, opp_p = pg_opp.player, 
+        my_name = pg.player.name, opp_name = pg_opp.player.name,
+        my_elo = pg.player.elo_rating, opp_elo = pg_opp.player.elo_rating,
+        turn_owner = t.created_by, turn_nr = t.number,
+        black_player = g.black_player);
+
+    if (maybe_game != null) {
+
+        var am_i_winner = false;
+        if (maybe_game.turn_nr == 0) {
+            // See Q2.1 above, we need to find black and make him the winner.
+            // Note: We cannot trust the "turn_owner" here, since it's just the player who created the game (could be black or white).
+            if (maybe_game.black_player == maybe_game.my_p) {
+                am_i_winner = true; // We are black, we should win
+            } else {
+                am_i_winner = false; // We are white, we should lose
+            }
+        } else if (maybe_game.my_pg == maybe_game.turn_owner) {
+            am_i_winner = true; // This player made the last move => this player is the winner
+        } else {
+            am_i_winner = false; // Opponent made the last move, => this player is the loser
+        }
+
+        if (am_i_winner) {
+            _inner_game_terminate_full_timeout(maybe_game.gme, 
+                maybe_game.my_p, maybe_game.opp_p,
+                maybe_game.my_pg, maybe_game.opp_pg,
+                maybe_game.my_name, maybe_game.opp_name,
+                maybe_game.my_elo, maybe_game.opp_elo
+            );
+        } else {
+            // Discussion: 
+            // Q: why are we doing something that isn't in the 
+            // players best interest? That is typically not the way of 
+            // blockchain, since blockchain users - according to game theory -
+            // would not trigger any action that's bad for them.
+            // A: The reason is that we assume that the player simply wants to play,
+            // EVEN if (s)he will lose rating on this old one.
+            _inner_game_terminate_full_timeout(maybe_game.gme, 
+                maybe_game.opp_p, maybe_game.my_p, 
+                maybe_game.opp_pg, maybe_game.my_pg, 
+                maybe_game.opp_name, maybe_game.my_name, 
+                maybe_game.opp_elo, maybe_game.my_elo
+            );
+        }
+    }
+}
+

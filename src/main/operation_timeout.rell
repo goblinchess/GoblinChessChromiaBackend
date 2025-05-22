@@ -1,0 +1,83 @@
+
+
+// -------------------------------------
+// Still Thinking
+//
+// If the player hasn't taken any action for 60 seconds, 
+// the player should send this operation to show the node that the player is still alive.
+// If not the opponent can timeout the game.
+// -------------------------------------
+operation still_thinking() {
+
+    val current_signers = op_context.get_signers();
+    val current_signer = current_signers[0];
+
+    val minimal_game: minimal_game_result? = minimal_game_data_get(current_signer);
+
+    require(minimal_game != null, "No game found");
+
+    game_timeout_set_player_alive(minimal_game.player_game);
+
+}
+
+
+// -------------------------------------
+// Claim Timeout
+// 
+// If you suspect that the opponent has timed out, you call this operation.
+// It will crash with error if the opponent has not timed out.
+// -------------------------------------
+
+operation claim_timeout(game_rowid: integer) {
+    
+    val current_signers = op_context.get_signers();
+    val caller_pubkey = current_signers[0];
+    
+    // Get the caller's player entity
+    val caller_player = player@{.signer == caller_pubkey};
+    
+    /*
+    // Verify the game exists
+    val game_rowid_real = rowid(game_rowid);
+    val g_res = game@?{.rowid == game_rowid_real} (finished = .is_finished);
+    require(g_res != null, "Game not found");
+    
+    // Verify the game is not already finished
+    require(not g_res.finished, "Game is already finished");
+    
+    // Determine if caller is white or black player and find opponent
+    val is_caller_white = game.white_player == caller_player;
+    val is_caller_black = game.black_player == caller_player;
+    
+    require(is_caller_white or is_caller_black, "You are not a player in this game");
+    
+    // Get player_game records for both players
+    val caller_player_game = player_game@{.player == caller_player, .game == game};
+    val opponent_player = if (is_caller_white) game.black_player else game.white_player;
+    val opponent_player_game = player_game@{.player == opponent_player, .game == game};
+    
+    // Check whose turn it is - can only claim timeout if it's opponent's turn
+    val is_white_turn = game.current_turn % 2 == 1; // White plays on odd turns
+    require(is_white_turn == opponent_player_game.is_white, 
+            "Cannot claim timeout when it's your turn");
+    
+    // Check if opponent has timed out
+    require(opponent_player_game.total_time_left <= 0, 
+            "Opponent has not timed out yet. They still have " + opponent_player_game.total_time_left + " seconds left");
+    
+    // Update game status to finished
+    update game (.is_finished = true, .is_draw = false);
+    
+    // Create turn record for game end
+    val turn_type_value = if (is_caller_white) turn_type.WHITE_WIN_BY_TIMEOUT else turn_type.BLACK_WIN_BY_TIMEOUT;
+    turn_create(game, caller_player_game, turn_type_value, is_caller_white);
+    
+    // Update player statistics
+    update caller_player (.games_won += 1, .games_played += 1);
+    update opponent_player (.games_lost += 1, .games_played += 1);
+    
+    // Optional: Update ELO ratings if your game tracks them
+    // This would depend on your ELO calculation function
+    // update_elo_ratings(caller_player, opponent_player, true);
+    */
+}

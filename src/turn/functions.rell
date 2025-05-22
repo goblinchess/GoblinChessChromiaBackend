@@ -72,6 +72,9 @@ function turn_create(game: game, created_by: player_game, new_turn_type: turn_ty
     //GAME cannot have a reference to the (current) TURN since we don't allow two-way FKs.
     update game (.current_turn = new_turn.number);  
 
+    // Update the player's last heartbeat (must be done every time a player does something)
+    game_timeout_set_player_alive(created_by);
+
     return new_turn;
 }
 

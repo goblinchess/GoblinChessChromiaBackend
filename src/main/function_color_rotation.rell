@@ -26,9 +26,8 @@ function color_rotation_get_all_actions(
     game_id: integer, 
     minimal_game: minimal_game_result, 
     last_seen_turn: integer,
-    estimated_time_left_ms: integer,
-    my_time_left_ms: integer, 
-    opp_time_left_ms: integer
+    opponent_timeout_data,
+    my_time_left_ms: integer
 ): color_rotation_actions? {
 
     val max_turn_nr_of_the_color_rotation = color_rotation_find_max_turn_nr(last_seen_turn);
@@ -171,22 +170,9 @@ function color_rotation_get_all_actions(
     // It's convenient that the node returns if we have a timeout, 
     // but at the same time it's expensive to calculate, so we only wanna do this 
     // when it's likely to happen
-    var opp_timeout: boolean = false;
-    if (estimated_time_left_ms < 5000 or opp_time_left_ms < 3000) { 
-        // Get current time
-        // Note: it's hard to get the current time from a query, since we cannot use [op_context.last_block_time] here.
-        val curr_time_ms: timestamp = block @ {} (.timestamp, @omit @sort_desc .block_height ) limit 1;
-
-        // How much time has the opponent consumed since my turn?
-        val opp_time_consumed =  curr_time_ms -  minimal_game.prev_move_finished_at;
-
-        if (opp_time_consumed > opp_time_left_ms) {
-            log("game_id " + game_id + " TIMEOUT: opp time consumed > opp time left (" + opp_time_consumed + " > " + opp_time_left_ms + ")");
-            opp_timeout = true;
-        } else {
-            log("game_id " + game_id + " opp time consumed < opp time left (" + opp_time_consumed + " < " + opp_time_left_ms + ")");
-        }
-    }
+    var opp_timeout: boolean = game_timeout_calc(
+            game_id, 
+            opponent_timeout_data);
 
     return color_rotation_actions(
         curr_turn_nr = return_turn_nr, // <- Should be the last seen turn, if our @sort works
@@ -196,6 +182,7 @@ function color_rotation_get_all_actions(
         extra_move = extra_move, 
         opp_timeout = opp_timeout,
         my_time_left_ms = my_time_left_ms,
-        opp_time_left_ms = opp_time_left_ms
+        opp_time_left_ms = opponent_timeout_data.opp_tot_time_left_since_color_rotation_ms
     );
-}
+
+} 

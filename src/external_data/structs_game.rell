@@ -34,3 +34,11 @@ struct old_game_stat {
     is_timeout: boolean; // Game ended because of a timeout
     is_error: boolean; // Game ended because of an error (it's always the client that made the error that lost)
 }
+
+// Holds all time-related info we need to calculate timeouts.
+struct opponent_timeout_data {
+    estimated_time_left_ms: integer; // The amount to time the client THINKS the opponent has left. If this is 0 the node must make a timeout check.
+    opp_last_heartbeat: timestamp; // The last heartbeat of the opponent.
+    last_color_rotation_at: timestamp; // The last time the color rotation was completed.
+    opp_tot_time_left_since_color_rotation_ms: integer; // How much time the opponent had left when the "move" (= color rotation) began.
+}
