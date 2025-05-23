@@ -2,7 +2,7 @@
 
 
 // Fetch everything from the card that was played the given turn and return it.
-function card_played_data_get(turn: turn, turn_type: turn_type, turn_nr: integer, minimal_game: minimal_game_result): card_played_data {
+function card_played_data_get(turn: turn, turn_type: turn_type, turn_nr: integer): card_played_data {
     
     // Find the card played during this turn
     val card_res = (c: card) @ { c.turn == turn } 

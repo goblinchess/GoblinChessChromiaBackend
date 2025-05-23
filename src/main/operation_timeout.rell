@@ -24,8 +24,10 @@ operation still_thinking() {
 // -------------------------------------
 // Claim Timeout
 // 
-// If you suspect that the opponent has timed out, you call this operation.
-// It will crash with error if the opponent has not timed out.
+// If the player suspects that the opponent has timed out, 
+// (s)he can call this operation.
+//
+// It will crash with error if the opponent has NOT timed out.
 // -------------------------------------
 
 operation claim_timeout(game_rowid: integer) {
@@ -35,49 +37,35 @@ operation claim_timeout(game_rowid: integer) {
     
     // Get the caller's player entity
     val caller_player = player@{.signer == caller_pubkey};
-    
-    /*
-    // Verify the game exists
-    val game_rowid_real = rowid(game_rowid);
-    val g_res = game@?{.rowid == game_rowid_real} (finished = .is_finished);
-    require(g_res != null, "Game not found");
-    
-    // Verify the game is not already finished
-    require(not g_res.finished, "Game is already finished");
-    
-    // Determine if caller is white or black player and find opponent
-    val is_caller_white = game.white_player == caller_player;
-    val is_caller_black = game.black_player == caller_player;
-    
-    require(is_caller_white or is_caller_black, "You are not a player in this game");
-    
-    // Get player_game records for both players
-    val caller_player_game = player_game@{.player == caller_player, .game == game};
-    val opponent_player = if (is_caller_white) game.black_player else game.white_player;
-    val opponent_player_game = player_game@{.player == opponent_player, .game == game};
-    
-    // Check whose turn it is - can only claim timeout if it's opponent's turn
-    val is_white_turn = game.current_turn % 2 == 1; // White plays on odd turns
-    require(is_white_turn == opponent_player_game.is_white, 
-            "Cannot claim timeout when it's your turn");
-    
-    // Check if opponent has timed out
-    require(opponent_player_game.total_time_left <= 0, 
-            "Opponent has not timed out yet. They still have " + opponent_player_game.total_time_left + " seconds left");
-    
-    // Update game status to finished
-    update game (.is_finished = true, .is_draw = false);
-    
-    // Create turn record for game end
-    val turn_type_value = if (is_caller_white) turn_type.WHITE_WIN_BY_TIMEOUT else turn_type.BLACK_WIN_BY_TIMEOUT;
-    turn_create(game, caller_player_game, turn_type_value, is_caller_white);
-    
-    // Update player statistics
-    update caller_player (.games_won += 1, .games_played += 1);
-    update opponent_player (.games_lost += 1, .games_played += 1);
-    
-    // Optional: Update ELO ratings if your game tracks them
-    // This would depend on your ELO calculation function
-    // update_elo_ratings(caller_player, opponent_player, true);
-    */
+
+    // Get the player's current game
+    //val estimated_time_left_ms = 0; // This way we force a real timeout calculation.
+    val (maximal_game: maximal_game_result?, opp_timeout_data: opponent_timeout_data?) =
+        maximal_game_and_timeout_data_get(caller_pubkey);
+
+    if (maximal_game == null) {
+        // There is a chance that the opponent has ended the game already
+        // Let's look again using the game_rowid.
+        val res = game @? {.rowid == rowid(game_rowid)} (ended = .is_finished);
+        require(res != null, "Game does not exist?"); // Error
+
+        if (res.ended) {
+            // Since we know that the game isn't ongoing, this is the message we expect to return to the client. 
+            require(false, "The game has ended already, did the opponent end game " + game_rowid + "?");
+        } else {
+            // Error, should never happen
+            require(false, "Internal error: didn't expect to find this game ongoing (already checked for that)?");
+        }
+    } else {
+        // Another sanity check
+        val game_id = maximal_game.game_id;
+        require(game_id == game_rowid, "The game you sent " + game_rowid + " isn't the one one we found " + game_id + ".");
+
+        // Timeout check
+        val curr_time_ms: timestamp = op_context.last_block_time;
+        val has_timed_out = game_timeout_calc_core(game_id, curr_time_ms, opp_timeout_data!!);
+        require(has_timed_out, "The opponent has not timed out yet. Please don't waste our resources like this!");
+
+        _inner_game_terminate_full_timeout_opponent(maximal_game);
+    }
 }

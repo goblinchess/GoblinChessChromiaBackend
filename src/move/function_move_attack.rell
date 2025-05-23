@@ -56,6 +56,7 @@ function move_attack_inner(
     //log("Move A.1");
     val minimal_game: minimal_game_result? = minimal_game_data_get(caller_pubkey);
     require (minimal_game != null, "Player is not in a game, id:" + game_id);
+    require(minimal_game.game_id == game_id, "The game id of the ongoing game " + minimal_game.game_id + " doesn't match the given id " + game_id + ".");
 
     // ----------------
     // A.2. Is game is out of sync? 

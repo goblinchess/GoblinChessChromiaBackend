@@ -21,13 +21,16 @@ function color_rotation_find_max_turn_nr(
 //
 // This function will return all actions (all turns) in the same "color rotation"  
 // that came after the given [last_seen_turn]. 
+// 
+// Note on performance:
+// To speed things up, we want to return everything the client needs in one single query (all "turns").
+// This way we can minimize the number of DB roundtrips.
 // -------------------------------------
 function color_rotation_get_all_actions(
     game_id: integer, 
     minimal_game: minimal_game_result, 
     last_seen_turn: integer,
-    opponent_timeout_data,
-    my_time_left_ms: integer
+    otd: opponent_timeout_data
 ): color_rotation_actions? {
 
     val max_turn_nr_of_the_color_rotation = color_rotation_find_max_turn_nr(last_seen_turn);
@@ -74,7 +77,7 @@ function color_rotation_get_all_actions(
                 { 
                     log("game_id " + game_id + "ERROR: Card played should be first thing seen, last seen turn was " + return_turn_nr + ", but card has turn nr: " + recent_turn.nr);
                 }
-                card_played_data = card_played_data_get(recent_turn.trn, recent_turn.turn_type, recent_turn.nr, minimal_game);
+                card_played_data = card_played_data_get(recent_turn.trn, recent_turn.turn_type, recent_turn.nr);
                 return_turn_nr = recent_turn.nr;
             }
             turn_type.WHITE_MOVE_SKIPPED, 
@@ -167,12 +170,19 @@ function color_rotation_get_all_actions(
         log("game_id " + game_id + "ERROR: return_turn_nr == max_turn_nr and not rotate_color, return_turn_nr: " + return_turn_nr + ", max_turn_nr: " + max_turn_nr_of_the_color_rotation);
     }
 
-    // It's convenient that the node returns if we have a timeout, 
-    // but at the same time it's expensive to calculate, so we only wanna do this 
-    // when it's likely to happen
-    var opp_timeout: boolean = game_timeout_calc(
-            game_id, 
-            opponent_timeout_data);
+    // Get current time
+    // Note: it's hard to get the current time from within a query, 
+    // since we cannot use [op_context.last_block_time] here.
+    var curr_time_ms: timestamp = 0; 
+    val maybe_curr_time_ms = block @? {} (ts = .timestamp, @omit @sort_desc .block_height ) limit 1;
+    if (maybe_curr_time_ms != null) { // During automated testing there are no blocks, so we cannot "require()" here
+        curr_time_ms = maybe_curr_time_ms.ts;
+    }
+
+    // It's convenient that the node returns information about opponent's timeout status.
+    val opp_timeout: boolean = game_timeout_calc_core(game_id, curr_time_ms, otd);
+
+    val ti = game_timeout_build_timeout_info(opp_timeout, otd, minimal_game.total_time_left_since_color_rotation_ms, curr_time_ms, minimal_game.game_created_at);
 
     return color_rotation_actions(
         curr_turn_nr = return_turn_nr, // <- Should be the last seen turn, if our @sort works
@@ -180,9 +190,7 @@ function color_rotation_get_all_actions(
         card_played_data = card_played_data,
         primary_move = primary_move,
         extra_move = extra_move, 
-        opp_timeout = opp_timeout,
-        my_time_left_ms = my_time_left_ms,
-        opp_time_left_ms = opponent_timeout_data.opp_tot_time_left_since_color_rotation_ms
+        timeout_info = ti
     );
 
 } 

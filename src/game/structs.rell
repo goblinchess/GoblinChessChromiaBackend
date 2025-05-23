@@ -2,13 +2,49 @@
 // Internal use
 // Return mostly a bunch of primary keys     
 struct minimal_game_result {
+    // Primary keys
     player;
     player_game;
     game;
+    // Data
+    game_id: integer; // The game's rowid.
     game_type;
     curr_turn_nr: integer; // We always check this, so best to store it.
     in_check: boolean; // Our king is in check.
-    is_white: boolean;
+    is_white: boolean; // True if this player is white.
+    // Timestamps
     last_color_rotation_at: timestamp; // When the last "move" was finished, i.e. when it became this player's turn..
+    game_created_at: timestamp; // When the game was created.
+    total_time_left_since_color_rotation_ms: integer; // Total time left for this player
 }
+
+// Internal use
+// Same as [minimal_game_result], but with more data.
+// Trying to return as much as typical data as possible, to prevent further lookups.
+struct maximal_game_result {
+    // Primary keys
+    my_p: player;
+    my_pg: player_game;
+    opp_p: player;
+    opp_pg: player_game;
+    game;
+    turn;
+    turn_owner: player_game; // The player who currently owns the turn.
+    // Data
+    game_id: integer; // The game's rowid.
+    game_type;
+    curr_turn_nr: integer; // We always check this, so best to store it.
+    in_check: boolean; // Our king is in check.
+    is_white: boolean; // True if this player is white.
+    // Timestamps
+    last_color_rotation_at: timestamp; // When the last "move" was finished. 
+    game_created_at: timestamp; // When the game was created.
+    total_time_left_since_color_rotation_ms: integer; // Total time left for this player
+    // Extra
+    my_name: text;
+    opp_name: text;
+    my_elo: integer;
+    opp_elo: integer;
+}
+
 

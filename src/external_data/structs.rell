@@ -12,4 +12,21 @@ struct card_played_data {
 }
 
 
+// We are sending everything the node knows about time to the client.
+// This way the client can make an educated guess if the opponent timed out.
+struct timeout_info {
+    // True if the opponent has timed out. 
+    // Remember that it's the caller who has to end the game based on this info, 
+    // by calling the [claim_timeout] operation.
+    opp_timeout: boolean;
 
+    // Me and the opponent
+    opp_last_heartbeat: timestamp; // When was the opponent last active?
+    my_time_left_ms: integer; // Amount of time I have for my next move 
+    opp_time_left_ms: integer; // Amount of time the opponent has for this move
+
+    // General info
+    curr_time_ms: integer; // The time the node sees
+    last_color_rotation_at: timestamp; // When the last color rotation was
+    game_started_at: timestamp; // When the game was started
+}

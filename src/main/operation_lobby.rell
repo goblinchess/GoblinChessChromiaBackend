@@ -22,8 +22,12 @@ operation enter_lobby(game_type_str: text) {
         // Before a player can enter the lobby (s)he must terminate any old (unfinished) game
         // (since there can only be one ongoing game per player).
         // However, if this fails we won't allow the player to enter the lobby.
-        val all_clear: boolean = game_timeout_any_player_if_possible(playa);
-        require(all_clear, "Cannot enter lobby, since you are in an existing game that has not been timed out yet.");
+        val (maximal_game, opp_timeout_data) = maximal_game_and_timeout_data_get(current_signer);
+        if (maximal_game != null) {
+            // We have an ongoing game, so we must try to terminate it.
+            val all_clear: boolean = game_timeout_any_player_if_possible(maximal_game, opp_timeout_data!!);
+            require(all_clear, "Cannot enter lobby, since you are in an existing game that has not been timed out yet.");
+        }
 
         log("player_id = " + playa.rowid.to_integer() + " - enter_lobby");
         create lobby(

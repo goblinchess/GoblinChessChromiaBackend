@@ -22,92 +22,6 @@ function game_type_to_time_left(gt: game_type) :integer {
 }
 
 
-// Will find the player, the game and the color  from the player's pubkey
-// This works since a player can only have one unfinished game at a time.
-function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
-    // Return data
-    val res = (p: player, pg: player_game, g: game)@?  {
-        p.signer == player_pubkey, 
-        pg.player == p, 
-        g == pg.game,
-        g.is_finished == false }
-        (player = pg.player, player_game = pg, gme = g, game_type = g.game_type, curr_turn_nr = g.current_turn, 
-        is_white = pg.is_white, in_check = pg.in_check, prev_move_time = g.last_color_rotation_at);
-
-    if (res != null) {
-        return minimal_game_result(
-            player = res.player,
-            player_game = res.player_game,
-            game = res.gme,
-            game_type = res.game_type,
-            curr_turn_nr = res.curr_turn_nr,
-            in_check = res.in_check,
-            is_white =res.is_white,
-            last_color_rotation_at = res.prev_move_time
-        );
-    } else {
-        return null;
-    }
-}
-
-// -------------------------------------
-// Will find various data even if the game is finished:
-// 1. [minimal_game_result], 
-// 2. [opponent_timeout_data],
-// 3. this player's total time left.
-//
-// Note:
-// We cannot use the function above, since when fetching the opponent's turn data, 
-// we need to to see finished games since we MUST see the winning move, 
-// event if the opponent just won the game and turned it into "finished".
-// -------------------------------------
-function minimal_game_and_timeout_data_get_even_if_finished(
-    player_pubkey: pubkey, 
-    game_id: integer, // We need this, since the player usually has multiple finished games.
-    estimated_time_left_ms: integer // Not really used, just packed into the result
-) :(minimal_game_result?, opponent_timeout_data?, integer) {
-    // Return data
-
-    val game_rowid = rowid(game_id);
-    val res = (p: player, my_pg: player_game, g: game, opp_pg: player_game)@?  {
-        p.signer == player_pubkey, 
-        my_pg.player == p, // Not stricly needed, but I want to make sure some guy doesn't just ask for a random game.
-        g == my_pg.game,
-        g.rowid == game_rowid,
-        opp_pg.game == g,
-        opp_pg.is_white != my_pg.is_white
-        }
-        (player = my_pg.player, player_game = my_pg, gme= g, 
-        game_type = g.game_type, curr_turn_nr = g.current_turn, 
-        is_white = my_pg.is_white, in_check = my_pg.in_check, 
-        cr_at = g.last_color_rotation_at, opp_last_heartbeat = opp_pg.last_heartbeat,
-        my_time_left_ms = my_pg.total_time_left, opp_time_left_ms = opp_pg.total_time_left);
-
-    if (res != null) {
-        val minimal_game = minimal_game_result(
-            player = res.player,
-            player_game = res.player_game,
-            game = res.gme,
-            game_type = res.game_type,
-            curr_turn_nr = res.curr_turn_nr,
-            in_check = res.in_check,
-            is_white =res.is_white,
-            last_color_rotation_at = res.cr_at
-        );
-
-        // Build the timeout data
-        // (But if the game is finished we won't need it)
-        val opp_timeout_data = opponent_timeout_data(
-            estimated_time_left_ms = estimated_time_left_ms, 
-            opp_last_heartbeat = res.opp_last_heartbeat, 
-            last_color_rotation_at = res.cr_at,
-            opp_tot_time_left_since_color_rotation_ms = res.opp_time_left_ms
-        );
-        return (minimal_game, opp_timeout_data, res.my_time_left_ms);
-    } else {
-        return (null, null, 0); // This is an error, don't bother timeout data.
-    }
-}
 
 
 // ----------
@@ -137,26 +51,26 @@ function game_update_turn_and_check_status(minimal_game: minimal_game_result, ne
 // We do this at the very last moment, usually when the player 
 // sends the "neutral_skip" move.
 function game_update_time_left(minimal_game: minimal_game_result) {
-    val curr_time_milli_sec = op_context.last_block_time; // Only way for us to measure time.
-    val real_time_consumed_milli_sec =  curr_time_milli_sec - minimal_game.last_color_rotation_at;
+    val curr_time_ms = op_context.last_block_time; // Only way for us to measure time.
+    val real_time_consumed_ms =  curr_time_ms - minimal_game.last_color_rotation_at;
 
     // We give the player two extra seconds per turn, since animations take time, blockchain build etc.
-    val time_consumed_milli_sec = real_time_consumed_milli_sec - 2000; // Doesn't matter if this is negative, a player should be able to GAIN time if fast.
+    val effective_time_consumed_ms = real_time_consumed_ms - 2000; // Doesn't matter if this is negative, a player should be able to GAIN time if fast.
 
     // TODO: Remove this, too expensive
-    val real_game_time_tot = curr_time_milli_sec - minimal_game.game.created_at;
+    val real_game_time_tot = curr_time_ms - minimal_game.game_created_at;
     val real_game_time_tot_secs = real_game_time_tot / 1000;
 
-    val real_secs = real_time_consumed_milli_sec / 1000;
-    val secs = time_consumed_milli_sec / 1000;
+    val real_secs = real_time_consumed_ms / 1000;
+    val secs = effective_time_consumed_ms / 1000;
     log("Gametime tot: " + real_game_time_tot_secs + ". Player consumed: " + real_secs + " seconds doing this turn, but we reduce it to " + secs + " seconds.");
 
     // Yes, we could use the timestamp from the [turn], but it's more convenient to 
     // keep this data in the [game] entity.
-    update minimal_game.game (.last_color_rotation_at = curr_time_milli_sec);
+    update minimal_game.game (.last_color_rotation_at = curr_time_ms);
 
     // Update the time left for the player
     // NOTE: If this becomes negative, it will be the opponent's task to call "timeout" 
-    update minimal_game.player_game (.total_time_left -= time_consumed_milli_sec);
+    update minimal_game.player_game (.total_time_left -= effective_time_consumed_ms);
 }
 

@@ -13,6 +13,8 @@ function card_skip_inner(
     // 1. Check player entity
     val minimal_game: minimal_game_result? = minimal_game_data_get(caller_pubkey);
     require (minimal_game != null, "Player is not in a game");
+    require(minimal_game.game_id == game_id, "The game id of the ongoing game " + minimal_game.game_id + " doesn't match the given id " + game_id + ".");
+
 
     // A.2. Is game is out of sync? 
     val curr_turn = minimal_game.curr_turn_nr;

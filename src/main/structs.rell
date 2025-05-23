@@ -64,17 +64,9 @@ struct color_rotation_actions {
     // Note, for double moves, this will be the second move.
     extra_move: move_full_data? = null;
 
-    // 6. Timeout 
-    // True if the opponent has timed out. 
-    // Remember that it's the caller who has to end the game based on this info, 
-    // by calling the [claim_timeout] operation.
-    opp_timeout: boolean;
-
-    // Amount of time I have for my next move 
-    my_time_left_ms: integer;
-
-    // Amount of time the opponent has for this move
-    opp_time_left_ms: integer;
+    // 6. Time-related info
+    timeout_info: timeout_info;
 }
+
 
 

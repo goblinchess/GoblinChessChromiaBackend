@@ -15,10 +15,6 @@
 // and the client has to keep calling this query while waiting for the opponent to make a move.
 // 
 // See documentation for [opponents_actions_result] for more details how to read the data.
-// 
-// Note on performance:
-// To speed things up, we want to return everything the client needs in one single query.
-// This way, the lag between turns can be kept to a minimum.
 // -------------------------------------
 query get_opponents_recent_actions (
     player_signer: pubkey,   // Player sends their own pubkey (Needed to know who is "me" and who is "opponent" for this game).
@@ -26,28 +22,26 @@ query get_opponents_recent_actions (
     last_seen_turn: integer, // This is mostly a performance thing. We enforce that the client keeps track of what turn-number it has seen/fetched.
                              // If the client sends the correct [last_seen_turn] and nothing has happened since then, 
                              // the node should only have to do one single SELECT to the DB, then return "null".
-    estimated_time_left_ms: integer  // The amount to time the client THINKS the opponent has left.
+    // TODO: Remove, we cannot use it
+    //estimated_time_left_ms: integer  // The amount to time the client THINKS the opponent has left.
                              // This is used improve performance when detecting timeouts.
                              // If you send "0" every time we will make a full timeout check every time,
                              // which is expensive.
 ): color_rotation_actions? {
 
     // Get the player's current game
-    val (minimal_game: minimal_game_result?, opp_timeout_data: opponent_timeout_data?, my_tot_time_left_ms: integer) =
-        minimal_game_and_timeout_data_get_even_if_finished(player_signer, game_id, estimated_time_left_ms);
-    if (minimal_game == null) {
+    val (minimal_game: minimal_game_result?, opp_timeout_data: opponent_timeout_data?) =
+        minimal_game_and_timeout_data_get_even_if_finished(player_signer, game_id);
+    if (minimal_game == null) { 
         log("game_id " + game_id + ", game not found, or not owned by the caller.");
-        return null; 
+        return null;  // Don't have to use require in a query.
     } 
-    if (opp_timeout_data == null) {
-        log("game_id " + game_id + ", ERROR opp_timeout_data not found. Internal error.");
-        return null; // Should never happen, since we just checked minimal_game.
-    }
+    // Should never happen, since we just checked maximal_game.
+    require(opp_timeout_data != null, "game_id " + game_id + ", ERROR opp_timeout_data not found. Internal error.");
     
     // Find the latest turn where it was the opponent's move
     // (This is the current turn if it's the opponent's turn, 
     // or the previous turn if it's the player's turn)
-    val g = minimal_game.game;
     val curr_turn_nr = minimal_game.curr_turn_nr;
     if (curr_turn_nr == last_seen_turn) return null; // No new turns, quit.
 
@@ -58,6 +52,5 @@ query get_opponents_recent_actions (
         ". But the current turn_nr is " + curr_turn_nr + ". Did you forget to save a move?");
     
     // Get everything that happened since last seen turn
-    return color_rotation_get_all_actions(game_id, minimal_game, last_seen_turn, opp_timeout_data, my_tot_time_left_ms); 
- 
+    return color_rotation_get_all_actions(game_id, minimal_game, last_seen_turn, opp_timeout_data); 
 }
