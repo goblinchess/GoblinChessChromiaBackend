@@ -30,7 +30,8 @@ function color_rotation_get_all_actions(
     game_id: integer, 
     minimal_game: minimal_game_result, 
     last_seen_turn: integer,
-    otd: opponent_timeout_data
+    otd: opponent_timeout_data,
+    calc_timeout: boolean // If "true" the node must calculate the timeout.
 ): color_rotation_actions? {
 
     val max_turn_nr_of_the_color_rotation = color_rotation_find_max_turn_nr(last_seen_turn);
@@ -170,19 +171,22 @@ function color_rotation_get_all_actions(
         log("game_id " + game_id + "ERROR: return_turn_nr == max_turn_nr and not rotate_color, return_turn_nr: " + return_turn_nr + ", max_turn_nr: " + max_turn_nr_of_the_color_rotation);
     }
 
-    // Get current time
-    // Note: it's hard to get the current time from within a query, 
-    // since we cannot use [op_context.last_block_time] here.
-    var curr_time_ms: timestamp = 0; 
-    val maybe_curr_time_ms = block @? {} (ts = .timestamp, @omit @sort_desc .block_height ) limit 1;
-    if (maybe_curr_time_ms != null) { // During automated testing there are no blocks, so we cannot "require()" here
-        curr_time_ms = maybe_curr_time_ms.ts;
+    var ti: timeout_info? = null;
+    if (calc_timeout) {
+        // Get current time
+        // Note: it's hard to get the current time from within a query, 
+        // since we cannot use [op_context.last_block_time] here.
+        var curr_time_ms: timestamp = 0; 
+        val maybe_curr_time_ms = block @? {} (ts = .timestamp, @omit @sort_desc .block_height ) limit 1;
+        if (maybe_curr_time_ms != null) { // During automated testing there are no blocks, so we cannot "require()" here
+            curr_time_ms = maybe_curr_time_ms.ts;
+        }
+
+        // It's convenient that the node returns information about opponent's timeout status.
+        val opp_timeout: boolean = game_timeout_calc_core(game_id, curr_time_ms, otd);
+
+        ti = game_timeout_build_timeout_info(opp_timeout, otd, minimal_game.total_time_left_since_color_rotation_ms, curr_time_ms, minimal_game.game_created_at);
     }
-
-    // It's convenient that the node returns information about opponent's timeout status.
-    val opp_timeout: boolean = game_timeout_calc_core(game_id, curr_time_ms, otd);
-
-    val ti = game_timeout_build_timeout_info(opp_timeout, otd, minimal_game.total_time_left_since_color_rotation_ms, curr_time_ms, minimal_game.game_created_at);
 
     return color_rotation_actions(
         curr_turn_nr = return_turn_nr, // <- Should be the last seen turn, if our @sort works

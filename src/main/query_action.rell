@@ -22,11 +22,13 @@ query get_opponents_recent_actions (
     last_seen_turn: integer, // This is mostly a performance thing. We enforce that the client keeps track of what turn-number it has seen/fetched.
                              // If the client sends the correct [last_seen_turn] and nothing has happened since then, 
                              // the node should only have to do one single SELECT to the DB, then return "null".
-    // TODO: Remove, we cannot use it
-    //estimated_time_left_ms: integer  // The amount to time the client THINKS the opponent has left.
-                             // This is used improve performance when detecting timeouts.
-                             // If you send "0" every time we will make a full timeout check every time,
-                             // which is expensive.
+    calc_timeout: boolean = false  // If "true" the node must calculate the timeout.
+                             // and return the [timeout_info] instance. Default is "false" to improve performance.
+                             // The recommendation is to set this flag to "true" when:
+                             // 1. The FIRST time you make this call after you finished your turn.
+                             //    This will give you some data to figure out how much time the opponent has left.
+                             // 2. If the client suspects that the opponent has timed out.
+                             //    If this is true, the response will confirm this suspicion.
 ): color_rotation_actions? {
 
     // Get the player's current game
@@ -52,5 +54,5 @@ query get_opponents_recent_actions (
         ". But the current turn_nr is " + curr_turn_nr + ". Did you forget to save a move?");
     
     // Get everything that happened since last seen turn
-    return color_rotation_get_all_actions(game_id, minimal_game, last_seen_turn, opp_timeout_data); 
+    return color_rotation_get_all_actions(game_id, minimal_game, last_seen_turn, opp_timeout_data, calc_timeout); 
 }

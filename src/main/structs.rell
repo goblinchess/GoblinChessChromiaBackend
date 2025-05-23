@@ -65,7 +65,8 @@ struct color_rotation_actions {
     extra_move: move_full_data? = null;
 
     // 6. Time-related info
-    timeout_info: timeout_info;
+    // Only filled with data if the [calc_timeout] flag is set to "true".
+    timeout_info: timeout_info? = null;
 }
 
 
