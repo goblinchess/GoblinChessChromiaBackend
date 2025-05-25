@@ -23,7 +23,7 @@ query get_opponents_recent_actions (
                              // If the client sends the correct [last_seen_turn] and nothing has happened since then, 
                              // the node should only have to do one single SELECT to the DB, then return "null".
     calc_timeout: boolean = false  // If "true" the node must calculate the timeout.
-                             // and return the [timeout_info] instance. Default is "false" to improve performance.
+                             // and return the [timeout_data] instance. Default is "false" to improve performance.
                              // The recommendation is to set this flag to "true" when:
                              // 1. The FIRST time you make this call after you finished your turn.
                              //    This will give you some data to figure out how much time the opponent has left.

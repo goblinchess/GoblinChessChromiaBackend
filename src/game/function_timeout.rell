@@ -101,16 +101,16 @@ function game_timeout_set_player_alive(pg: player_game) {
 }
 
 
-// Builds a [timeout_info] struct.
-function game_timeout_build_timeout_info(
+// Builds a [timeout_data] struct.
+function game_timeout_build_timeout_data(
     opp_timeout: boolean, // "true" if the opponent has timed out
     otd: opponent_timeout_data, 
     my_time_left_ms: integer, 
     curr_time_ms: timestamp, 
     game_started_at: timestamp
-): timeout_info {
+): timeout_data {
 
-    return timeout_info(
+    return timeout_data(
         opp_timeout = opp_timeout,
         opp_last_heartbeat = otd.opp_last_heartbeat,
         my_time_left_ms = my_time_left_ms,

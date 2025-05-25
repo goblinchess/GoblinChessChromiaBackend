@@ -14,7 +14,7 @@ struct card_played_data {
 
 // We are sending everything the node knows about time to the client.
 // This way the client can make an educated guess if the opponent timed out.
-struct timeout_info {
+struct timeout_data {
     // True if the opponent has timed out. 
     // Remember that it's the caller who has to end the game based on this info, 
     // by calling the [claim_timeout] operation.

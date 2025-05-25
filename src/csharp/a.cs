@@ -32,6 +32,32 @@ namespace Dc.ChrSerializable
 
     }
 
+    // Translation of the Rell struct timeout_data.
+    [PostchainSerializable]
+    public class ChrTimeoutIData
+    {
+        [PostchainProperty("opp_timeout")]
+        public bool OppTimeout; // True if the opponent has timed out
+
+        [PostchainProperty("opp_last_heartbeat")]
+        public long OppLastHeartbeat; // When was the opponent last active?
+
+        [PostchainProperty("my_time_left_ms")]
+        public long MyTimeLeftMs; // Amount of time I have for my next move
+
+        [PostchainProperty("opp_time_left_ms")]
+        public long OppTimeLeftMs; // Amount of time the opponent has for this move
+
+        [PostchainProperty("curr_time_ms")]
+        public long CurrTimeMs; // The time the node sees
+
+        [PostchainProperty("last_color_rotation_at")]
+        public long LastColorRotationAt; // When the last color rotation was
+
+        [PostchainProperty("game_started_at")]
+        public long GameStartedAt; // When the game was started
+    }
+
     public class X {
 
                 // This holds one entire row (= stats for one old game)
@@ -39,9 +65,10 @@ namespace Dc.ChrSerializable
         public GameObject Prefab_RowOldGame; // Dev must set this in Unity GUI
 
         private void _fillRowWithData() {
-            
+
         }
     }
+
 
 
 }

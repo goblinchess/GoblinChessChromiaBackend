@@ -171,7 +171,7 @@ function color_rotation_get_all_actions(
         log("game_id " + game_id + "ERROR: return_turn_nr == max_turn_nr and not rotate_color, return_turn_nr: " + return_turn_nr + ", max_turn_nr: " + max_turn_nr_of_the_color_rotation);
     }
 
-    var ti: timeout_info? = null;
+    var ti: timeout_data? = null;
     if (calc_timeout) {
         // Get current time
         // Note: it's hard to get the current time from within a query, 
@@ -185,7 +185,7 @@ function color_rotation_get_all_actions(
         // It's convenient that the node returns information about opponent's timeout status.
         val opp_timeout: boolean = game_timeout_calc_core(game_id, curr_time_ms, otd);
 
-        ti = game_timeout_build_timeout_info(opp_timeout, otd, minimal_game.total_time_left_since_color_rotation_ms, curr_time_ms, minimal_game.game_created_at);
+        ti = game_timeout_build_timeout_data(opp_timeout, otd, minimal_game.total_time_left_since_color_rotation_ms, curr_time_ms, minimal_game.game_created_at);
     }
 
     return color_rotation_actions(
@@ -194,7 +194,7 @@ function color_rotation_get_all_actions(
         card_played_data = card_played_data,
         primary_move = primary_move,
         extra_move = extra_move, 
-        timeout_info = ti
+        timeout_data = ti
     );
 
 } 

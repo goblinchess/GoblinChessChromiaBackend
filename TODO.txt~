@@ -1,4 +1,6 @@
 
+Generate C# object for "timeout_info" 
+
 a) Test time-out of old ongoing games.
 b) Test time_left param.
 

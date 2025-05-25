@@ -64,9 +64,11 @@ struct color_rotation_actions {
     // Note, for double moves, this will be the second move.
     extra_move: move_full_data? = null;
 
+    // ----------------------
     // 6. Time-related info
+    // ----------------------
     // Only filled with data if the [calc_timeout] flag is set to "true".
-    timeout_info: timeout_info? = null;
+    timeout_data: timeout_data? = null;
 }
 
 
