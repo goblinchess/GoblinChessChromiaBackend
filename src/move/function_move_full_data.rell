@@ -60,8 +60,8 @@ function move_full_data_get(
     var is_check = false;
     var m_data: opponents_move_data? = null;
     var att_args: move_attack_arguments? = null;
-    var chaos_args: move_chaos_mode_arguments? = null;
-    var ret_args: move_retaliation_arguments? = null;
+    var chaos_data: chaos_mode_attack_data? = null;
+    var ret_data: retaliation_data? = null;
 
     if (is_skipped_move) {
         // ------------------------------------------
@@ -114,12 +114,12 @@ function move_full_data_get(
         if (att_args != null and not game_is_classic(minimal_game.game_type)) {
             // This is an attack AND CHAOS MODE
             require(am != null, "If we don't have the attack_move entity we have a bug.");
-            chaos_args = move_base_get_chaos_mode_args(game_id, t, m_res.mv, am);
+            chaos_data = move_base_get_chaos_mode_data(game_id, t, m_res.mv, am);
 
             // 4. Retaliation 
             if (att_args.attack_result_type_str == "HIT") {
                 // Only case where we have retaliation
-                ret_args = move_base_get_retaliation_args(game_id, t, m_res.mv, am);
+                ret_data = move_base_get_retaliation_data(game_id, t, m_res.mv, am);
             }
         }
     }
@@ -141,8 +141,8 @@ function move_full_data_get(
         check_data = check_data,
         att_args = att_args,
         end_args = end_args,
-        chaos_args = chaos_args,
-        ret_args = ret_args
+        chaos_data = chaos_data,
+        ret_data = ret_data
     );
 }
 

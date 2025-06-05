@@ -11,6 +11,23 @@ struct card_played_data {
     card_picks: list<integer>; // The squares picked by the player when playing the card.
 }
 
+// Only chaotic attack has this data, classic mode must use "null"
+struct chaos_mode_attack_data {
+    defender_can_retaliate: boolean; // Some objects cannot retaliate (stones, for example)
+    is_flash_attack: boolean; // Jumps for example cannot be retaliated against.
+    is_luck: boolean; // true if attack was lucky and rolled highest score
+    dice_results: text; // This is the rolled dice results in this format: ",2(1-6),5(1-6)" (two six-side dice: first a 2 then a 5). 
+}
+
+// Only retaliation has this data, no retaliation can use "null"
+// If a) main attack result is "hit" and b) this is chaos mode 
+struct retaliation_data {
+    retaliation_result_type_str: text; // The result type of the retaliation
+    attacker_defence_points: integer;  // The attacker's defense power (the attacker is curretly defending himself)
+    damage_points: integer; // How much the retaliation damaged the attacker
+    dice_results: text; // This is the rolled dice results in this format: ",2(1-6),5(1-6)" (two six-side dice: first a 2 then a 5). 
+}
+
 
 // We are sending everything the node knows about time to the client.
 // This way the client can make an educated guess if the opponent timed out.

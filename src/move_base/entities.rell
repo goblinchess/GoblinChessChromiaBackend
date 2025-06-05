@@ -36,6 +36,8 @@ entity chaos_mode_args {
     defender_can_retaliate: boolean; // Some objects cannot retaliate (stones, for example)
     is_flash_attack: boolean; // Jumps for example cannot be retaliated against.
     is_luck: boolean; // true if attack was lucky and rolled highest score
+    dice_results: text; // This is the rolled dice results in this format: ",2(1-6),5(1-6)" (two six-side dice: first a 2 then a 5). 
+                        // Yes, This is not normalized. We don't need joins here, so we compress into text for speed.
 }
 
 // In Chaos mode, when an attack doesn't kill the defender, 
@@ -45,4 +47,6 @@ entity retaliation {
     result_type: battle_result_type;
     attacker_defence_points: integer;  // The attacker's defense power (the attacker is curretly defending himself)
     damage_points: integer; // How much the retaliation damaged the attacker
+    dice_results: text; // This is the rolled dice results in this format: ",2(1-6),5(1-6)" (two six-side dice: first a 2 then a 5). 
+                        // Yes, This is not normalized. We don't need joins here, so we compress into text for speed.
 }

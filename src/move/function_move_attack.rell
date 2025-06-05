@@ -286,11 +286,13 @@ function move_attack_inner(
 
         // B.7.chaos.1. Create chaos_mode_args entity
         require(chaos_args != null, "Internal error: Chaos mode args is null, id:" + game_id); // Already checked above.
+
         create chaos_mode_args(
             attack_move = am,
             defender_can_retaliate = chaos_args.defender_can_retaliate,
             is_flash_attack = chaos_args.is_flash_attack,
-            is_luck = chaos_args.is_luck 
+            is_luck = chaos_args.is_luck, 
+            dice_results = dice_string(battle_res.rnd_attack_results)
         );
 
         when (battle_res.result) {
@@ -301,7 +303,8 @@ function move_attack_inner(
                     attack_move = am,
                     result_type = battle_res.retaliation_result,
                     attacker_defence_points = ret_args.attacker_defence_points,
-                    damage_points = ret_args.damage_points
+                    damage_points = ret_args.damage_points,
+                    dice_results = dice_string(battle_res.rnd_retaliation_results)
                 );
             }
         }

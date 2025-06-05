@@ -1,5 +1,13 @@
+- Remove TurnProducerDeterministic
+- Create "SkipOpponentAction()" 
+- Make ChrMoveArguments -> GcMoveArguments (Real C# types, like SquarePos)
 
-Generate C# object for "timeout_info" 
+- The timing for entering new turns is very complex, since we might have to
+  wait for data to arrive.
+
+- We had White/Black in cleartext for My/Opp in the Board._reportXAction() for
+  portal??
+  This is now replaced, but must be tested.
 
 a) Test time-out of old ongoing games.
 b) Test time_left param.
@@ -17,6 +25,11 @@ b) Test time_left param.
  
 
 Client Done: 
+
+1. Sending the OnlineConnection and OnlinePlayer via the Board.SetOnlineGameExtra().
+2. Using the OnlineGameGeneral class to report errors and resign.
+3. Finished the Online Opponent Card handling.
+
 
 
  TODO Node: 
@@ -39,3 +52,7 @@ Node DONE:
  (Main Idea is to explain that making one SQL-call to fetch all events for a turn is the trick)
 
 
+ Exist for Love
+ This could be a dream.
+ Exhale Inhale
+ Everything Matters 

@@ -39,6 +39,10 @@ function calculate_classic_attack_result(
         retaliation_result = battle_result_type.ERROR, // Does not apply
         attacker_lost_hp = 0, // Does not apply
         luck = false, // Does not apply
+
+        // Random
+        rnd_attack_results = list<rnd_result>(), // Empty
+        rnd_retaliation_results = list<rnd_result>(), // Empty
         rnd_results = list<rnd_result>() // Empty
     );
 

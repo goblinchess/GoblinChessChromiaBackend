@@ -5,6 +5,16 @@ function dice_number_max_result(dn: dice_number): integer {
     return single_die_max * dn.number_of_dice;
 }
 
+
+// Will return a string like ",2(1-6),5(1-6)" for two dice rolls (2 and 5).
+function dice_string(rnd_results: list<rnd_result>): text {
+    var dice_string = "";
+    for (rnd in rnd_results) {
+        dice_string += "," + rnd.result + "(" + rnd.min + "-" + rnd.max + ")";
+    }
+    return dice_string;
+}
+
 // E.g. 3d6 or d6 (if 1)
 function dice_number_debug(dn: dice_number): text {
     if (dn.number_of_dice == 1) { 

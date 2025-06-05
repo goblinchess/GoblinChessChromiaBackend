@@ -23,10 +23,9 @@ struct battle_result {
     attacker_lost_hp: integer;
     luck: boolean; // true if attack was lucky and rolled highest score
 
-    rnd_results: list<rnd_result>; // Needed for the validation in the end of the game
-    
-    // Perhaps needed for Debug?
-    //attacker_die_result_set: die_result_set;
-    //retaliation_die_result_set: die_result_set?; // Doesn't have to exist
+    // Random
+    rnd_attack_results: list<rnd_result>; // We want to show the dice roll for the player on the other side.
+    rnd_retaliation_results: list<rnd_result>; // Mostly for symmetry since retaliation dice are not rolled in the GUI.
+    rnd_results: list<rnd_result>; // All random numbers generated for the attack. Needed for the validation in the end of the game
 }
 

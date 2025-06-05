@@ -7,6 +7,9 @@
 // ------------------------------------------------------------------------------
 // Returned when the client asks for the full move data.
 // (We use this struct no matter if attack or just move)
+// 
+// A lot of the data we return here is the same as the other player sent us,
+// and in some cases we even use the same types for returning data.
 // ------------------------------------------------------------------------------
 struct move_full_data {
 
@@ -19,20 +22,20 @@ struct move_full_data {
     check_data: check_data;
 
     // Only if this is an attack
-    att_args: move_attack_arguments? = null;
+    att_args: move_attack_arguments? = null; // <-- Reusing type from when the other player provided this data.
 
     // Only if we have events that happened after the move
-    end_args: move_end_events_arguments? = null;
+    end_args: move_end_events_arguments? = null; // <-- Reusing type from when the other player provided this data.
 
     // ----------------------
     // Needed for chaos mode
     // ----------------------
 
     // Chaos mode arguments
-    chaos_args: move_chaos_mode_arguments? = null;
+    chaos_data: chaos_mode_attack_data? = null;
 
     // Only used if there is retaliation.
-    ret_args: move_retaliation_arguments? = null;
+    ret_data: retaliation_data? = null;
 }
 
 // Move data, used for attacks too.

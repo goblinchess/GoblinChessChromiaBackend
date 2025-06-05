@@ -1,4 +1,5 @@
 
+
 // Returns a battle_result (holding the result of the attack)
 // based on the chaos mode.
 function calculate_chaos_attack_result(
@@ -29,6 +30,8 @@ function calculate_chaos_attack_result(
     // Attacker
     val attack_res = die_set_roll(att_strength, rnd_numbers);
     val attack_die_res_set = attack_res[0];
+    val attack_dice_res = list<rnd_result>();
+    attack_dice_res.add_all(attack_res[1]); // Don't forget to save the rnds
     rnd_results.add_all(attack_res[1]); // Don't forget to save the rnds
 
     val attack_damage = die_res_set_calc(attack_die_res_set);
@@ -69,6 +72,7 @@ function calculate_chaos_attack_result(
     // The simplest way to VISUALIZE the "miss" is to place the attacker far away during the attack
     // (being far away makes retalation strange), therefore only "Hit" will give retaliation.
     var retaliation_die_res_set: die_result_set? = null;
+    val retaliation_dice_res = list<rnd_result>();
     
     if (result == battle_result_type.HIT) {
         if (can_retaliate and not flash_attack) {
@@ -77,6 +81,7 @@ function calculate_chaos_attack_result(
             val new_rnd_numbers = rnd_new_rnd_data_list(rnd_results, rnd_numbers);
             val retaliation_res = die_set_roll(def_strength, new_rnd_numbers);
             retaliation_die_res_set = retaliation_res[0];
+            retaliation_dice_res.add_all(retaliation_res[1]); // Don't forget to save the rnds
             rnd_results.add_all(retaliation_res[1]); // Don't forget to save the rnds
 
             val retaliation_damage = die_res_set_calc(retaliation_die_res_set);
@@ -110,6 +115,10 @@ function calculate_chaos_attack_result(
         retaliation_result = retaliation_result,
         attacker_lost_hp = a_lost_hp,
         luck = luck,
+
+        // Random
+        rnd_attack_results = attack_dice_res,
+        rnd_retaliation_results = retaliation_dice_res,
         rnd_results = rnd_results
     );
 

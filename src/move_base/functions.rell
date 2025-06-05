@@ -31,23 +31,25 @@ function move_base_get_attack_args(t: turn, m: move): (move_attack_arguments?, a
 // Chaos mode?
 // Get chaos mode arguments
 // ------------------------------------------------------------------------------
-function move_base_get_chaos_mode_args(game_id: integer, t: turn, m: move, am: attack_move): move_chaos_mode_arguments? {
+function move_base_get_chaos_mode_data(game_id: integer, t: turn, m: move, am: attack_move): chaos_mode_attack_data? {
     
     // Get chaos mode arguments
     val res = (cma: chaos_mode_args) @? {cma.attack_move == am} (
         can_retaliate = cma.defender_can_retaliate,
         flash = cma.is_flash_attack,
-        luck = cma.is_luck
+        luck = cma.is_luck,
+        dice_r = cma.dice_results
     );
     if (res == null) {
         log("game_id: " + game_id + " ERROR: Didn't we just check for chaos mode? Why no entity?");
         return null;
     }
     
-    return move_chaos_mode_arguments(
+    return chaos_mode_attack_data(
         defender_can_retaliate = res.can_retaliate,
         is_flash_attack = res.flash,
-        is_luck = res.luck
+        is_luck = res.luck,
+        dice_results = res.dice_r
     );
 }
 
@@ -55,20 +57,22 @@ function move_base_get_chaos_mode_args(game_id: integer, t: turn, m: move, am: a
 // Retaliation?
 // Get retaliation arguments
 // ------------------------------------------------------------------------------
-function move_base_get_retaliation_args(game_id: integer, t: turn, m: move, am: attack_move): move_retaliation_arguments? {
+function move_base_get_retaliation_data(game_id: integer, t: turn, m: move, am: attack_move): retaliation_data? {
     
     // Get retaliation entity
     val res = (r: retaliation) @? {r.attack_move == am} (
         rt = r.result_type,
         adp = r.attacker_defence_points,
-        dp = r.damage_points
+        dp = r.damage_points,
+        dice_r = r.dice_results
     );
 
     if (res == null) return null;  // Ok, not all hits have retaliation
     
-    return move_retaliation_arguments(
+    return retaliation_data(
         retaliation_result_type_str = res.rt.name,
         attacker_defence_points = res.adp,
-        damage_points = res.dp
+        damage_points = res.dp,
+        dice_results = res.dice_r
     );
 }
