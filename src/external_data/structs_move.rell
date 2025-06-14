@@ -40,8 +40,6 @@ struct move_full_data {
 
 // Move data, used for attacks too.
 struct move_arguments {
-    game_id: integer;
-    last_seen_turn: integer; // What turn the client last saw.
     from_position: integer; // Where the piece is currently standing.
     to_position: integer; // Where the piece will be standing after the move.
     piece_type_str: text; // The type of piece we are moving

@@ -1,6 +1,24 @@
-- Remove TurnProducerDeterministic
-- Create "SkipOpponentAction()" 
-- Make ChrMoveArguments -> GcMoveArguments (Real C# types, like SquarePos)
+- Assemble data to send to the server (both for Noramal AND skip).
+
+
+            // ---------------------
+            // 4: (Potentially) send move to node
+            // ---------------------
+            // We only do this for ME (not the opponent)
+            TurnOwner owner = _octt.TeamColor2Owner(drama.LeadAlign.Align);
+            if (_board.IsGameOnline() && owner == TurnOwner.Me) // Only ONLINE uses a server
+            {
+                TurnOnlineMoveData tomd = new TurnOnlineMoveData(_tCtxt, _battleResult, leadActualPath, tee, _board.GetOnlineGameGeneral());
+                // _board.SendMoveToNode(tomd); // TODO <--- Send it somehowe
+            }
+
+
+            if (isPrimary) {
+                return _board.SkipOnlineOpponentAction(checkData, endArgs);
+            } else {
+                // TODO: What to do?
+                return planningMode.HandleAsyncActionSkipped(turnId, _board, endEvents);
+            }
 
 - The timing for entering new turns is very complex, since we might have to
   wait for data to arrive.
@@ -26,9 +44,7 @@ b) Test time_left param.
 
 Client Done: 
 
-1. Sending the OnlineConnection and OnlinePlayer via the Board.SetOnlineGameExtra().
-2. Using the OnlineGameGeneral class to report errors and resign.
-3. Finished the Online Opponent Card handling.
+
 
 
 

@@ -5,6 +5,10 @@
 // --------------------------------------------------------------
 function move_attack_inner(
     caller_pubkey: pubkey,
+
+    game_id: integer,
+    last_seen_turn: integer,
+
     m_args: move_arguments,
 
     att_args: move_attack_arguments,
@@ -47,8 +51,7 @@ function move_attack_inner(
     var dbg = move_debug_str(m_args, check_args);
     val p_dbg = "type: " + m_args.piece_type_str + " (from: " + m_args.from_position + " -> attack on: " + att_args.attacked_position + " -> dest " + m_args.to_position + ")";
 
-    val game_id = m_args.game_id;
-    log("game_id: " + game_id + " - Move Attack Begin. Last_turn: " + m_args.last_seen_turn, ", piece " + p_dbg + ", flags: " + dbg);
+    log("game_id: " + game_id + " - Move Attack Begin. Last_turn: " + last_seen_turn, ", piece " + p_dbg + ", flags: " + dbg);
     
     // ----------------
     // A.1. Check player entity
@@ -63,7 +66,7 @@ function move_attack_inner(
     // ----------------
     //log("Move A.2");
     val curr_turn = minimal_game.curr_turn_nr;
-    require(curr_turn == m_args.last_seen_turn, "Player client is on turn " + m_args.last_seen_turn + " but blockchain is on turn " + curr_turn);
+    require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
 
     // ----------------
     // A.3. Validate positions

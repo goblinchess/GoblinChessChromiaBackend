@@ -3,6 +3,10 @@
 // A non-attacking move
 function move_peaceful_inner(
     caller_pubkey: pubkey,
+
+    game_id: integer,
+    last_seen_turn: integer,
+
     m_args: move_arguments,
 
     // Treat castle as special case, since only peaceful moves can castle.
@@ -26,8 +30,7 @@ function move_peaceful_inner(
     }
     val p_dbg = "type: " + m_args.piece_type_str + " (from: " + m_args.from_position + " to: " + m_args.to_position + ")";
 
-    val game_id = m_args.game_id;
-    log("game_id: " + game_id + " - Move Peaceful Begin: last_turn: " + m_args.last_seen_turn, ", piece " + p_dbg + ", flags: " + dbg );
+    log("game_id: " + game_id + " - Move Peaceful Begin: last_turn: " + last_seen_turn, ", piece " + p_dbg + ", flags: " + dbg );
     
     // ----------------
     // A.1. Check player entity
@@ -43,7 +46,7 @@ function move_peaceful_inner(
     // ----------------
     //log("Move A.2");
     val curr_turn = minimal_game.curr_turn_nr;
-    require(curr_turn == m_args.last_seen_turn, "Player client is on turn " + m_args.last_seen_turn + " but blockchain is on turn " + curr_turn);
+    require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
 
     // ----------------
     // A.3. Validate positions

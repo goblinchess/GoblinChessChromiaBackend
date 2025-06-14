@@ -42,6 +42,9 @@ operation skip_neutral(
 
 // Move a piece to a empty square.
 operation move_peaceful(
+    game_id: integer,
+    last_seen_turn: integer, // What turn the client last saw.
+
     m_args: move_arguments,
 
     // Treat castle as special case
@@ -66,6 +69,8 @@ operation move_peaceful(
     // We do it this way so we can test failure cases.
     move_peaceful_inner(
         caller_pubkey, 
+        game_id,
+        last_seen_turn,
         m_args,
         castle_rook_from,
         castle_rook_to,
@@ -75,6 +80,9 @@ operation move_peaceful(
 }
 
 operation move_attack(
+    game_id: integer,
+    last_seen_turn: integer, // What turn the client last saw.
+
     m_args: move_arguments,
 
     // Mandatory arguments
@@ -123,6 +131,8 @@ operation move_attack(
     // We do it this way so we can test failure cases.
     move_attack_inner(
         caller_pubkey, 
+        game_id,
+        last_seen_turn,
         m_args,
         att_args,
         rnd_numbers,
