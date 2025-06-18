@@ -11,7 +11,7 @@ function check_stale_n_mate(
     opp_king: piece_living_data,
     our_team: character_team,
     opp_team: character_team,
-    check_args: move_check_arguments? 
+    check_args: move_check_arguments? // Optional, since the node will calculate the check/stale/mate status even if the client doen't send it.
 ): (is_check: boolean, is_checkmate: boolean, is_stalemate: boolean) {
 
     var is_checkmate = false;

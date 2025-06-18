@@ -1,7 +1,6 @@
 
-- ChrCardPlayedData -> GcCardPlayedData
-
-- Assemble data to send to the server (both for Noramal AND skip).
+// TODO: Implement!
+   public void OnlineSendSkipMoveTx(TurnEndEvents turnEndEvents) {
 
 
             // ---------------------
@@ -23,8 +22,6 @@
                 return planningMode.HandleAsyncActionSkipped(turnId, _board, endEvents);
             }
 
-- The timing for entering new turns is very complex, since we might have to
-  wait for data to arrive.
 
 - We had White/Black in cleartext for My/Opp in the Board._reportXAction() for
   portal??
@@ -47,8 +44,14 @@ b) Test time_left param.
 
 Client Done: 
 
-
-
+- Assemble data to send to the server (both for Noramal AND skip).
+- ChrCardPlayedData -> GcCardPlayedData
+- When fetching data, the timing for double turns is complex, since we might have to
+  wait for data to arrive OR wait for the turn to complete.
+- Use the new gameId, lastSeenTurn params in ALL move/card operation.
+- Adding the GetGcCardPlayedData() to the MagicModeSpell interface (so we can
+  send it via the play_card tx).
+- Make sure we count up the Turns every time we fetch/send some data.
 
 
  TODO Node: 
@@ -70,8 +73,3 @@ Node DONE:
  Make an event performance video!
  (Main Idea is to explain that making one SQL-call to fetch all events for a turn is the trick)
 
-
- Exist for Love
- This could be a dream.
- Exhale Inhale
- Everything Matters 

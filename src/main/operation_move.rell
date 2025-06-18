@@ -1,9 +1,29 @@
 
-// Skip the move
+
+// ------------------------------------------------------------------
+// Skip the "primary" (=main) move
 // Can only happen in combination with certain spells.
-operation skip_move(
+// 
+// Note:
+// We must make a check/stale/mate calculation here, since 
+// we don't know what the spell has done with the board, 
+// perhaps a SWITCH spell has caused checkmate?
+// ------------------------------------------------------------------
+operation skip_primary_move(
     game_id: integer,
     last_seen_turn: integer, // What turn the client last saw.
+
+    // ----------------------
+    // Only if the client wants
+    // ----------------------
+    // Calculating check/stale/mate status is extra hard due to portals etc.
+    // Therefore we don't require the client to do this, and the "check_args" is optional.
+    // Note that if the client doesn't do its own calculation it will discover checkmate 
+    // only after it has fetched data from the node, which will cause a delay. 
+    // If the client makes its own calculation and send the "check_args" the node 
+    // will abort with an error message if the node disagrees with the clients calculations.
+    // This is useful for clients that want to abort the game if situation unclear.
+    check_args: move_check_arguments? = null, 
 
     // Events that might happen after a move.
     // NOTE: Sometimes end-of-turn events happen even if turn is skipped. 
@@ -14,18 +34,33 @@ operation skip_move(
     val caller_pubkey = current_signers[0];
 
     // We do it this way so we can test failure cases.
-    move_skip_inner(
+    move_primary_skip_inner(
         caller_pubkey,
         game_id,
         last_seen_turn,
+        check_args,
         end_args
     );
 }
 
 
-// Skip the neutral move
-// We usually skip neutral in v1.0, but we need it for double move.
-operation skip_neutral(
+// ------------------------------------------------------------------
+// Skip the "neutral" (=extra) move.
+// We usually skip neutral move in but we don't skip it for for double move.
+// For double move this operation should NOT be called, instead make 
+// another normal move.
+//
+// When we skip the neutral move absolutely nothing is happening on the board,
+// so we don't have to make any check/stale/mate calculations.
+//
+// Note:
+// In GoblinChess the turns progress like this:
+// 1. White Card -> 2. White Move -> 3. Neutral Move -> 
+// 4. Black Card -> 5. Black Move -> 6. Neutral Move -> (and so on)
+// The "neutral" move isn't only for handling potential double moves, but
+// the idea is that in v2.0 the "neutral color" can move during this turn.
+// ------------------------------------------------------------------
+operation skip_neutral_move(
     game_id: integer,
     last_seen_turn: integer // What turn the client last saw.
 ) {
@@ -40,7 +75,12 @@ operation skip_neutral(
     );
 }
 
+// ------------------------------------------------------------------
 // Move a piece to a empty square.
+//
+// Note that this might be the second move of a double move, and 
+// if this is the case the node will verify that a DOUBLE MOVE spell was cast.
+// ------------------------------------------------------------------
 operation move_peaceful(
     game_id: integer,
     last_seen_turn: integer, // What turn the client last saw.
@@ -54,7 +94,14 @@ operation move_peaceful(
     // ----------------------
     // Only if the client wants
     // ----------------------
-    check_args: move_check_arguments? = null,
+    // Calculating check/stale/mate status is extra hard due to portals etc.
+    // Therefore we don't require the client to do this, and the "check_args" is optional.
+    // Note that if the client doesn't do its own calculation it will discover checkmate 
+    // only after it has fetched data from the node, which will cause a delay. 
+    // If the client makes its own calculation and send the "check_args" the node 
+    // will abort with an error message if the node disagrees with the clients calculations.
+    // This is useful for clients that want to abort the game if situation unclear.
+    check_args: move_check_arguments? = null, 
 
     // Events that might happen after a move.
     end_args: move_end_events_arguments? = null
@@ -79,6 +126,14 @@ operation move_peaceful(
     );
 }
 
+// ------------------------------------------------------------------
+// A move where we capture an enemy piece 
+// (or at least attempt to capture, in the case of chaos mode).
+// "attacks" will need more data than "peaceful" moves.
+//
+// Note that this might be the second move of a double move, and 
+// if this is the case the node will verify that a DOUBLE MOVE spell was cast.
+// ------------------------------------------------------------------
 operation move_attack(
     game_id: integer,
     last_seen_turn: integer, // What turn the client last saw.
@@ -107,6 +162,13 @@ operation move_attack(
     // ----------------------
     // Only if the client needs to send it
     // ----------------------
+    // Calculating check/stale/mate status is extra hard due to portals etc.
+    // Therefore we don't require the client to do this, and the "check_args" is optional.
+    // Note that if the client doesn't do its own calculation it will discover checkmate 
+    // only after it has fetched data from the node, which will cause a delay. 
+    // If the client makes its own calculation and send the "check_args" the node 
+    // will abort with an error message if the node disagrees with the clients calculations.
+    // This is useful for clients that want to abort the game if situation unclear.
     check_args: move_check_arguments? = null,
 
     // Events that might happen after a move.

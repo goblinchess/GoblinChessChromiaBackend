@@ -1,8 +1,10 @@
 
-function move_skip_inner(
+
+function move_primary_skip_inner(
     caller_pubkey: pubkey,
     game_id: integer,
     last_seen_turn: integer,
+    check_args: move_check_arguments?, 
     end_args: move_end_events_arguments?
 ) {
     // -----------    
@@ -96,7 +98,7 @@ function move_skip_inner(
     // ----------------------------------------------    
 
     // B.4 Verify if we just won via checkmate?
-    val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, null);
+    val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args);
     move_skipped_create(new_turn, is_check);
 
     // ----------------

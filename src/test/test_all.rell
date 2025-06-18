@@ -635,7 +635,7 @@ function test_full_game() {
 
     log ("Turn 1(3): Skip neutral.");
     val temp_last_seen_turn = last_seen_turn + 1; // Don't want to update the real one, since we should fetch two moves soon.
-    rell.test.tx(skip_neutral(the_game.game_rowid, temp_last_seen_turn)).sign(white_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, temp_last_seen_turn)).sign(white_player).run();
 
     // --------------------
     // Try to fetch the two moves.
@@ -694,7 +694,7 @@ function test_full_game() {
     last_seen_turn += 1;
 
     log ("Turn 1(6): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 2 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -734,7 +734,7 @@ function test_full_game() {
     last_seen_turn += 1;
 
     log ("Turn 2(9): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ BLack Move 2 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -810,7 +810,7 @@ function test_full_game() {
     last_seen_turn += 1;
     
     log ("Turn 2(12): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 3 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -845,7 +845,7 @@ function test_full_game() {
     last_seen_turn += 1;
 
     log ("Turn 3(15): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ BLack Move 3 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -888,7 +888,7 @@ function test_full_game() {
     
     log ("Turn 3(18): Skip neutral.");
     val temp_last_seen_turn2 = last_seen_turn + 1; // Don't want to update the real one, since we should fetch two moves soon.
-    rell.test.tx(skip_neutral(the_game.game_rowid, temp_last_seen_turn2)).sign(black_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, temp_last_seen_turn2)).sign(black_player).run();
 
     // --------------------
     // Try to fetch the two moves.
@@ -964,11 +964,16 @@ function test_full_game() {
         resurrection_pos = null, 
         promotions = list<integer>()
     );
-    rell.test.tx(skip_move(the_game.game_rowid, last_seen_turn, end_args)).sign(white_player).run();
+    check_args = move_check_arguments(
+        is_check = false,
+        is_checkmate = false,
+        is_stalemate = false
+    );
+    rell.test.tx(skip_primary_move(the_game.game_rowid, last_seen_turn, check_args, end_args)).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 4(21): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 4 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1032,7 +1037,7 @@ function test_full_game() {
     last_seen_turn += 1;
 
     log ("Turn 4(24): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 5 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1080,7 +1085,7 @@ function test_full_game() {
     last_seen_turn += 1;
     
     log ("Turn 5(27): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 5 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1115,7 +1120,7 @@ function test_full_game() {
     last_seen_turn += 1;
     
     log ("Turn 5(30): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 6 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1149,7 +1154,7 @@ function test_full_game() {
     last_seen_turn += 1;
 
     log ("Turn 6(33): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 6 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1184,7 +1189,7 @@ function test_full_game() {
     last_seen_turn += 1;
     
     log ("Turn 6(36): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 7 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1218,7 +1223,7 @@ function test_full_game() {
     last_seen_turn += 1;
 
     log ("Turn 7(39): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 7 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1266,7 +1271,7 @@ function test_full_game() {
     last_seen_turn += 1;
 
     log ("Turn 7(42): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 8 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1339,7 +1344,7 @@ function test_full_game() {
     last_seen_turn += 1;
 
     log ("Turn 8(45): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
 
@@ -1373,7 +1378,7 @@ function test_full_game() {
     last_seen_turn += 1;
     
     log ("Turn 8(48): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 9 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1492,7 +1497,7 @@ function test_full_game() {
     last_seen_turn += 1;
 
     log ("Turn 9(51): Skip neutral.");
-    rell.test.tx(skip_neutral(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
     last_seen_turn += 1;
 
 
