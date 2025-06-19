@@ -55,26 +55,35 @@ function card_get_type_for_turn_number(t_number: integer): card_type? {
 }
 
 // Takes an index (0-9) and returns the corresponding card_type
+//
+// Note:
+// The client side must have the same indexing of the card or else the 
+// end-of-game verification of the random numbers won't work.
+//
+// Example:
+// When the client generates a "6" for card 2 in the hand, it must 
+// mean "RESURRECT" or else the validation will break on the node-side.
 function card_get_type_from_index(idx: integer): card_type {
     when (idx) {
         0 -> return card_type.FROG;
         1 -> return card_type.TURN_TO_STONE;
         
-        // Enchant change
-        2 -> return card_type.POTION;
-        3 -> return card_type.KNIGHTED;
-        
         // This-turn-only change
-        4 -> return card_type.JUMP;
-        5 -> return card_type.SWITCH_PLACE;
+        2 -> return card_type.JUMP;
+        3 -> return card_type.SWITCH_PLACE;
         
         // Immediate Spell affecting the entire board
-        6 -> return card_type.WALL;
-        7 -> return card_type.PORTAL;
+        4 -> return card_type.WALL;
+        5 -> return card_type.PORTAL;
         
         // Delayed Spell
-        8 -> return card_type.RESURRECT; // Resurrect next killed Enemy
-        9 -> return card_type.DOUBLE_MOVE;
+        6 -> return card_type.RESURRECT; // Resurrect next killed Enemy
+        7 -> return card_type.DOUBLE_MOVE;
+
+        // Enchant change
+        8 -> return card_type.KNIGHTED;
+        9 -> return card_type.POTION; // Putting this last so we can omit it (by using 0-8 range) for classic mode.
+        
         else -> {
             require(false, "V1.0 only has 10 cards: " + idx);
             return card_type.FROG; // This will never execute due to the require, but needed for return type

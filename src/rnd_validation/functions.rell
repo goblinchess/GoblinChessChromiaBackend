@@ -36,6 +36,7 @@ function rnd_validation_create_player_rnd_nr(
 // ------------------------------------------------------------------
 function rnd_validation_of_player(
     game_id: integer,
+    g_type: game_type,
     g: game,
     pg: player_game,
     org_seed: integer // Client's seed, unique for each game/player
@@ -52,12 +53,13 @@ function rnd_validation_of_player(
     // is the 5 cards. But a game can end before the player played all cards, 
     // so we only need to verify the cards played.
 
-    val x: random_results = generate_random_numbers(curr_seed, 5, 9);
-    curr_seed = x.new_seed;
+    var five_generated_cards: random_results = rnd_validation_card_generation_inner(g_type, curr_seed);
+
+    curr_seed = five_generated_cards.new_seed;
 
     val card_map = map<integer, card_type>();
     for (idx in range(0, 5)) {
-        val rnd_val = x.results[idx];
+        val rnd_val = five_generated_cards.results[idx];
         val card_type = card_get_type_from_index(rnd_val);
         card_map[idx] = card_type;
     }
@@ -131,7 +133,17 @@ function rnd_validation_of_player(
     return null; // No errors
 }
 
-
+// --------------------------------------------------------------
+// Returns the 5 cards that should be generated based on the 
+// given seed. 
+// --------------------------------------------------------------
+function rnd_validation_card_generation_inner(g_type: game_type, curr_seed: integer): random_results {
+    if (game_is_classic(g_type)) { 
+        return generate_random_numbers(curr_seed, 5, 8); // We cannot use POTION here
+    } else {
+        return generate_random_numbers(curr_seed, 5, 9); // All 10 cards are allowed
+    }
+}
 
 // --------------------------------------------------------------
 // Returns a random position in the given list holding positions.

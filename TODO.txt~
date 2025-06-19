@@ -1,4 +1,4 @@
-
+- POTION not allowed in classical game, since Online can only sends HIT/MISS etc for Chaos Mode.
 
 - We had White/Black in cleartext for My/Opp in the Board._reportXAction() for
   portal??

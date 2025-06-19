@@ -76,11 +76,11 @@ function card_play_inner_core(
     require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
     
     // A.3. Check card type
-    val card_type: card_type = card_type.value(card_type_str);
+    val c_type: card_type = card_type.value(card_type_str);
 
     // A.3.1. Check if card is allowed in classic mode
     if (game_is_classic(minimal_game.game_type)) {
-        require(card_is_allowed_in_classic_mode(card_type), "Card " + card_type_str + " is not allowed in classic mode");
+        require(card_is_allowed_in_classic_mode(c_type), "Card " + card_type_str + " is not allowed in classic mode");
     }
 
     // A.4. Check if player has cards left
@@ -88,7 +88,7 @@ function card_play_inner_core(
     require(cards_left > 0, "How can this player play a card when they have no cards left?");
     
     // A.5. Check if correct number of picks are sent for this card
-    val expected_pick_types: list<card_pick_type> = card_pick_get_by_card_type(card_type); 
+    val expected_pick_types: list<card_pick_type> = card_pick_get_by_card_type(c_type); 
     val expected_nr_of_picks = expected_pick_types.size();
     require(expected_nr_of_picks == card_picks.size(), "Expected " + expected_nr_of_picks + " picks for card " + card_type_str + " but got " + card_picks.size());
 
@@ -99,7 +99,7 @@ function card_play_inner_core(
 
     // A.6. Check individual picks 
     val pick_piece_map = map<integer, piece_living_data>(); // Save the pieces we found on the board for the pick.
-    val pick_summary = card_pick_are_valid(minimal_game.game, card_type, card_type_str, expected_pick_types, card_picks, my_color, pick_piece_map);
+    val pick_summary = card_pick_are_valid(minimal_game.game, c_type, card_type_str, expected_pick_types, card_picks, my_color, pick_piece_map);
 
 
     // -----------------------------------------------------------------------------------
@@ -139,7 +139,7 @@ function card_play_inner_core(
     // (Note: the wall can also create self-stalemate, but we don't check for that)
     // -----------------------------------------------------------------------------------
 
-    when (card_type) {
+    when (c_type) {
 
         DOUBLE_MOVE -> {
             if (minimal_game.in_check) {
@@ -250,7 +250,7 @@ function card_play_inner_core(
     val rnd_list = list<rnd_result>();
 
     // B.3. We create the card when it's played
-    val new_card =create card(minimal_game.player_game, new_turn, card_type, card_order_number);
+    val new_card =create card(minimal_game.player_game, new_turn, c_type, card_order_number);
 
     // B.4. Count down the cards left
     update minimal_game.player_game (.cards_left = cards_left - 1);
@@ -279,7 +279,7 @@ function card_play_inner_core(
     // B.6. Implement the effect of the card
     // -----------    
     // Card pick verification should have been done already.
-    when (card_type) {
+    when (c_type) {
         // ----------------
         // a) Enchantments (no change in position or alignment, so no update of [board_positions_all])
         // ----------------
