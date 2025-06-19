@@ -1,27 +1,4 @@
 
-// TODO: Implement!
-   public void OnlineSendSkipMoveTx(TurnEndEvents turnEndEvents) {
-
-
-            // ---------------------
-            // 4: (Potentially) send move to node
-            // ---------------------
-            // We only do this for ME (not the opponent)
-            TurnOwner owner = _octt.TeamColor2Owner(drama.LeadAlign.Align);
-            if (_board.IsGameOnline() && owner == TurnOwner.Me) // Only ONLINE uses a server
-            {
-                TurnOnlineMoveData tomd = new TurnOnlineMoveData(_tCtxt, _battleResult, leadActualPath, tee, _board.GetOnlineGameGeneral());
-                // _board.SendMoveToNode(tomd); // TODO <--- Send it somehowe
-            }
-
-
-            if (isPrimary) {
-                return _board.SkipOnlineOpponentAction(checkData, endArgs);
-            } else {
-                // TODO: What to do?
-                return planningMode.HandleAsyncActionSkipped(turnId, _board, endEvents);
-            }
-
 
 - We had White/Black in cleartext for My/Opp in the Board._reportXAction() for
   portal??
@@ -44,16 +21,6 @@ b) Test time_left param.
 
 Client Done: 
 
-- Assemble data to send to the server (both for Noramal AND skip).
-- ChrCardPlayedData -> GcCardPlayedData
-- When fetching data, the timing for double turns is complex, since we might have to
-  wait for data to arrive OR wait for the turn to complete.
-- Use the new gameId, lastSeenTurn params in ALL move/card operation.
-- Adding the GetGcCardPlayedData() to the MagicModeSpell interface (so we can
-  send it via the play_card tx).
-- Make sure we count up the Turns every time we fetch/send some data.
-
-
  TODO Node: 
 -------------
  
@@ -73,8 +40,3 @@ Node DONE:
  Make an event performance video!
  (Main Idea is to explain that making one SQL-call to fetch all events for a turn is the trick)
 
-
- Exist for Love
- This could be a dream.
- Exhale Inhale
- Everything Matters 

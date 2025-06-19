@@ -78,6 +78,11 @@ function card_play_inner_core(
     // A.3. Check card type
     val card_type: card_type = card_type.value(card_type_str);
 
+    // A.3.1. Check if card is allowed in classic mode
+    if (game_is_classic(minimal_game.game_type)) {
+        require(card_is_allowed_in_classic_mode(card_type), "Card " + card_type_str + " is not allowed in classic mode");
+    }
+
     // A.4. Check if player has cards left
     val cards_left = minimal_game.player_game.cards_left;
     require(cards_left > 0, "How can this player play a card when they have no cards left?");

@@ -27,6 +27,25 @@ function card_should_skip_move(c_type: card_type): boolean {
     }
 }
 
+
+// ------------------------------------------------------------
+// Only one card is forbidden for classic mode, and that's POTION.
+// 
+// Motivation:
+// The reason we only allow POTION for Chaos mode is that we only 
+// send HIT/MISS/Retaliation etc for Chaos Mode, and POTION will 
+// make the first attack a HIT in classic mode, meaning that there is
+// possibility of retaliation etc, data we don't have in classic.
+// ------------------------------------------------------------
+function card_is_allowed_in_classic_mode(c_type: card_type): boolean {
+    when (c_type) {
+        POTION -> return false; 
+        else -> return true;
+    }
+}
+
+
+
 // Given a turn number, return the card type that was played on that turn
 function card_get_type_for_turn_number(t_number: integer): card_type? {
     return (t: turn, c: card) @? {
