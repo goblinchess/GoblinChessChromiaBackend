@@ -48,7 +48,7 @@ function card_play_inner_core(
     rnd_numbers: list<rnd_data>, // If any randomness was used playing this card, the numbers generated goes in here.
     reverted_list: list<card_enchantment_reverted> // List of reverted enchantments.
 ) {
-    val card_type_str = card_played_data.card_type_str;
+    val card_type_str = card_played_data.card_type_str.upper_case();
     val card_order_number = card_played_data.card_order_number;
     val card_picks: list<integer> = card_played_data.card_picks;
 

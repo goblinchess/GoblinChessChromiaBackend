@@ -70,9 +70,10 @@ function move_calc_and_verify_battle_result(
     // ----------------
     // Verify the result types and the damage points.
     // ----------------
-    val given_result_type = battle_result_type.value(att_args.attack_result_type_str);
+    val att_res_type_str =att_args.attack_result_type_str.upper_case();
+    val given_result_type = battle_result_type.value(att_res_type_str);
     require(battle_res.result == given_result_type, 
-        "Given Battle result type "+ att_args.attack_result_type_str + " doesn't match calculated result " + battle_res.result + ", id:" + game_id);
+        "Given Battle result type "+ att_res_type_str + " doesn't match calculated result " + battle_res.result + ", id:" + game_id);
 
     when (battle_res.result) {
         battle_result_type.KILL -> {
@@ -110,9 +111,10 @@ function move_calc_and_verify_battle_result(
                     "Chaos mode, and main attack is hit, so retaliation arguments cannot be null, id:" + game_id);
 
                 // Verify the retaliation result type
-                val given_retaliation_result_type = battle_result_type.value(ret_args.retaliation_result_type_str);
+                val ret_res_type_str = ret_args.retaliation_result_type_str.upper_case();
+                val given_retaliation_result_type = battle_result_type.value(ret_res_type_str);
                 require(battle_res.retaliation_result == given_retaliation_result_type, 
-                    "Given retaliation result type "+ ret_args.retaliation_result_type_str + " doesn't match calculated result " + battle_res.retaliation_result + ", id:" + game_id);
+                    "Given retaliation result type "+ ret_res_type_str + " doesn't match calculated result " + battle_res.retaliation_result + ", id:" + game_id);
             
                 when (battle_res.retaliation_result) {
                     battle_result_type.HIT -> {

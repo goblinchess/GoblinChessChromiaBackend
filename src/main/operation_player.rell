@@ -3,7 +3,9 @@
 // -------------------------------------
 
 // Create a new player with the given name and signer
-operation create_player(name: text) {
+operation create_player(name_raw: text) {
+
+    val name = name_raw.trim(); // We will allow various cases to mean different names. Not sure if it's the best?
     // Check if name is valid
     require(name.size() > 0, "Player name cannot be empty");
     require(name.size() <= 30, "Player name too long (max 30 characters)");

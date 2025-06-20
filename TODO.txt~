@@ -1,5 +1,6 @@
 - POTION not allowed in classical game, since Online can only sends HIT/MISS etc for Chaos Mode.
 
+
 - We had White/Black in cleartext for My/Opp in the Board._reportXAction() for
   portal??
   This is now replaced, but must be tested.
@@ -9,6 +10,7 @@ b) Test time_left param.
 
  TODO Client: 
 -------------
+- Impl RESIGN button
 
 - Call the "fetch data" method for moves and cards.
 
@@ -21,6 +23,8 @@ b) Test time_left param.
 
 Client Done: 
 
+
+
  TODO Node: 
 -------------
  
@@ -32,8 +36,6 @@ Client Done:
 
 
 Node DONE:
-
-
 
  Videos
 -------------
