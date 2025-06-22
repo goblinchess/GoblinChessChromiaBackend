@@ -37,17 +37,19 @@ function color_rotation_get_all_actions(
     val max_turn_nr_of_the_color_rotation = color_rotation_find_max_turn_nr(last_seen_turn);
 
     val recent_turns = (t: turn) @* {
-        t.created_by == minimal_game.player_game, 
+        t.game == minimal_game.game,
         t.number > last_seen_turn,
         t.number <= max_turn_nr_of_the_color_rotation}  
         (@sort nr = t.number, t.turn_type, trn = t);
     
     var turns_found = recent_turns.size();
     if (turns_found == 0) { 
-        // Error, since we wan't to do minimal SELECTs.
-        log("game_id " + game_id + "ERROR: Don't call this function unless there is something to fetch!");
+        // Let's exit early (since we wan't to do minimal SELECTs)
+        log("game_id " + game_id + " - Nothing new to fetch. last_seen_turn: " + last_seen_turn + ", max_turn_nr_of_the_color_rotation: " + max_turn_nr_of_the_color_rotation);
         return null; 
-    }
+    } 
+
+    log("game_id " + game_id + " - Found " + turns_found + " turns to fetch! last_seen_turn: " + last_seen_turn + ", max_turn_nr_of_the_color_rotation: " + max_turn_nr_of_the_color_rotation);
 
     // The idea is that this variable will be updated without gaps, else sorting is broken.
     var return_turn_nr: integer = last_seen_turn;  // The new last seen turn nr
@@ -67,7 +69,7 @@ function color_rotation_get_all_actions(
                 // No card was played. All we do is count up the turn.
                 if(recent_turn.nr != return_turn_nr + 1) 
                 { 
-                    log("game_id " + game_id + "ERROR: Card played should be first thing seen, last seen turn was " + return_turn_nr + ", but card has turn nr: " + recent_turn.nr);
+                    log("game_id " + game_id + " - ERROR: Card played should be first thing seen, last seen turn was " + return_turn_nr + ", but card has turn nr: " + recent_turn.nr);
                 }
                 return_turn_nr = recent_turn.nr; 
             }
@@ -76,7 +78,7 @@ function color_rotation_get_all_actions(
                 // A card was played, we must gather info 
                 if(recent_turn.nr != return_turn_nr + 1) 
                 { 
-                    log("game_id " + game_id + "ERROR: Card played should be first thing seen, last seen turn was " + return_turn_nr + ", but card has turn nr: " + recent_turn.nr);
+                    log("game_id " + game_id + " - ERROR: Card played should be first thing seen, last seen turn was " + return_turn_nr + ", but card has turn nr: " + recent_turn.nr);
                 }
                 card_played_data = card_played_data_get(recent_turn.trn, recent_turn.turn_type, recent_turn.nr);
                 return_turn_nr = recent_turn.nr;
@@ -86,7 +88,7 @@ function color_rotation_get_all_actions(
                 // Even skipped moves can have a lot of events on them.
                 if(recent_turn.nr != return_turn_nr + 1) 
                 { 
-                    log("game_id " + game_id + "ERROR: Something wrong with the order, last seen turn was " + return_turn_nr + ", but move has turn nr: " + recent_turn.nr);
+                    log("game_id " + game_id + " - ERROR: Something wrong with the order, last seen turn was " + return_turn_nr + ", but move has turn nr: " + recent_turn.nr);
                 }
                 return_turn_nr = recent_turn.nr; 
 
@@ -106,7 +108,7 @@ function color_rotation_get_all_actions(
                 // Regular move
                 if(recent_turn.nr != return_turn_nr + 1) 
                 { 
-                    log("game_id " + game_id + "ERROR: Something wrong with the order, last seen turn was " + return_turn_nr + ", but move has turn nr: " + recent_turn.nr);
+                    log("game_id " + game_id + " - ERROR: Something wrong with the order, last seen turn was " + return_turn_nr + ", but move has turn nr: " + recent_turn.nr);
                 }
                 return_turn_nr = recent_turn.nr; 
 
@@ -125,7 +127,7 @@ function color_rotation_get_all_actions(
                 // Typical case.
                 if(recent_turn.nr != return_turn_nr + 1) 
                 { 
-                    log("game_id " + game_id + "ERROR: Something wrong with the order, last seen turn was " + return_turn_nr + ", but move has turn nr: " + recent_turn.nr);
+                    log("game_id " + game_id + " - ERROR: Something wrong with the order, last seen turn was " + return_turn_nr + ", but move has turn nr: " + recent_turn.nr);
                 }
                 return_turn_nr = recent_turn.nr; // Kind of unusal that the opponent would send only the skipped turn, but yeah.
                 rotate_color = true;
@@ -136,7 +138,7 @@ function color_rotation_get_all_actions(
                 // Double move.
                 if(recent_turn.nr != return_turn_nr + 1) 
                 { 
-                    log("game_id " + game_id + "ERROR: Something wrong with the order, last seen turn was " + return_turn_nr + ", but move has turn nr: " + recent_turn.nr);
+                    log("game_id " + game_id + " - ERROR: Something wrong with the order, last seen turn was " + return_turn_nr + ", but move has turn nr: " + recent_turn.nr);
                 }
                 return_turn_nr = recent_turn.nr; // Kind of unusal that the opponent would send only the skipped turn, but yeah.
                 rotate_color = true;
@@ -154,10 +156,10 @@ function color_rotation_get_all_actions(
             }
             turn_type.NEUTRAL_MOVE_1, 
             turn_type.NEUTRAL_MOVE_2 -> {
-                log("game_id " + game_id + "ERROR: Not used in v1.0.");
+                log("game_id " + game_id + " - ERROR: Not used in v1.0.");
             }
             else -> {
-                log("game_id " + game_id + "ERROR: Unknown turn type: " + recent_turn.turn_type);
+                log("game_id " + game_id + " - ERROR: Unknown turn type: " + recent_turn.turn_type);
             }
         }
 
