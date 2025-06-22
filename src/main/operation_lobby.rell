@@ -5,6 +5,9 @@
 // Lobby 
 // -------------------------------------
 
+
+// We are entering the lobby.
+// Requires that we're not already in a game.
 operation enter_lobby(game_type_str: text) {
 
     val current_signers = op_context.get_signers();
@@ -37,8 +40,40 @@ operation enter_lobby(game_type_str: text) {
         );
     }
     else {
-        // Don't even log it, this will happen often
+        // Didn't exactly expected this, but it is not a problem really.
+        log("player_id = " + playa.rowid.to_integer() + " - enter_lobby but there is already a lobby entry");
         update existing_lobby (.last_heartbeat = op_context.last_block_time);
+    }
+}
+
+// If we already have entered the lobby (via "enter_lobby()") we are required to 
+// regularly bump the time of our lobby ently so that other players know we are
+// still waiting.
+operation bump_lobby() {
+
+    val current_signers = op_context.get_signers();
+    val current_signer = current_signers[0];
+     
+    val playa = player@ {.signer == current_signer};
+
+    // Yes we allow multiple entries at once.
+    val existing_lobby = lobby@* {.player == playa};
+
+    if (existing_lobby.size() == 0) {
+
+        log("player_id = " + playa.rowid.to_integer() + " - bump_lobby but there is no lobby entry to bump?");
+        val minimal_game = minimal_game_data_get(current_signer);
+
+        // Since we're updating an existing lobby entry, the most 
+        // likely explanation is that someone created a game with us 
+        // and removed our entry. So if we have an ongoing game, 
+        // we'll pick it up next time we call "in_game()" and all is well.
+        // But if we don't have a game here something is broken.
+        require(minimal_game != null, "Cannot bump our lobby entry, and there is no new game either.");
+    }
+    else {
+        // Don't even log it, this will happen often
+        update lobby@* {.player == playa} (.last_heartbeat = op_context.last_block_time);
     }
 }
 
