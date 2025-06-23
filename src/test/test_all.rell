@@ -656,8 +656,15 @@ function test_full_game() {
     assert_false(m_data.given_is_knighted);
     assert_false(m_data.given_is_enchanted_jumper);
 
+    // Check/Stale/Mate
+    var check_info: check_data = primary_move.check_data;
+    assert_false(check_info.is_check);
+    assert_false(check_info.is_checkmate);
+    assert_false(check_info.is_stalemate);
+
     // Extra move
     assert_null(recent_actions.extra_move);
+
 
     last_seen_turn += 1;
     last_seen_turn += 1;
