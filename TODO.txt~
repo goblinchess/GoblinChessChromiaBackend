@@ -1,12 +1,3 @@
-
-- Sometimes lobby fails. 
-"Cannot enter lobby, since you are in an existing game ..."
-
-- BUG: Black isn't fetching any moves at first turn.
-
-
-
-
 - We had White/Black in cleartext for My/Opp in the Board._reportXAction() for
   portal??
   This is now replaced, but must be tested.

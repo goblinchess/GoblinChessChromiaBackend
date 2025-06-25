@@ -118,7 +118,7 @@ function move_event_creation(
 // ------------------------------------------------------------
 // Remove old spells and vuln paths
 // ------------------------------------------------------------
-function move_cleanup_after_move(is_enchanted_jump: boolean, opp_vuln_ctxt: pre_vuln_context, minimal_game: minimal_game_result, align: alignment) {
+function move_cleanup_after_move(is_enchanted_jump: boolean, opp_vuln_ctxt: pre_vuln_context, minimal_game: minimal_game_result, opp_align: alignment) {
     // 1. Enchanted jump (if exists)
     if (is_enchanted_jump) {
         jump_remove_enchanted(minimal_game.player_game);
@@ -126,7 +126,7 @@ function move_cleanup_after_move(is_enchanted_jump: boolean, opp_vuln_ctxt: pre_
 
     // 2. Vuln Path (if exists)
     if (opp_vuln_ctxt.prev_turn_vuln_path != null) {
-        move_remove_vuln_path(minimal_game.game, align); // Removing this players old vulns
+        move_remove_vuln_path(minimal_game.game, opp_align); // Removing opponent's old vulns
     }
 
     // 3. Count down all enchantments
