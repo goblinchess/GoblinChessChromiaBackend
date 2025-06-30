@@ -1,3 +1,8 @@
+Test resurrect.
+Test double move.
+Test switch.
+
+
 - We had White/Black in cleartext for My/Opp in the Board._reportXAction() for
   portal??
   This is now replaced, but must be tested.
@@ -19,6 +24,7 @@ b) Test time_left param.
  
 
 Client Done: 
+
 
 
 

@@ -1274,7 +1274,14 @@ function test_full_game() {
         promotions = list<integer>()
     );
 
-    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, m_args, att_args, list<rnd_data>(), check_args, end_args)).sign(black_player).run();
+    var resurrect_rnd_data = rnd_data(
+        result = 0, // We put the resurrected at a8, which is one out of two squares
+        min = 0, // 
+        max = 1 // The two options are a8 and d8 (where the queen started, but no longer holds).
+    );
+    rnds = [resurrect_rnd_data];
+
+    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, m_args, att_args, rnds, check_args, end_args)).sign(black_player).run();
     last_seen_turn += 1;
 
     log ("Turn 7(42): Skip neutral.");
@@ -1347,7 +1354,14 @@ function test_full_game() {
         promotions = list<integer>()
     );
 
-    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, m_args, att_args, list<rnd_data>(), check_args, end_args)).sign(white_player).run();
+    resurrect_rnd_data = rnd_data(
+        result = 0, // We put the resurrected at b1, which is the first available square.
+        min = 0, 
+        max = 1 // Only two squares on rank 1 (b1, d1)
+    );
+    rnds = [resurrect_rnd_data];
+
+    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, m_args, att_args, rnds, check_args, end_args)).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 8(45): Skip neutral.");
@@ -1500,7 +1514,7 @@ function test_full_game() {
         damage_points = 7 
     );
 
-    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, m_args, att_args, list<rnd_data>(), check_args, end_args)).sign(white_player).run();
+    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, m_args, att_args, list<rnd_data>(), check_args, null)).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 9(51): Skip neutral.");

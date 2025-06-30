@@ -100,6 +100,12 @@ function move_attack_inner(
     val is_classic_mode: boolean = game_is_classic(minimal_game.game_type); 
     val is_chaos_mode: boolean = not is_classic_mode; // Else it's chaos mode.
 
+    var resurrect_pos: integer? = null;
+    if (end_args != null) {
+        resurrect_pos = end_args.resurrection_pos;
+    }
+
+
     // After this we know that our calculation matches the given data.
     val battle_res = move_calc_and_verify_battle_result(
         game_id = game_id,
@@ -108,6 +114,7 @@ function move_attack_inner(
         p = p,
         opp_vuln = opp_vuln,
         rnd_numbers = rnd_numbers,
+        resurrect_pos = resurrect_pos,
         is_chaos_mode = is_chaos_mode,
         chaos_args = chaos_args,
         ret_args = ret_args
@@ -193,6 +200,8 @@ function move_attack_inner(
     // ----------------------------------------------    
     // B. Updates 
     // ----------------------------------------------    
+    val rnd_results = battle_res.rnd_results;
+
     var new_turn_type = turn_type.BLACK_MOVE;
     if (minimal_game.is_white) { 
         new_turn_type = turn_type.WHITE_MOVE;
@@ -241,6 +250,16 @@ function move_attack_inner(
                 require(end_args.resurrection_pos != null, 
                 "move_battle_resurrect_of_vulnerable() - ERROR: Node thinks we should resurrect. "
                 + ", but no resurrection_pos provided.");
+
+                // We have to wait until now to verify the random number of the resurrect position,
+                // since we need the move (and portal travels) to happen first.
+                var rnd_res: rnd_result? = null;
+                if (my_color == alignment.WHITE) {
+                    rnd_res = board_find_empty_starting_from_white_side(board_positions_all, end_args.resurrection_pos, rnd_numbers[0]);
+                } else {
+                    rnd_res = board_find_empty_starting_from_black_side(board_positions_all, end_args.resurrection_pos, rnd_numbers[0]);
+                }
+                rnd_results.add(rnd_res); // Don't forget to add it to the result list!
 
                 val old_pos = att_args.attacked_position; // The place where the piece was killed.
                 val new_pos = end_args.resurrection_pos; // This cannot be validated, must wait to the end of the game.
@@ -312,11 +331,12 @@ function move_attack_inner(
             }
         }
 
-        // ----------------
-        // B.7.chaos.3. Save the rnd results
-        // ----------------
-        rnd_validation_create_player_rnd_nr(new_turn, battle_res.rnd_results);
     }
+    // ----------------
+    // B.7.3. Save the rnd results
+    // ----------------
+    // We save the random results for the final validation in the end of the game.
+    rnd_validation_create_player_rnd_nr(new_turn, rnd_results);
 
     // ----------------
     // B.8 Is it over?

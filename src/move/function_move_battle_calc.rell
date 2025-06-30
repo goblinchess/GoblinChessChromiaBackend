@@ -1,4 +1,3 @@
-
 // ------------------------------------------------------------
 // Here we calculate the [battle_result] and 
 // verify it against the data the client sent us.
@@ -12,6 +11,7 @@ function move_calc_and_verify_battle_result(
     p: piece_living_data,
     opp_vuln: vulnerable_data,
     rnd_numbers: list<rnd_data>, // <- Damn important that the correct count is sent here.
+    resurrect_pos: integer?,
 
     is_chaos_mode: boolean,
 
@@ -50,7 +50,7 @@ function move_calc_and_verify_battle_result(
             "Calculated Luck was "+ battle_res.luck + " but given was " + chaos_args.is_luck + ", id:" + game_id);
 
         // b) Verify that we used all incoming random numbers 
-        move_attack_verify_rnd_results(game_id, battle_res, rnd_numbers, battle_res.rnd_results);
+        move_attack_verify_rnd_results(game_id, battle_res, resurrect_pos, rnd_numbers, battle_res.rnd_results);
 
     } else {
         // This is the real battle calculation.
@@ -61,8 +61,16 @@ function move_calc_and_verify_battle_result(
         );
 
         // a) No luck
-        // b) No random numbers
-        require(rnd_numbers.size() == 0, "No random numbers expected in classic mode, id:" + game_id);
+
+        // b) Random
+        // There is ONE case where we actually have random for classic, and that's during RESURRECT
+        if (resurrect_pos != null) {
+            require(rnd_numbers.size() == 1, "Classic mode, one random numbers expected due to resurrect " + resurrect_pos + ", id:" + game_id);
+
+            // We don't verify the resurrect random number here, since we need the move to happen first.
+        } else {
+            require(rnd_numbers.size() == 0, "Classic mode, no random numbers expected in this turn, id:" + game_id);
+        }
     }
 
     log("game_id: " + game_id + " - " + battle_result_dbg(battle_res));
@@ -135,22 +143,40 @@ function move_calc_and_verify_battle_result(
 }
 
 // Verify that we used all random numbers in the incoming list.
-function move_attack_verify_rnd_results(game_id: integer, battle_res: battle_result, rnd_numbers: list<rnd_data>, rnd_results: list<rnd_result>) {
+function move_attack_verify_rnd_results(game_id: integer, battle_res: battle_result, resurrect_pos: integer?, rnd_numbers: list<rnd_data>, rnd_results: list<rnd_result>) {
     val given_rnd_num_size = rnd_numbers.size();
-    val calc_rnd_num_size = rnd_results.size();
+    var calc_after_attack_size = rnd_results.size();
+
+    var calc_rnd_num_size = calc_after_attack_size;
+    if (resurrect_pos != null) {
+        // Resurrection requires one random too.
+        // Even if there is only one possible square where the piece must resurrect
+        // we still use one random to make it easier on the node to validate that we have the 
+        // correct number of randoms.
+        calc_rnd_num_size += 1; 
+        // We don't verify the resurrect pos here, since the move hasn't happened on the board yet.
+    }
+
     if (given_rnd_num_size > calc_rnd_num_size) { 
-        // This CAN happen! 
-        // (If we miss and want to calculate how much shorter the advance is)
+        // This CAN happen for one specific situation:
+        // 1. Chaos mode +
+        // 2. Ground attack +
+        // 3. Miss.
+        // This random number is used if we miss and want to calculate how much shorter 
+        // the advance is. A "miss" can only happens in chaos mode. The idea is that 
+        // the piece moves towards the defender but swings too early. If we have a 
+        // miss on a ground attack the lead will advance one or two squares shorter,
+        // and there is a 50%-50% what it will be. A single D6 is used to determine it.
         if (battle_res.result == battle_result_type.MISS) {
-            // This is OK, no need to go deeper
-            val rnd_data = rnd_numbers[calc_rnd_num_size];
+            // We don't really validate that the die result 
+            // cause the correct move destination (it's not very important)
+            // we just copy the data into the [rnd_results] list.
+            val rnd_data = rnd_numbers[calc_after_attack_size];
 
             val dice_count = 1;
-            val rnd_offset = calc_rnd_num_size;
+            val rnd_offset = calc_after_attack_size;
             val res: dice_number_result = dice_number_roll_d6(dice_count, rnd_numbers, rnd_offset);
             rnd_results.add(res.rnd_results[0]);
-        } else {
-            require(false, "Too many random numbers sent. Expected " + calc_rnd_num_size + " but got " + given_rnd_num_size + ", id:" + game_id);
         }
     }
 

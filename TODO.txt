@@ -1,4 +1,5 @@
-Cannot build. "Failed to run installer"
+Test double move.
+Test switch.
 
 
 - We had White/Black in cleartext for My/Opp in the Board._reportXAction() for
@@ -22,6 +23,7 @@ b) Test time_left param.
  
 
 Client Done: 
+
 
 
 
