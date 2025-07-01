@@ -6,7 +6,7 @@ function card_skip_inner(
 ) {
 
     // -----------    
-    // A. Verication
+    // A. Verification
     // -----------    
     log("game_id: " + game_id +" - Skip Card Beign, last turn: " + last_seen_turn );
 

@@ -6,7 +6,7 @@ function move_neutral_skip_inner(
     last_seen_turn: integer
 ) {
     // -----------    
-    // A. Verication
+    // A. Verification
     // -----------    
     log("game_id: "+game_id+" - Skip Neutral Begin: last_turn: " + last_seen_turn);
 

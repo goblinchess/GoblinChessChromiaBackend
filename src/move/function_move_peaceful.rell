@@ -213,7 +213,7 @@ function move_peaceful_inner(
     val is_game_over = game_over(minimal_game, new_turn, is_checkmate, is_stalemate);
     if (not is_game_over) {
 
-        // Usally we don't set "time_left" during regular moves, but there is one case where we must make an exception:
+        // Usually we don't set "time_left" during regular moves, but there is one case where we must make an exception:
         if (turn_is_last_double_move(new_turn_type)) {
             game_update_time_left(minimal_game);
         }

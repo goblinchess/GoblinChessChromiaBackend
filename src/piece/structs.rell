@@ -21,7 +21,7 @@ struct piece_living_data {
 struct vulnerable_data {
     // From Vulnerable
     align: alignment; // = Color
-    position: integer; // Acutally from "alive" but we don't want a separate struct for that.
+    position: integer; // Actually from "alive" but we don't want a separate struct for that.
 
     is_obstacle: boolean;
     can_retaliate: boolean;

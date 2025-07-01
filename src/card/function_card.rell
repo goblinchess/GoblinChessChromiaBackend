@@ -53,7 +53,7 @@ function card_play_inner_core(
     val card_picks: list<integer> = card_played_data.card_picks;
 
     // -----------    
-    // A. Verication
+    // A. Verification
     // -----------    
 
     log("game_id: " + game_id + "- Play Card Beign, last turn: " + last_seen_turn + ", type: " + card_type_str + ", order number: " + card_order_number );
@@ -250,7 +250,7 @@ function card_play_inner_core(
     val rnd_list = list<rnd_result>();
 
     // B.3. We create the card when it's played
-    val new_card =create card(minimal_game.player_game, new_turn, c_type, card_order_number);
+    val new_card = create card(minimal_game.player_game, new_turn, c_type, card_order_number);
 
     // B.4. Count down the cards left
     update minimal_game.player_game (.cards_left = cards_left - 1);

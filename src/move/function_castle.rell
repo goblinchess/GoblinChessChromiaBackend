@@ -17,7 +17,7 @@ function move_castle_verify_and_return_rook(
         require(from_position == 4, "White king must not have moved, " + from_position + ", id: " + game_id);
         require(castle_rook_from == 0 or castle_rook_from == 7, "Rook must not have moved: " + castle_rook_from + ", id:" + game_id);
     } else {
-        require(from_position == 60, "Blakc king must not have moved, " + from_position + ", id: " + game_id);
+        require(from_position == 60, "Black king must not have moved, " + from_position + ", id: " + game_id);
         require(castle_rook_from == 63 or castle_rook_from == 56, "Rook must not have moved: " + castle_rook_from + ", id:" + game_id);
     }
 

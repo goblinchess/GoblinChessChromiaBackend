@@ -108,7 +108,7 @@ function test_player_rotation_find_max_turn_nr() {
 // Here we are duplicating the code from module 
 // rnd_validation.rnd_validation_of_player().
 // ------------------------------------------
-function test_same_as_on_crient_side() {
+function test_same_as_on_client_side() {
     val org_seed = 123172398125;
 
     // Generate hand
@@ -765,7 +765,7 @@ function test_full_game() {
     fetching_rotation_nr += 1;
 
     // --------------------
-    // Failed Blakc moves
+    // Failed Black moves
     // --------------------
     // First we try to move the rook link usually, but its ACTIVE TYPE is a frog, so shouldn't work.
     // It's only been a frog 2 turns, to the enchantment has not yet timed out.
@@ -803,7 +803,7 @@ function test_full_game() {
     assert_true(failed_move.message.starts_with(expected_wrong_move));
 
     // --------------------
-    // /Failed Blakc moves
+    // /Failed Black moves
     // --------------------
 
     log ("Turn 4(11): Black moves pawn a5->a4");
@@ -1489,9 +1489,9 @@ function test_full_game() {
     failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
-    var move_expeceted_err_msg: text = "Illegal move: type: BISHOP";
+    var move_expected_err_msg: text = "Illegal move: type: BISHOP";
     //log(failed_move.message);
-    assert_true(failed_move.message.starts_with(move_expeceted_err_msg));
+    assert_true(failed_move.message.starts_with(move_expected_err_msg));
 
     log("Turn 17(50): Move Fail. Bishop cannot move f1 -> d3 (Only the enchanted piece can jump)");
 
@@ -1505,9 +1505,9 @@ function test_full_game() {
     failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
-    move_expeceted_err_msg = "This piece is not an enchanted jumper";
+    move_expected_err_msg = "This piece is not an enchanted jumper";
     //log(failed_move.message);
-    assert_true(failed_move.message.starts_with(move_expeceted_err_msg));
+    assert_true(failed_move.message.starts_with(move_expected_err_msg));
 
     // --------------------
     // /Failed White moves

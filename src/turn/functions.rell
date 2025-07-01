@@ -60,7 +60,7 @@ function turn_create_first(g: game, creatoor: player_game): turn {
         .created_at = op_context.last_block_time
     );
 
-    val new_turn =create turn(
+    val new_turn = create turn(
         .game = g,
         .number = 0,
         .turn_type = turn_type.FRESH_GAME, // This is the turn BEFORE anything has happened.

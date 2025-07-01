@@ -58,7 +58,7 @@ function game_create_inner(white_player: player, black_player: player, game_type
     val game_type_str = game_type_str_raw.upper_case();
     val g_type: game_type = game_type.value(game_type_str);
     
-    val new_game =create game(
+    val new_game = create game(
         .white_player = white_player,
         .black_player = black_player,
         .game_type = g_type,
