@@ -23,8 +23,8 @@ function move_primary_skip_inner(
     // ----------------
     // A.2. Is game is out of sync? 
     // ----------------
-    val curr_turn = minimal_game.curr_turn_nr;
-    require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
+    val old_turn_nr = minimal_game.curr_turn_nr; // Since we're soon creating a new turn, this is the old turn.
+    require(old_turn_nr == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + old_turn_nr);
 
     // ----------------
     // A.3 Get same state
@@ -63,10 +63,7 @@ function move_primary_skip_inner(
     // B.1. Create the turn record
     // ----------------
     // lots of verification in here.
-    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
-
-    // B.2 Use all unblocked portals
-    val hist_portals: list<portal_event> = move_common_use_all_unblocked_portals(game_id, curr_turn, minimal_game.game, new_turn, board_positions_all, null, opp_team, my_color, end_args);
+    val (new_turn, new_turn_nr, last_rot_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
 
     // ----------------
     // 2. Apply end_args
@@ -77,7 +74,7 @@ function move_primary_skip_inner(
 
     // B.2.a Use all unblocked portals
     // Skip: We need this for skip moves as well, because we might have played the PORTAL card before the skip.
-    move_common_use_all_unblocked_portals(game_id, curr_turn, minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
+    val hist_portals: list<portal_event> = move_common_use_all_unblocked_portals(game_id, last_rot_nr, minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
 
     // B.2.b Resurrection
     // (Must happen after the portal travel, so we won't end up blocking a portal exit)
@@ -113,7 +110,7 @@ function move_primary_skip_inner(
         move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, opp_color);
 
         // The "is_check" status of the opponent should be saved.
-        game_update_turn_and_check_status(minimal_game, new_turn, is_check);
+        game_update_turn_and_check_status(minimal_game, is_check);
     }
 
     log("game_id: "+game_id+" - /Skip Move End: new turn type: " + new_turn_type + ", is_game_over: " + is_game_over + ", opp in check: " + is_check );

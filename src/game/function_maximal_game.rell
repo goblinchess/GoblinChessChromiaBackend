@@ -11,7 +11,7 @@ function maximal_game_and_timeout_data_get(
     player_pubkey: pubkey,
 ) :(maximal_game_result?, opponent_timeout_data?) {
 
-   val res = (p_my: player, pg_my: player_game, g: game, pg_opp: player_game, p_opp: player, ct: current_turn, t: turn)@? {
+   val res = (p_my: player, pg_my: player_game, g: game, pg_opp: player_game, p_opp: player, ct: current_turn, t: turn, rot: player_rotation)@? {
         p_my.signer == player_pubkey,
         pg_my.player == p_my,
         pg_my.game == g,
@@ -20,7 +20,8 @@ function maximal_game_and_timeout_data_get(
         pg_opp.is_white != pg_my.is_white, // Only one is white
         pg_opp.player == p_opp,
         ct.game == g,
-        ct.current_turn == t // yes, even if we are at turn = 0 there will be a [current_turn] row.
+        ct.current_turn == t, // yes, even if we are at turn = 0 there will be a [current_turn] row.
+        t.player_rotation == rot
     } (gme = g, 
         my_p = p_my, opp_p = p_opp,  // Player
         my_pg = pg_my, opp_pg = pg_opp,  // P.G.
@@ -29,7 +30,7 @@ function maximal_game_and_timeout_data_get(
         my_elo = p_my.elo_rating, opp_elo = p_opp.elo_rating, // ELO
         cr_at = g.last_player_rotation_at, game_created_at = g.created_at, opp_last_heartbeat = pg_opp.last_heartbeat, // Timeout
         my_time_left_ms = pg_my.total_time_left, opp_time_left_ms = pg_opp.total_time_left, // Total time left
-        turn_owner = t.created_by, curr_turn_nr = g.current_turn, turn_nr = t.number, // Turn data
+        turn_owner = rot.created_by, curr_turn_nr = g.current_turn_nr, turn_nr = t.number, // Turn data
         g_id = g.rowid.to_integer(), game_type = g.game_type,  is_white = pg_my.is_white, in_check = pg_my.in_check, black_player = g.black_player // General
         );
 

@@ -9,7 +9,8 @@ struct minimal_game_result {
     // Data
     game_id: integer; // The game's rowid.
     game_type;
-    curr_turn_nr: integer; // We always check this, so best to store it.
+    curr_rotation_nr: integer; 
+    curr_turn_nr: integer; // We always check this
     in_check: boolean; // Our king is in check.
     is_white: boolean; // True if this player is white.
     // Timestamps

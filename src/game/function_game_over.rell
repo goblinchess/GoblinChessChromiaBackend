@@ -18,7 +18,7 @@
 // -------------------------------------
 function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkmate: boolean, is_stalemate: boolean) :boolean {
     if (is_checkmate or is_stalemate) {
-        log("Game Over");
+        log("game_id: " + minimal_game.game_id + " - Game Over");
         if (is_checkmate) {
             _inner_game_end_checkmate(minimal_game.game, new_turn.number, minimal_game.player_game);
             game_update_time_left(minimal_game);
@@ -36,13 +36,13 @@ function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkma
 
 // We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
 function _inner_game_end_checkmate(gme: game, curr_turn_nr: integer, winner_pg: player_game) {
-    update gme (.current_turn = curr_turn_nr, .is_finished = true, .is_draw = false);
+    update gme (.current_turn_nr = curr_turn_nr, .is_finished = true, .is_draw = false);
 
 }
 
 // We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
 function _inner_game_end_draw(gme: game, curr_turn_nr: integer, winner_pg: player_game) {
-    update gme (.current_turn = curr_turn_nr, .is_finished = true, .is_draw = true);
+    update gme (.current_turn_nr = curr_turn_nr, .is_finished = true, .is_draw = true);
 }
 
 // -------------------------------------

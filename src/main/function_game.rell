@@ -62,7 +62,8 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .white_player = white_player,
         .black_player = black_player,
         .game_type = g_type,
-        .current_turn = 0, // Starting at 0 means first (actual) turn will be 1.
+        .current_rotation_nr = 0, // Starting at 0 means first (actual) rotation will be 1.
+        .current_turn_nr = 0, // Starting at 0 means first (actual) turn will be 1.
         .is_finished = false, 
         .is_draw = false,
         .created_at = op_context.last_block_time,

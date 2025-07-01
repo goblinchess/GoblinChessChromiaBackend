@@ -1,10 +1,10 @@
 
 
-function board_debug_print(game_id: integer, turn_nr: integer, board_all: board_positions_all): text {
+function board_debug_print(game_id: integer, last_rot_nr: integer, board_all: board_positions_all): text {
     var out = "\n";
 
     out += "+-------------------+\n";
-    out += "|Game: " + game_id + " (t: " + turn_nr + ")\n";
+    out += "|Game: " + game_id + " (r: " + last_rot_nr + ")\n";
     out += "+-------------------+\n";
     for (rev_y in range(0, 8)) {
         val y = 7 - rev_y;

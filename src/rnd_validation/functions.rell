@@ -90,10 +90,11 @@ function rnd_validation_of_player(
     // --------------------------
     // 2. Find all saved rnd numbers for the player
     // --------------------------
-    val res_list = (r: rnd_nr_from_player, t: turn) @* {
-        t.created_by == pg,
+    val res_list = (rot: player_rotation, t: turn, r: rnd_nr_from_player) @* {
+        rot.created_by == pg,
+        t.player_rotation == rot,
         r.turn == t
-    } (r.idx, r.result, r.type, r.min, r.max, playa_rnd_nr = r, turn = t, turn_nr = t.number); 
+    } (r.idx, r.result, r.type, r.min, r.max, playa_rnd_nr = r, turn = t, turn_nr = t.number, rotation = rot); 
 
     // --------------------------
     // 3. Validate the rnd_results

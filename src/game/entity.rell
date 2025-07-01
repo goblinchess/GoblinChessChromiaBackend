@@ -16,10 +16,18 @@ entity game {
     index white_player: player;
     index black_player: player;
     index game_type: game_type;
-    mutable current_turn: integer;  //A GAME cannot have a reference to the (current) TURN entity since TURN references GAME, 
-                                    // and Rell doesn't allow two-way FKs.
+
+    // Denormalization for performance reasons
+    mutable current_rotation_nr: integer; //A GAME cannot have a reference to the (current) PLAYER_ROTATION entity since it references GAME, 
+                                          // and Rell doesn't allow two-way FKs.
+    mutable current_turn_nr: integer;     //A GAME cannot have a reference to the (current) TURN entity since TURN references GAME, 
+                                          // and Rell doesn't allow two-way FKs.
+
+    // End of game data
     mutable is_finished: boolean; // NOTE: this is set BEFORE we validate the random numbers.
     mutable is_draw: boolean;     // NOTE: this is set BEFORE we validate the random numbers.
+
+    // Timestamps
     created_at: timestamp;
     mutable last_player_rotation_at: timestamp; // Updated when a player is completely done with a "move", 
                                                // meaning that the other player can take action. 

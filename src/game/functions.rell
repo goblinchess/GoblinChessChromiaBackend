@@ -28,21 +28,17 @@ function game_type_to_time_left(gt: game_type) :integer {
 // Updates
 // ----------
 
-// Will update the gome with:
-// a. New turn number, (actually redundant, since the [turn] entity has been created)
-// b. is_check = meaning we put the opponent in check.
+// Will update the gome with "is_check" = meaning we put the opponent in check.
 // 
 // Note: If we were in check in the beginning of this turn, 
 // we don't bother to remove it, since the opponent will 
 // update our is_check status in the end of their move.
-function game_update_turn_and_check_status(minimal_game: minimal_game_result, new_turn: turn, is_check: boolean) {
-    // 1. Update game with new turn number
-    update minimal_game.game (.current_turn = new_turn.number);
+function game_update_turn_and_check_status(minimal_game: minimal_game_result, is_check: boolean) {
 
-    // 2. Find opponent [player_game]
+    // 1. Find opponent [player_game]
     val opponent_player_game = player_game_get_opponent(minimal_game);
 
-    // 3. Update opponent [player_game] with new is_check status
+    // 2. Update opponent [player_game] with new is_check status
     update opponent_player_game (.in_check = is_check);
 }
 

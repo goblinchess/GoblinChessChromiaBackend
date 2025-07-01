@@ -6,21 +6,84 @@
 //   When a player "does something", it will generate a new "turn".
 // -------------------------------------
 
-// Calculates the maximum turn number for a player rotation
-function player_rotation_find_max_turn_nr(
-    last_seen_turn_nr: integer,
+// -------------------------------------
+// Returns the "max turn nr" of this rotation, if we pass validation.
+//
+// Example 1:
+// Current Rotation = 1: this has happened:
+// - Turn 1: White plays a card
+// - Turn 2: White moves
+// Fetched rotation = 1.
+// Black's last seen turn is 2.
+// The "max turn" (of rotation 1) is 3.
+//
+// Is "last seen turn" allowed for the "fetched rotation"?
+// Verification: 1 + (last seen turn / 3) = 1 + 2/3 = 1 + 0 = 1 (Same as fetched rotation.)
+//
+// Note: had black client sent last seen turn = 3 (s)he made an error,
+// since the client should have realized there is nothing more to fetch.
+// 
+// Example 2:
+// Current Rotation = 1: this has happened:
+// - Turn 1: White plays a card
+// - Turn 2: White moves
+// - Turn 3: White neutral move is skipped
+// Fetched Rotation = 2.
+// White's last seen turn is 3.
+// The "max turn" (of rotation 2) is 6.
+//
+// Is "last seen turn" allowed for the "fetched rotation"?
+// Verification: 1 + (last seen turn / 3) = 1 + 3/3 = 1 + 1 = 2 (Same as fetched rotation.)
+//
+// Note: Even though the current rotation is not the same as the fetched rotation we allow this!
+// -------------------------------------
+function player_rotation_find_max_turn_nr_and_validate(
+    game_id: integer,
+    fetched_rotation_nr: integer, // The rotation the client is fetching.
+    last_seen_turn_nr: integer
 ): integer {
 
-    // If he [last_seen_turn_nr] is the last turn of a player rotation, we'll look at the the next player rotation.
-    val player_rotation_nr = last_seen_turn_nr / 3;
-    return player_rotation_nr * 3 + 3;
+    val max_turn_nr = fetched_rotation_nr * 3;
+
+
+    require(last_seen_turn_nr != max_turn_nr, "game_id " + game_id + " - Why ask for more turns when you have already seen the last turn of this rotation: " + last_seen_turn_nr + ".");
+    require(last_seen_turn_nr < max_turn_nr, "game_id " + game_id + " -The last seen turn: " + last_seen_turn_nr + " is already beyond the reach of this rotation, rotation nr: " + fetched_rotation_nr + ".");
+ 
+    // Is "last seen turn" allowed for the "fetched rotation"?
+    // (If he [last_seen_turn_nr] is the last turn of the (current) rotation, we'll look at the the next rotation).
+    val calc_rotation_nr = player_rotation_calc_allowed_fetched_rotation_nr(last_seen_turn_nr); 
+    require(calc_rotation_nr == fetched_rotation_nr, "game_id " + game_id + " -Given last_seen_turn: " + last_seen_turn_nr + " is not within fetched rotation: " + fetched_rotation_nr);
+
+
+
+    return max_turn_nr;
+}
+
+function player_rotation_calc_allowed_fetched_rotation_nr(last_seen_turn_nr: integer): integer {
+    return 1 + last_seen_turn_nr / 3;
+}
+
+// -------------------------------------
+// Look for logical errors when comparing last seen turn/rotation to current turn/rotation.
+// We also prevent the player from fetching his/her own rotation.
+// It's not strictly an error, but most likely the client lost count or something, so we better give an error early.
+// -------------------------------------
+function player_rotation_validate_curr_vs_last_seen(
+    game_id: integer,
+    fetched_rotation_nr: integer, // The rotation the client is fetching.
+    current_rotation_nr: integer, // The rotation from the db.
+) {
+    val curr_next_rot_nr = current_rotation_nr + 1;
+    require(fetched_rotation_nr == current_rotation_nr or fetched_rotation_nr == curr_next_rot_nr, 
+        "game_id " + game_id + ". You want to fetch rotation: " + fetched_rotation_nr + 
+        ". But the current rotation is " + current_rotation_nr + ", out of sync. Did you forget to save a move?");
 }
 
 // -------------------------------------
 // Get the player rotation
 //
-// This function will return all actions (all turns) in the same "player rotation"  
-// that came after the given [last_seen_turn]. 
+// This function will return all actions (all turns) that a player did before the turn shifted 
+// to the other player, but only turns that came after the given [last_seen_turn]. 
 // 
 // Note on performance:
 // To speed things up, we want to return everything the client needs in one single query (all "turns").
@@ -28,28 +91,28 @@ function player_rotation_find_max_turn_nr(
 // -------------------------------------
 function player_rotation_get_all_actions(
     game_id: integer, 
+    fetched_rotation_nr: integer, // The rotation number to get actions for
+    max_turn_nr_of_the_fetched_rotation: integer,
     minimal_game: minimal_game_result, 
     last_seen_turn: integer,
     otd: opponent_timeout_data,
     calc_timeout: boolean // If "true" the node must calculate the timeout.
 ): player_rotation_actions? {
 
-    val max_turn_nr_of_the_player_rotation = player_rotation_find_max_turn_nr(last_seen_turn);
-
     val recent_turns = (t: turn) @* {
         t.game == minimal_game.game,
         t.number > last_seen_turn,
-        t.number <= max_turn_nr_of_the_player_rotation}  
+        t.number <= max_turn_nr_of_the_fetched_rotation}  
         (@sort nr = t.number, t.turn_type, trn = t);
     
     var turns_found = recent_turns.size();
     if (turns_found == 0) { 
         // Let's exit early (since we wan't to do minimal SELECTs)
-        log("game_id " + game_id + " - Nothing new to fetch. last_seen_turn: " + last_seen_turn + ", max_turn_nr_of_the_player_rotation: " + max_turn_nr_of_the_player_rotation);
+        log("game_id " + game_id + " - Nothing new to fetch. last_seen_turn: " + last_seen_turn + ", max_turn_nr_of_the_player_rotation: " + max_turn_nr_of_the_fetched_rotation);
         return null; 
     } 
 
-    log("game_id " + game_id + " - Found " + turns_found + " turns to fetch! last_seen_turn: " + last_seen_turn + ", max_turn_nr_of_the_player_rotation: " + max_turn_nr_of_the_player_rotation);
+    log("game_id " + game_id + " - Found " + turns_found + " turns to fetch! last_seen_turn: " + last_seen_turn + ", max_turn_nr_of_the_player_rotation: " + max_turn_nr_of_the_fetched_rotation);
 
     // The idea is that this variable will be updated without gaps, else sorting is broken.
     var return_turn_nr: integer = last_seen_turn;  // The new last seen turn nr
@@ -166,11 +229,11 @@ function player_rotation_get_all_actions(
     }
 
     // Some sanity checks.
-    if (return_turn_nr > max_turn_nr_of_the_player_rotation) {
-        log("game_id " + game_id + "ERROR: return_turn_nr > max_turn_nr, return_turn_nr: " + return_turn_nr + ", max_turn_nr: " + max_turn_nr_of_the_player_rotation);
+    if (return_turn_nr > max_turn_nr_of_the_fetched_rotation) {
+        log("game_id " + game_id + "ERROR: return_turn_nr > max_turn_nr, return_turn_nr: " + return_turn_nr + ", max_turn_nr: " + max_turn_nr_of_the_fetched_rotation);
     }
-    if (return_turn_nr == max_turn_nr_of_the_player_rotation and not rotate_color) {
-        log("game_id " + game_id + "ERROR: return_turn_nr == max_turn_nr and not rotate_color, return_turn_nr: " + return_turn_nr + ", max_turn_nr: " + max_turn_nr_of_the_player_rotation);
+    if (return_turn_nr == max_turn_nr_of_the_fetched_rotation and not rotate_color) {
+        log("game_id " + game_id + "ERROR: return_turn_nr == max_turn_nr and not rotate_color, return_turn_nr: " + return_turn_nr + ", max_turn_nr: " + max_turn_nr_of_the_fetched_rotation);
     }
 
     var ti: timeout_data? = null;

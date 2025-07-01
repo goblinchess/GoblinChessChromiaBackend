@@ -3,17 +3,42 @@
 // -------------------------------------
 
 // Returns the last seen turn type and its number.
-function get_current_turn(game: game): (turn_type: turn_type, number: integer) {
-    return (ct: current_turn, t: turn)@ {
+function get_current_turn(game: game): (turn_type: turn_type, number: integer, rotation_nr: integer, p_rotation: player_rotation) {
+    return (ct: current_turn, t: turn, r: player_rotation)@ {
         ct.game == game,
-        ct.current_turn == t
-    } (t.turn_type, t.number);
+        ct.current_turn == t,
+        t.player_rotation == r
+    } (t.turn_type, t.number, r.rotation_nr, p_rotation = r);
+}
+
+function turn_is_first_of_rotation(tt: turn_type): boolean {
+    when (tt) {
+        turn_type.WHITE_CARD,
+        turn_type.WHITE_CARD_SKIPPED,
+        turn_type.BLACK_CARD,
+        turn_type.BLACK_CARD_SKIPPED
+          -> return true;
+        else -> return false;
+    }
 }
 
 // Returns "true" if this is the last turn of a double move.
 function turn_is_last_double_move(tt: turn_type): boolean {
     return tt == turn_type.NEUTRAL_MOVE_1_HIJACKED or tt == turn_type.NEUTRAL_MOVE_2_HIJACKED;
 }
+
+function turn_is_last_of_rotation(tt: turn_type): boolean {
+    when (tt) {
+        turn_type.NEUTRAL_MOVE_1,
+        turn_type.NEUTRAL_MOVE_1_SKIPPED,
+        turn_type.NEUTRAL_MOVE_1_HIJACKED,
+        turn_type.NEUTRAL_MOVE_2,
+        turn_type.NEUTRAL_MOVE_2_SKIPPED,
+        turn_type.NEUTRAL_MOVE_2_HIJACKED
+          -> return true;
+        else -> return false;
+    }
+} 
 
 // -------------------------------------
 // Creators
@@ -27,11 +52,19 @@ function turn_create_first(g: game, creatoor: player_game): turn {
     require(check == null, "Game: " + g.rowid.to_integer() + " already has a turn.");
 
     // Creation 
+
+    val new_rotation = create player_rotation(
+        .game = g,
+        .rotation_nr = 0, // Before first turn
+        .created_by = creatoor,
+        .created_at = op_context.last_block_time
+    );
+
     val new_turn =create turn(
         .game = g,
         .number = 0,
         .turn_type = turn_type.FRESH_GAME, // This is the turn BEFORE anything has happened.
-        .created_by = creatoor,
+        .player_rotation = new_rotation,
         .created_at = op_context.last_block_time
     );
 
@@ -48,34 +81,51 @@ function turn_create_first(g: game, creatoor: player_game): turn {
 // These values must be validated, to detect if the client playing 
 // out of turn.
 // -------------------------------------
-function turn_create(game: game, created_by: player_game, new_turn_type: turn_type, is_white: boolean): turn {
+function turn_create(game: game, created_by: player_game, new_turn_type: turn_type, is_white: boolean): (turn, integer, integer) {
 
     // Validation 
-    val (t_type: turn_type, t_number: integer) = get_current_turn(game);
+    val (t_type: turn_type, t_number: integer, r_number: integer, p_rotation: player_rotation) = get_current_turn(game);
 
     val err: text? = verify_old_turn_type_new_turn_type(game, created_by, t_type, new_turn_type, t_number, is_white);
     if (err != null) {
         require(false, err);
     }
 
+    // Do we need a new rotation?
+    var last_rotation_nr = r_number;
+    var last_rotation: player_rotation = p_rotation;
+    if (turn_is_first_of_rotation(new_turn_type)) {
+        require(t_number % 3 == 0, "New turn type: " + new_turn_type + " indicates first of rotation, but old turn_number: " + t_number + " is not a multiple of 3.");
+
+        last_rotation_nr++;
+        // Yes, create it
+        last_rotation = create player_rotation(
+            .game = game,
+            .rotation_nr = last_rotation_nr,
+            .created_by = created_by,
+            .created_at = op_context.last_block_time
+        );
+    }
+
     // Creation
+    val new_turn_nr = t_number + 1;
     val new_turn = create turn(
         .game = game,
-        .number = t_number + 1,
+        .number = new_turn_nr,
         .turn_type = new_turn_type,
-        .created_by = created_by,
+        .player_rotation = last_rotation,
         .created_at = op_context.last_block_time
     );
 
     update current_turn@ {game} (.current_turn = new_turn);
 
     //GAME cannot have a reference to the (current) TURN since we don't allow two-way FKs.
-    update game (.current_turn = new_turn.number);  
+    update game (.current_rotation_nr = last_rotation_nr, .current_turn_nr = new_turn_nr);  
 
     // Update the player's last heartbeat (must be done every time a player does something)
     game_timeout_set_player_alive(created_by);
 
-    return new_turn;
+    return (new_turn, new_turn_nr, last_rotation_nr);
 }
 
 

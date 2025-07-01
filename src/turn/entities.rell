@@ -47,7 +47,7 @@ enum turn_type {
 
 // Represents a single turn in the game
 entity turn {
-    index created_by: player_game;
+    index player_rotation; // Must belong to a rotation
     index game;
     number: integer; // Turn number within the game
     key game, number;
@@ -61,6 +61,15 @@ entity current_turn {
     mutable current_turn: turn;
 }
 
+// Represnt everything that happens during white's/black's "turn",
+// including playing cards, moving and double moves.
+entity player_rotation {
+    index created_by: player_game;
+    index game;
+    rotation_nr: integer; // Rotation number within the game
+    key game, rotation_nr;
+    created_at: timestamp;
+}
 
 
 

@@ -65,8 +65,8 @@ function move_attack_inner(
     // A.2. Is game is out of sync? 
     // ----------------
     //log("Move A.2");
-    val curr_turn = minimal_game.curr_turn_nr;
-    require(curr_turn == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + curr_turn);
+    val old_turn_nr = minimal_game.curr_turn_nr; // Soon to be updated
+    require(old_turn_nr == last_seen_turn, "Player client is on turn " + last_seen_turn + " but blockchain is on turn " + old_turn_nr);
 
     // ----------------
     // A.3. Validate positions
@@ -211,7 +211,7 @@ function move_attack_inner(
     // ----------------
 
     // B.1 Do this FIRST since lots of verification in here.
-    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
+    val (new_turn, new_turn_nr, last_rot_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
 
     // B.2 Update hp and is_alive for both attacker and defender
     // NOTE: Must be done BEFORE we move the attacker, since we require both combatants to stay on original positions.
@@ -219,14 +219,14 @@ function move_attack_inner(
 
     if (attacker_still_alive) {
         // B.3 Same as for peaceful move
-        move_common_change_piece_position(game_id, curr_turn, p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position, board_positions_all, our_team);
+        move_common_change_piece_position(game_id, last_rot_nr, p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position, board_positions_all, our_team);
     }
 
     // ----------------
     // 4. Apply end_args
     // ----------------
     // B.4.a Use all unblocked portals
-    move_common_use_all_unblocked_portals(game_id, curr_turn, minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
+    move_common_use_all_unblocked_portals(game_id, old_turn_nr, minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
 
     // B.4.b Resurrection
     // A resurrection happens on the player's side of the board, close to the player's starting rank.
@@ -239,7 +239,7 @@ function move_attack_inner(
             val opp_resurrect_piece = opp!!;
 
             // We killed an opponent piece, so we can maybe resurrect one.
-            val old_card: card? = resurrect_find_potential(minimal_game.player_game, new_turn.number);
+            val old_card: card? = resurrect_find_potential(minimal_game.player_game, new_turn_nr);
             if (old_card != null) {
 
                 // We found a potential resurrect, so we can resurrect one!
@@ -353,7 +353,7 @@ function move_attack_inner(
         // Won't add any vulns for attacks.
 
         // The "is_check" status of the opponent should be saved.
-        game_update_turn_and_check_status(minimal_game, new_turn, is_check);
+        game_update_turn_and_check_status(minimal_game, is_check);
     }
 
     log("game_id: " + game_id + " - /Move Attack End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + 

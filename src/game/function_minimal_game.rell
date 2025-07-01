@@ -18,7 +18,7 @@ function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
         g.is_finished == false 
     }
         (gme = g, player = pg.player, player_game = pg,  
-        g_id = g.rowid.to_integer(), game_type = g.game_type, curr_turn_nr = g.current_turn, is_white = pg.is_white, in_check = pg.in_check,  // General Data
+        g_id = g.rowid.to_integer(), game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, is_white = pg.is_white, in_check = pg.in_check,  // General Data
         prev_move_time = g.last_player_rotation_at, game_created_at = g.created_at, my_time_left_ms = pg.total_time_left // Minimal Timestamps
         );
 
@@ -31,6 +31,7 @@ function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
             // Data
             game_id = res.g_id,
             game_type = res.game_type,
+            curr_rotation_nr = res.curr_rot_nr,
             curr_turn_nr = res.curr_turn_nr,
             in_check = res.in_check,
             is_white =res.is_white,
@@ -71,7 +72,7 @@ function minimal_game_and_timeout_data_get_even_if_finished(
         pg_opp.game == g, // We need this to get the opponent's timeout data
         pg_opp.is_white != pg_my.is_white // Only one is white
     } ( gme = g, my_p = p_my, my_pg = pg_my, // Primary keys
-        game_type = g.game_type, curr_turn_nr = g.current_turn, is_white = pg_my.is_white, in_check = pg_my.in_check, // General Data
+        game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, is_white = pg_my.is_white, in_check = pg_my.in_check, // General Data
         cr_at = g.last_player_rotation_at, game_created_at = g.created_at, // Minimal Timestamps
         my_time_left_ms = pg_my.total_time_left, opp_time_left_ms = pg_opp.total_time_left, // Total time left
         opp_last_heartbeat = pg_opp.last_heartbeat // Inactive?
@@ -88,6 +89,7 @@ function minimal_game_and_timeout_data_get_even_if_finished(
             // Data
             game_id = game_id,
             game_type = res.game_type,
+            curr_rotation_nr = res.curr_rot_nr,
             curr_turn_nr = res.curr_turn_nr,
             in_check = res.in_check,
             is_white =res.is_white,

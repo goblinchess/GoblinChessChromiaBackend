@@ -19,6 +19,7 @@
 query get_opponents_recent_actions (
     player_signer: pubkey,   // Player sends their own pubkey (Needed to know who is "me" and who is "opponent" for this game).
     game_id: integer,        // What game are we looking at? Cannot assume the game is "unfinished".
+    fetched_rotation_nr: integer, // The rotation number to get actions for
     last_seen_turn: integer, // This is mostly a performance thing. We enforce that the client keeps track of what turn-number it has seen/fetched.
                              // If the client sends the correct [last_seen_turn] and nothing has happened since then, 
                              // the node should only have to do one single SELECT to the DB, then return "null".
@@ -47,12 +48,14 @@ query get_opponents_recent_actions (
     val curr_turn_nr = minimal_game.curr_turn_nr;
     if (curr_turn_nr == last_seen_turn) return null; // No new turns, quit.
 
+    // --------------------------------
+    // 1. Look for logical errors when comparing last_seen_turn_nr to fetched_rotation_nr.
+    // --------------------------------
+    val max_turn_nr_of_the_player_rotation = player_rotation_find_max_turn_nr_and_validate(game_id, fetched_rotation_nr, last_seen_turn); 
+
     // We won't allow the caller to fetch his own moves this way, too expensive and likely a bug.
-    val max_turn_nr_of_the_player_rotation = player_rotation_find_max_turn_nr(last_seen_turn); 
-    require(curr_turn_nr <= max_turn_nr_of_the_player_rotation, "game_id " + game_id + ". You provided last_seen_turn: " + 
-        last_seen_turn + " which indicates that the maximum turn is " + max_turn_nr_of_the_player_rotation + 
-        ". But the current turn_nr is " + curr_turn_nr + ". Did you forget to save a move?");
+    player_rotation_validate_curr_vs_last_seen(game_id, fetched_rotation_nr, minimal_game.curr_rotation_nr);
     
     // Get everything that happened since last seen turn
-    return player_rotation_get_all_actions(game_id, minimal_game, last_seen_turn, opp_timeout_data, calc_timeout); 
+    return player_rotation_get_all_actions(game_id, fetched_rotation_nr, max_turn_nr_of_the_player_rotation, minimal_game, last_seen_turn, opp_timeout_data, calc_timeout); 
 }
