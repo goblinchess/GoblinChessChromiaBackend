@@ -13,9 +13,9 @@ struct minimal_game_result {
     in_check: boolean; // Our king is in check.
     is_white: boolean; // True if this player is white.
     // Timestamps
-    last_color_rotation_at: timestamp; // When the last "move" was finished, i.e. when it became this player's turn..
+    last_player_rotation_at: timestamp; // When the last "move" was finished, i.e. when it became this player's turn..
     game_created_at: timestamp; // When the game was created.
-    total_time_left_since_color_rotation_ms: integer; // Total time left for this player
+    total_time_left_since_player_rotation_ms: integer; // Total time left for this player
 }
 
 // Internal use
@@ -37,9 +37,9 @@ struct maximal_game_result {
     in_check: boolean; // Our king is in check.
     is_white: boolean; // True if this player is white.
     // Timestamps
-    last_color_rotation_at: timestamp; // When the last "move" was finished. 
+    last_player_rotation_at: timestamp; // When the last "move" was finished. 
     game_created_at: timestamp; // When the game was created.
-    total_time_left_since_color_rotation_ms: integer; // Total time left for this player
+    total_time_left_since_player_rotation_ms: integer; // Total time left for this player
     // Extra
     my_name: text;
     opp_name: text;

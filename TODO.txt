@@ -1,3 +1,5 @@
+Online oppent's attack history goes to wrong turn.
+
 Test double move.
 Test switch.
 

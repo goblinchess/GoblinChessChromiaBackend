@@ -27,7 +27,7 @@ function maximal_game_and_timeout_data_get(
         trn = t,
         my_name = p_my.name, opp_name = p_opp.name, // Names
         my_elo = p_my.elo_rating, opp_elo = p_opp.elo_rating, // ELO
-        cr_at = g.last_color_rotation_at, game_created_at = g.created_at, opp_last_heartbeat = pg_opp.last_heartbeat, // Timeout
+        cr_at = g.last_player_rotation_at, game_created_at = g.created_at, opp_last_heartbeat = pg_opp.last_heartbeat, // Timeout
         my_time_left_ms = pg_my.total_time_left, opp_time_left_ms = pg_opp.total_time_left, // Total time left
         turn_owner = t.created_by, curr_turn_nr = g.current_turn, turn_nr = t.number, // Turn data
         g_id = g.rowid.to_integer(), game_type = g.game_type,  is_white = pg_my.is_white, in_check = pg_my.in_check, black_player = g.black_player // General
@@ -56,9 +56,9 @@ function maximal_game_and_timeout_data_get(
             in_check = res.in_check,
             is_white =res.is_white,
             // Timestamps
-            last_color_rotation_at = res.cr_at,
+            last_player_rotation_at = res.cr_at,
             game_created_at = res.game_created_at,
-            total_time_left_since_color_rotation_ms = res.my_time_left_ms,
+            total_time_left_since_player_rotation_ms = res.my_time_left_ms,
             // Extra
             my_name = res.my_name,
             opp_name = res.opp_name,
@@ -69,8 +69,8 @@ function maximal_game_and_timeout_data_get(
         // Build the timeout data
         val opp_timeout_data = opponent_timeout_data(
             opp_last_heartbeat = res.opp_last_heartbeat, 
-            last_color_rotation_at = res.cr_at,
-            opp_tot_time_left_since_color_rotation_ms = res.opp_time_left_ms
+            last_player_rotation_at = res.cr_at,
+            opp_tot_time_left_since_player_rotation_ms = res.opp_time_left_ms
         );
         return (maximal_game, opp_timeout_data);
     } else {

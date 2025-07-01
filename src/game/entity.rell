@@ -21,7 +21,7 @@ entity game {
     mutable is_finished: boolean; // NOTE: this is set BEFORE we validate the random numbers.
     mutable is_draw: boolean;     // NOTE: this is set BEFORE we validate the random numbers.
     created_at: timestamp;
-    mutable last_color_rotation_at: timestamp; // Updated when a player is completely done with a "move", 
+    mutable last_player_rotation_at: timestamp; // Updated when a player is completely done with a "move", 
                                                // meaning that the other player can take action. 
                                                // (Convenient when calculating remaining time (total_time_left) for each player)
 }

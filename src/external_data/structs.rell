@@ -44,6 +44,6 @@ struct timeout_data {
 
     // General info
     curr_time_ms: integer; // The time the node sees
-    last_color_rotation_at: timestamp; // When the last color rotation was
+    last_player_rotation_at: timestamp; // When the last player rotation was
     game_started_at: timestamp; // When the game was started
 }

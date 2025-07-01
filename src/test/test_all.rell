@@ -75,28 +75,28 @@ function test_random_new_numbers_list() {
 // ------------------------------------------
 // Color rotation <-> turn number
 // ------------------------------------------
-function test_color_rotation_find_max_turn_nr() {
+function test_player_rotation_find_max_turn_nr() {
     var max_turn_nr = -1;
 
-    max_turn_nr = color_rotation_find_max_turn_nr(0);
+    max_turn_nr = player_rotation_find_max_turn_nr(0);
     assert_equals(max_turn_nr, 3);
 
-    max_turn_nr = color_rotation_find_max_turn_nr(1);
+    max_turn_nr = player_rotation_find_max_turn_nr(1);
     assert_equals(max_turn_nr, 3);
 
-    max_turn_nr = color_rotation_find_max_turn_nr(2);
+    max_turn_nr = player_rotation_find_max_turn_nr(2);
     assert_equals(max_turn_nr, 3);
     
-    max_turn_nr = color_rotation_find_max_turn_nr(3);
+    max_turn_nr = player_rotation_find_max_turn_nr(3);
     assert_equals(max_turn_nr, 6);
 
-    max_turn_nr = color_rotation_find_max_turn_nr(4);
+    max_turn_nr = player_rotation_find_max_turn_nr(4);
     assert_equals(max_turn_nr, 6);
     
-    max_turn_nr = color_rotation_find_max_turn_nr(5);
+    max_turn_nr = player_rotation_find_max_turn_nr(5);
     assert_equals(max_turn_nr, 6);
     
-    max_turn_nr = color_rotation_find_max_turn_nr(6);
+    max_turn_nr = player_rotation_find_max_turn_nr(6);
     assert_equals(max_turn_nr, 9);
     
 }
@@ -320,8 +320,8 @@ function test_game_timeout_calc() {
     // Not timed out yet
     var otd = opponent_timeout_data(
         opp_last_heartbeat = curr_time_ms - less_than_a_minute_ms, // Not timed out yet, since 59 sec old heartbeat
-        last_color_rotation_at = curr_time_ms - more_than_a_minute_ms, // The last time the color rotation was completed 61 sec ago.
-        opp_tot_time_left_since_color_rotation_ms = ten_minutes_ms, // The opponent has 10 minutes left when the "move" (= color rotation) began.
+        last_player_rotation_at = curr_time_ms - more_than_a_minute_ms, // The last time the player rotation was completed 61 sec ago.
+        opp_tot_time_left_since_player_rotation_ms = ten_minutes_ms, // The opponent has 10 minutes left when the "move" (= player rotation) began.
     );
     var result = game_timeout_calc_primitive_curr_time(game_id, otd);
     assert_equals(result, false);
@@ -329,8 +329,8 @@ function test_game_timeout_calc() {
     // Timed out due to old heartbeat
     otd = opponent_timeout_data(
         opp_last_heartbeat = curr_time_ms - more_than_a_minute_ms, // Timed out due to old heartbeat, since 61 sec ago.
-        last_color_rotation_at = curr_time_ms - more_than_a_minute_ms, // The last time the color rotation was completed 61 sec ago.
-        opp_tot_time_left_since_color_rotation_ms = ten_minutes_ms, // The opponent has 10 minutes left when the "move" (= color rotation) began.
+        last_player_rotation_at = curr_time_ms - more_than_a_minute_ms, // The last time the player rotation was completed 61 sec ago.
+        opp_tot_time_left_since_player_rotation_ms = ten_minutes_ms, // The opponent has 10 minutes left when the "move" (= player rotation) began.
     );
     result = game_timeout_calc_primitive_curr_time(game_id, otd);
     assert_equals(result, true);
@@ -338,8 +338,8 @@ function test_game_timeout_calc() {
     // Timed out due to total time gone
     otd = opponent_timeout_data(
         opp_last_heartbeat = curr_time_ms - less_than_a_minute_ms, // Not timed out yet, since 59 sec old heartbeat.
-        last_color_rotation_at = curr_time_ms - more_than_a_minute_ms, // The last time the color rotation was completed 61 sec ago.
-        opp_tot_time_left_since_color_rotation_ms = less_than_a_minute_ms, // The opponent has 59 sec left when the "move" (= color rotation) began.
+        last_player_rotation_at = curr_time_ms - more_than_a_minute_ms, // The last time the player rotation was completed 61 sec ago.
+        opp_tot_time_left_since_player_rotation_ms = less_than_a_minute_ms, // The opponent has 59 sec left when the "move" (= player rotation) began.
     );
     result = game_timeout_calc_primitive_curr_time(game_id, otd);
     assert_equals(result, true);
@@ -517,7 +517,7 @@ function test_full_game() {
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, crd_data, list<rnd_data>())).sign(white_player).run();
 
     // Try to fetch the card.
-    var recent_actions: color_rotation_actions? = get_opponents_recent_actions(white_player.pub, the_game.game_rowid, last_seen_turn);
+    var recent_actions: player_rotation_actions? = get_opponents_recent_actions(white_player.pub, the_game.game_rowid, last_seen_turn);
     assert_not_null(recent_actions);
     assert_equals(recent_actions.curr_turn_nr, 1);
     assert_false(recent_actions.rotate_color);

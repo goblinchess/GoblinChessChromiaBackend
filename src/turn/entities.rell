@@ -9,8 +9,8 @@
 // Represents different types of "turns" in the game
 // 
 // First some definitions:
-// - A "color rotation" is everything that happens during black's or white's "turn".
-// - A color rotation has 3 "turns", which is the smallest unity of time in the game.
+// - A "player rotation" is everything that happens during black's or white's "turn".
+// - A player rotation has 3 "turns", which is the smallest unity of time in the game.
 //   When a player "does something", it will generate a new "turn".
 //
 // What are the SKIPPED turns?

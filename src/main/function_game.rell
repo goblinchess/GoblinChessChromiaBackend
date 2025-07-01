@@ -66,7 +66,7 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .is_finished = false, 
         .is_draw = false,
         .created_at = op_context.last_block_time,
-        .last_color_rotation_at = op_context.last_block_time
+        .last_player_rotation_at = op_context.last_block_time
     );
 
     val start_time_remaining = game_type_to_time_left(g_type);

@@ -19,7 +19,7 @@ function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
     }
         (gme = g, player = pg.player, player_game = pg,  
         g_id = g.rowid.to_integer(), game_type = g.game_type, curr_turn_nr = g.current_turn, is_white = pg.is_white, in_check = pg.in_check,  // General Data
-        prev_move_time = g.last_color_rotation_at, game_created_at = g.created_at, my_time_left_ms = pg.total_time_left // Minimal Timestamps
+        prev_move_time = g.last_player_rotation_at, game_created_at = g.created_at, my_time_left_ms = pg.total_time_left // Minimal Timestamps
         );
 
     if (res != null) {
@@ -35,9 +35,9 @@ function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
             in_check = res.in_check,
             is_white =res.is_white,
             // Timestamps
-            last_color_rotation_at = res.prev_move_time,
+            last_player_rotation_at = res.prev_move_time,
             game_created_at = res.game_created_at,
-            total_time_left_since_color_rotation_ms = res.my_time_left_ms
+            total_time_left_since_player_rotation_ms = res.my_time_left_ms
         );
     } else {
         return null;
@@ -72,7 +72,7 @@ function minimal_game_and_timeout_data_get_even_if_finished(
         pg_opp.is_white != pg_my.is_white // Only one is white
     } ( gme = g, my_p = p_my, my_pg = pg_my, // Primary keys
         game_type = g.game_type, curr_turn_nr = g.current_turn, is_white = pg_my.is_white, in_check = pg_my.in_check, // General Data
-        cr_at = g.last_color_rotation_at, game_created_at = g.created_at, // Minimal Timestamps
+        cr_at = g.last_player_rotation_at, game_created_at = g.created_at, // Minimal Timestamps
         my_time_left_ms = pg_my.total_time_left, opp_time_left_ms = pg_opp.total_time_left, // Total time left
         opp_last_heartbeat = pg_opp.last_heartbeat // Inactive?
         );
@@ -92,9 +92,9 @@ function minimal_game_and_timeout_data_get_even_if_finished(
             in_check = res.in_check,
             is_white =res.is_white,
             // Timestamps
-            last_color_rotation_at = res.cr_at,
+            last_player_rotation_at = res.cr_at,
             game_created_at = res.game_created_at,
-            total_time_left_since_color_rotation_ms = res.my_time_left_ms,
+            total_time_left_since_player_rotation_ms = res.my_time_left_ms,
         );
 
         // Build the timeout data
@@ -102,8 +102,8 @@ function minimal_game_and_timeout_data_get_even_if_finished(
         val opp_timeout_data = opponent_timeout_data(
             //estimated_time_left_ms = estimated_time_left_ms, 
             opp_last_heartbeat = res.opp_last_heartbeat, 
-            last_color_rotation_at = res.cr_at,
-            opp_tot_time_left_since_color_rotation_ms = res.opp_time_left_ms
+            last_player_rotation_at = res.cr_at,
+            opp_tot_time_left_since_player_rotation_ms = res.opp_time_left_ms
         );
         return (mnimial_game, opp_timeout_data);
     } else {

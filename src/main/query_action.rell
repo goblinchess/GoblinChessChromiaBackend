@@ -29,7 +29,7 @@ query get_opponents_recent_actions (
                              //    This will give you some data to figure out how much time the opponent has left.
                              // 2. If the client suspects that the opponent has timed out.
                              //    If this is true, the response will confirm this suspicion.
-): color_rotation_actions? {
+): player_rotation_actions? {
 
     // Get the player's current game
     val (minimal_game: minimal_game_result?, opp_timeout_data: opponent_timeout_data?) =
@@ -48,11 +48,11 @@ query get_opponents_recent_actions (
     if (curr_turn_nr == last_seen_turn) return null; // No new turns, quit.
 
     // We won't allow the caller to fetch his own moves this way, too expensive and likely a bug.
-    val max_turn_nr_of_the_color_rotation = color_rotation_find_max_turn_nr(last_seen_turn); 
-    require(curr_turn_nr <= max_turn_nr_of_the_color_rotation, "game_id " + game_id + ". You provided last_seen_turn: " + 
-        last_seen_turn + " which indicates that the maximum turn is " + max_turn_nr_of_the_color_rotation + 
+    val max_turn_nr_of_the_player_rotation = player_rotation_find_max_turn_nr(last_seen_turn); 
+    require(curr_turn_nr <= max_turn_nr_of_the_player_rotation, "game_id " + game_id + ". You provided last_seen_turn: " + 
+        last_seen_turn + " which indicates that the maximum turn is " + max_turn_nr_of_the_player_rotation + 
         ". But the current turn_nr is " + curr_turn_nr + ". Did you forget to save a move?");
     
     // Get everything that happened since last seen turn
-    return color_rotation_get_all_actions(game_id, minimal_game, last_seen_turn, opp_timeout_data, calc_timeout); 
+    return player_rotation_get_all_actions(game_id, minimal_game, last_seen_turn, opp_timeout_data, calc_timeout); 
 }

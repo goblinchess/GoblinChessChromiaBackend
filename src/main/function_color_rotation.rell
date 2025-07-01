@@ -1,55 +1,55 @@
 
 // -------------------------------------
 // Some definitions:
-// - A "color rotation" is everything that happens during black's or white's "turn".
-// - A color rotation has 3 "turns", which is the smallest unity of time in the game.
+// - A "player rotation" is everything that happens during black's or white's "turn".
+// - A player rotation has 3 "turns", which is the smallest unity of time in the game.
 //   When a player "does something", it will generate a new "turn".
 // -------------------------------------
 
-// Calculates the maximum turn number for a color rotation
-function color_rotation_find_max_turn_nr(
+// Calculates the maximum turn number for a player rotation
+function player_rotation_find_max_turn_nr(
     last_seen_turn_nr: integer,
 ): integer {
 
-    // If he [last_seen_turn_nr] is the last turn of a color rotation, we'll look at the the next color rotation.
-    val color_rotation_nr = last_seen_turn_nr / 3;
-    return color_rotation_nr * 3 + 3;
+    // If he [last_seen_turn_nr] is the last turn of a player rotation, we'll look at the the next player rotation.
+    val player_rotation_nr = last_seen_turn_nr / 3;
+    return player_rotation_nr * 3 + 3;
 }
 
 // -------------------------------------
-// Get the color rotation
+// Get the player rotation
 //
-// This function will return all actions (all turns) in the same "color rotation"  
+// This function will return all actions (all turns) in the same "player rotation"  
 // that came after the given [last_seen_turn]. 
 // 
 // Note on performance:
 // To speed things up, we want to return everything the client needs in one single query (all "turns").
 // This way we can minimize the number of DB roundtrips.
 // -------------------------------------
-function color_rotation_get_all_actions(
+function player_rotation_get_all_actions(
     game_id: integer, 
     minimal_game: minimal_game_result, 
     last_seen_turn: integer,
     otd: opponent_timeout_data,
     calc_timeout: boolean // If "true" the node must calculate the timeout.
-): color_rotation_actions? {
+): player_rotation_actions? {
 
-    val max_turn_nr_of_the_color_rotation = color_rotation_find_max_turn_nr(last_seen_turn);
+    val max_turn_nr_of_the_player_rotation = player_rotation_find_max_turn_nr(last_seen_turn);
 
     val recent_turns = (t: turn) @* {
         t.game == minimal_game.game,
         t.number > last_seen_turn,
-        t.number <= max_turn_nr_of_the_color_rotation}  
+        t.number <= max_turn_nr_of_the_player_rotation}  
         (@sort nr = t.number, t.turn_type, trn = t);
     
     var turns_found = recent_turns.size();
     if (turns_found == 0) { 
         // Let's exit early (since we wan't to do minimal SELECTs)
-        log("game_id " + game_id + " - Nothing new to fetch. last_seen_turn: " + last_seen_turn + ", max_turn_nr_of_the_color_rotation: " + max_turn_nr_of_the_color_rotation);
+        log("game_id " + game_id + " - Nothing new to fetch. last_seen_turn: " + last_seen_turn + ", max_turn_nr_of_the_player_rotation: " + max_turn_nr_of_the_player_rotation);
         return null; 
     } 
 
-    log("game_id " + game_id + " - Found " + turns_found + " turns to fetch! last_seen_turn: " + last_seen_turn + ", max_turn_nr_of_the_color_rotation: " + max_turn_nr_of_the_color_rotation);
+    log("game_id " + game_id + " - Found " + turns_found + " turns to fetch! last_seen_turn: " + last_seen_turn + ", max_turn_nr_of_the_player_rotation: " + max_turn_nr_of_the_player_rotation);
 
     // The idea is that this variable will be updated without gaps, else sorting is broken.
     var return_turn_nr: integer = last_seen_turn;  // The new last seen turn nr
@@ -166,11 +166,11 @@ function color_rotation_get_all_actions(
     }
 
     // Some sanity checks.
-    if (return_turn_nr > max_turn_nr_of_the_color_rotation) {
-        log("game_id " + game_id + "ERROR: return_turn_nr > max_turn_nr, return_turn_nr: " + return_turn_nr + ", max_turn_nr: " + max_turn_nr_of_the_color_rotation);
+    if (return_turn_nr > max_turn_nr_of_the_player_rotation) {
+        log("game_id " + game_id + "ERROR: return_turn_nr > max_turn_nr, return_turn_nr: " + return_turn_nr + ", max_turn_nr: " + max_turn_nr_of_the_player_rotation);
     }
-    if (return_turn_nr == max_turn_nr_of_the_color_rotation and not rotate_color) {
-        log("game_id " + game_id + "ERROR: return_turn_nr == max_turn_nr and not rotate_color, return_turn_nr: " + return_turn_nr + ", max_turn_nr: " + max_turn_nr_of_the_color_rotation);
+    if (return_turn_nr == max_turn_nr_of_the_player_rotation and not rotate_color) {
+        log("game_id " + game_id + "ERROR: return_turn_nr == max_turn_nr and not rotate_color, return_turn_nr: " + return_turn_nr + ", max_turn_nr: " + max_turn_nr_of_the_player_rotation);
     }
 
     var ti: timeout_data? = null;
@@ -187,10 +187,10 @@ function color_rotation_get_all_actions(
         // It's convenient that the node returns information about opponent's timeout status.
         val opp_timeout: boolean = game_timeout_calc_core(game_id, curr_time_ms, otd);
 
-        ti = game_timeout_build_timeout_data(opp_timeout, otd, minimal_game.total_time_left_since_color_rotation_ms, curr_time_ms, minimal_game.game_created_at);
+        ti = game_timeout_build_timeout_data(opp_timeout, otd, minimal_game.total_time_left_since_player_rotation_ms, curr_time_ms, minimal_game.game_created_at);
     }
 
-    return color_rotation_actions(
+    return player_rotation_actions(
         curr_turn_nr = return_turn_nr, // <- Should be the last seen turn, if our @sort works
         rotate_color = rotate_color,
         card_played_data = card_played_data,

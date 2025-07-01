@@ -29,11 +29,11 @@
 // Answer: If our last_seen_turn is 3, and the [curr_turn_nr] is 6,
 // we know that the opponent has created 3 turns on the node, 
 // where the [extra_move] was empty (which is the usual case).
-// Using the lingo of this dApp, we have a full "color rotation",
+// Using the lingo of this dApp, we have a full "player rotation",
 // which means that the opponent's turn is over, client should urge the player
 // to make a move, start the player's clock etc.
 // ------------------------------------------------------------
-struct color_rotation_actions {
+struct player_rotation_actions {
     // 1. The most recent turn number
     // The most recent turn number, if this struct is only partly filled with data 
     // (opponent only played a card), the client must use this when asking for the move.

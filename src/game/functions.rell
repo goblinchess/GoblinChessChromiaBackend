@@ -52,7 +52,7 @@ function game_update_turn_and_check_status(minimal_game: minimal_game_result, ne
 // sends the "neutral_skip" move.
 function game_update_time_left(minimal_game: minimal_game_result) {
     val curr_time_ms = op_context.last_block_time; // Only way for us to measure time.
-    val real_time_consumed_ms =  curr_time_ms - minimal_game.last_color_rotation_at;
+    val real_time_consumed_ms =  curr_time_ms - minimal_game.last_player_rotation_at;
 
     // We give the player two extra seconds per turn, since animations take time, blockchain build etc.
     val effective_time_consumed_ms = real_time_consumed_ms - 2000; // Doesn't matter if this is negative, a player should be able to GAIN time if fast.
@@ -67,7 +67,7 @@ function game_update_time_left(minimal_game: minimal_game_result) {
 
     // Yes, we could use the timestamp from the [turn], but it's more convenient to 
     // keep this data in the [game] entity.
-    update minimal_game.game (.last_color_rotation_at = curr_time_ms);
+    update minimal_game.game (.last_player_rotation_at = curr_time_ms);
 
     // Update the time left for the player
     // NOTE: If this becomes negative, it will be the opponent's task to call "timeout" 
