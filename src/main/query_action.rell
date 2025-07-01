@@ -19,7 +19,7 @@
 query get_opponents_recent_actions (
     player_signer: pubkey,   // Player sends their own pubkey (Needed to know who is "me" and who is "opponent" for this game).
     game_id: integer,        // What game are we looking at? Cannot assume the game is "unfinished".
-    fetched_rotation_nr: integer, // The rotation number to get actions for
+    fetching_rotation_nr: integer, // The rotation number to get actions for
     last_seen_turn: integer, // This is mostly a performance thing. We enforce that the client keeps track of what turn-number it has seen/fetched.
                              // If the client sends the correct [last_seen_turn] and nothing has happened since then, 
                              // the node should only have to do one single SELECT to the DB, then return "null".
@@ -51,11 +51,11 @@ query get_opponents_recent_actions (
     // --------------------------------
     // 1. Look for logical errors when comparing last_seen_turn_nr to fetched_rotation_nr.
     // --------------------------------
-    val max_turn_nr_of_the_player_rotation = player_rotation_find_max_turn_nr_and_validate(game_id, fetched_rotation_nr, last_seen_turn); 
+    val max_turn_nr_of_the_player_rotation = player_rotation_find_max_turn_nr_and_validate(game_id, fetching_rotation_nr, last_seen_turn); 
 
     // We won't allow the caller to fetch his own moves this way, too expensive and likely a bug.
-    player_rotation_validate_curr_vs_last_seen(game_id, fetched_rotation_nr, minimal_game.curr_rotation_nr);
+    player_rotation_validate_curr_vs_last_seen(game_id, fetching_rotation_nr, minimal_game.curr_rotation_nr);
     
     // Get everything that happened since last seen turn
-    return player_rotation_get_all_actions(game_id, fetched_rotation_nr, max_turn_nr_of_the_player_rotation, minimal_game, last_seen_turn, opp_timeout_data, calc_timeout); 
+    return player_rotation_get_all_actions(game_id, fetching_rotation_nr, max_turn_nr_of_the_player_rotation, minimal_game, last_seen_turn, opp_timeout_data, calc_timeout); 
 }

@@ -91,7 +91,7 @@ function player_rotation_validate_curr_vs_last_seen(
 // -------------------------------------
 function player_rotation_get_all_actions(
     game_id: integer, 
-    fetched_rotation_nr: integer, // The rotation number to get actions for
+    fetching_rotation_nr: integer, // The rotation number to get actions for
     max_turn_nr_of_the_fetched_rotation: integer,
     minimal_game: minimal_game_result, 
     last_seen_turn: integer,
