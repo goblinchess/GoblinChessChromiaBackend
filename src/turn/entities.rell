@@ -27,22 +27,22 @@
 // The client must anticipate that a turn will be skipped and send an extra operation 
 // to the node to create the skipped turn.
 // -------------------------------------
-enum turn_type {
-    FRESH_GAME, // Before any moves have been made
-    WHITE_CARD,
-    WHITE_CARD_SKIPPED, // No card played
-    WHITE_MOVE,
-    WHITE_MOVE_SKIPPED, // Due to Double Move card played
-    NEUTRAL_MOVE_1,  // TODO
-    NEUTRAL_MOVE_1_SKIPPED, 
-    NEUTRAL_MOVE_1_HIJACKED, // Stolen by white player, Double Move
-    BLACK_CARD,
-    BLACK_CARD_SKIPPED, // No card played
-    BLACK_MOVE,
-    BLACK_MOVE_SKIPPED, // Due to Double Move card played
-    NEUTRAL_MOVE_2,  // TODO
-    NEUTRAL_MOVE_2_SKIPPED, 
-    NEUTRAL_MOVE_2_HIJACKED // Stolen by black player, Double Move
+enum turn_type { // I'll write the DB number here, to help when reading the [turn] table [turn_type] column.
+    FRESH_GAME, // 0: Before any moves have been made
+    WHITE_CARD, // 1
+    WHITE_CARD_SKIPPED, // 2: No card played
+    WHITE_MOVE, // 3:
+    WHITE_MOVE_SKIPPED, // 4: Due to some card (like Double Move, Switch etc) played
+    NEUTRAL_MOVE_1,  // 5: TODO
+    NEUTRAL_MOVE_1_SKIPPED, // 6: Usually last turn of a rotation.
+    NEUTRAL_MOVE_1_HIJACKED, // 7: Stolen by white player, Double Move
+    BLACK_CARD, // 8:
+    BLACK_CARD_SKIPPED, // 9: No card played
+    BLACK_MOVE, // 10:
+    BLACK_MOVE_SKIPPED, // 11: Due tosome card (like Double Move, Switch etc) played
+    NEUTRAL_MOVE_2,  // 12: TODO
+    NEUTRAL_MOVE_2_SKIPPED, // 13: Usually last turn of a rotation.
+    NEUTRAL_MOVE_2_HIJACKED // 14: Stolen by black player, Double Move
 } 
 
 // Represents a single turn in the game
