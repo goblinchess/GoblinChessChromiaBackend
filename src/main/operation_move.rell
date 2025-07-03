@@ -84,6 +84,7 @@ operation skip_neutral_move(
 operation move_peaceful(
     game_id: integer,
     last_seen_turn: integer, // What turn the client last saw.
+    is_double_move: boolean, // If the piece is doing a double move, and this is the second move of the rotation.
 
     m_args: move_arguments,
 
@@ -118,6 +119,7 @@ operation move_peaceful(
         caller_pubkey, 
         game_id,
         last_seen_turn,
+        is_double_move,
         m_args,
         castle_rook_from,
         castle_rook_to,
@@ -137,6 +139,7 @@ operation move_peaceful(
 operation move_attack(
     game_id: integer,
     last_seen_turn: integer, // What turn the client last saw.
+    is_double_move: boolean, // If the piece is doing a double move, and this is the second move of the rotation.
 
     m_args: move_arguments,
 
@@ -195,6 +198,7 @@ operation move_attack(
         caller_pubkey, 
         game_id,
         last_seen_turn,
+        is_double_move,
         m_args,
         att_args,
         rnd_numbers,

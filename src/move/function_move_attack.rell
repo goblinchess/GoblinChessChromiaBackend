@@ -8,6 +8,7 @@ function move_attack_inner(
 
     game_id: integer,
     last_seen_turn: integer,
+    is_double_move: boolean, // If the piece is doing a double move, and this is the second move of the rotation.
 
     m_args: move_arguments,
 
@@ -202,10 +203,8 @@ function move_attack_inner(
     // ----------------------------------------------    
     val rnd_results = battle_res.rnd_results;
 
-    var new_turn_type = turn_type.BLACK_MOVE;
-    if (minimal_game.is_white) { 
-        new_turn_type = turn_type.WHITE_MOVE;
-    }
+    val new_turn_type = move_common_get_turn_type(is_double_move, minimal_game.is_white);
+    
     // ----------------
     // Update piece position
     // ----------------

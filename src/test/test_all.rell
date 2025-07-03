@@ -528,6 +528,7 @@ function test_full_game() {
     assert_equals(recent_actions.card_played_data.card_picks[0], a8);
 
     last_seen_turn += 1;
+    var is_double_move = false;
 
     // --------------------
     // Failed White moves
@@ -561,7 +562,7 @@ function test_full_game() {
         is_checkmate = false, 
         is_stalemate = false);
 
-    var failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, m_args, null, null, check_args,
+    var failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
         ));
     val expected_wrong_pos: text = "No piece at position " + wrong_orig_pos;
@@ -578,7 +579,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false); 
 
-    failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, m_args, null, null, check_args,
+    failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
     val expected_wrong_type: text = "Expected piece to have active type KNIGHT but got BISHOP";
@@ -594,7 +595,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
 
-    failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, m_args, null, null, check_args,
+    failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
     log(failed_move.message);
@@ -613,7 +614,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
 
-    failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, m_args, null, null, check_args,
+    failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
     val expected_move_on_friend: text = "Illegal move";
@@ -632,7 +633,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
 
-    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, m_args, null, null, check_args)).sign(white_player).run();
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args)).sign(white_player).run();
 
     log ("Turn 1(3): Skip neutral.");
     val temp_last_seen_turn = last_seen_turn + 1; // Don't want to update the real one, since we should fetch two moves soon.
@@ -699,7 +700,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false); 
 
-    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, m_args, null, null, check_args)).sign(black_player).run();
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
 
     log ("Turn 2(6): Skip neutral.");
@@ -740,7 +741,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
 
-    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, m_args, null, null, check_args)).sign(white_player).run();
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 3(9): Skip neutral.");
@@ -779,7 +780,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
     
-    failed_move = assert_fails(move_peaceful_inner(black_player.pub, the_game.game_rowid, last_seen_turn, m_args, null, null, check_args,
+    failed_move = assert_fails(move_peaceful_inner(black_player.pub, the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
     val expected_rook_vs_frog = "Expected piece to have active type FROG but got ROOK";
@@ -796,7 +797,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
  
-    failed_move = assert_fails(move_peaceful_inner(black_player.pub, the_game.game_rowid, last_seen_turn, m_args, null, null, check_args,
+    failed_move = assert_fails(move_peaceful_inner(black_player.pub, the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
     log(failed_move.message);
@@ -817,7 +818,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
 
-    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, m_args, null, null, check_args)).sign(black_player).run();
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
     
     log ("Turn 4(12): Skip neutral.");
@@ -853,7 +854,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
 
-    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, m_args, null, null, check_args)).sign(white_player).run();
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 5(15): Skip neutral.");
@@ -897,7 +898,7 @@ function test_full_game() {
         damage_points = 7 
     );
 
-    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, m_args, att_args, list<rnd_data>(), check_args)).sign(black_player).run();
+    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, is_double_move, m_args, att_args, list<rnd_data>(), check_args)).sign(black_player).run();
     
     log ("Turn 6(18): Skip neutral.");
     val temp_last_seen_turn2 = last_seen_turn + 1; // Don't want to update the real one, since we should fetch two moves soon.
@@ -1048,7 +1049,7 @@ function test_full_game() {
         damage_points = 7 
     );
 
-    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, m_args, att_args, list<rnd_data>(), check_args)).sign(black_player).run();
+    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, is_double_move, m_args, att_args, list<rnd_data>(), check_args)).sign(black_player).run();
     last_seen_turn += 1;
 
     log ("Turn 8(24): Skip neutral.");
@@ -1097,7 +1098,7 @@ function test_full_game() {
         damage_points = 7 
     );
 
-    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, m_args, att_args, list<rnd_data>(), check_args)).sign(white_player).run();
+    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, is_double_move, m_args, att_args, list<rnd_data>(), check_args)).sign(white_player).run();
     last_seen_turn += 1;
     
     log ("Turn 9(27): Skip neutral.");
@@ -1133,7 +1134,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
 
-    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, m_args, null, null, check_args)).sign(black_player).run();
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
     
     log ("Turn 10(30): Skip neutral.");
@@ -1168,7 +1169,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
 
-    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, m_args, null, null, check_args)).sign(white_player).run();
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 11(33): Skip neutral.");
@@ -1204,7 +1205,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
 
-    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, m_args, null, null, check_args)).sign(black_player).run();
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
     
     log ("Turn 12(36): Skip neutral.");
@@ -1239,7 +1240,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
 
-    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, m_args, null, null, check_args)).sign(white_player).run();
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args)).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 13(39): Skip neutral.");
@@ -1295,7 +1296,7 @@ function test_full_game() {
     );
     rnds = [resurrect_rnd_data];
 
-    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, m_args, att_args, rnds, check_args, end_args)).sign(black_player).run();
+    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, is_double_move, m_args, att_args, rnds, check_args, end_args)).sign(black_player).run();
     last_seen_turn += 1;
 
     log ("Turn 14(42): Skip neutral.");
@@ -1333,7 +1334,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
 
-    failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, m_args, null, null, check_args,
+    failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
     val expected_move_causes_check: text = "Move puts us into check: type: BISHOP";
@@ -1376,7 +1377,7 @@ function test_full_game() {
     );
     rnds = [resurrect_rnd_data];
 
-    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, m_args, att_args, rnds, check_args, end_args)).sign(white_player).run();
+    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, is_double_move, m_args, att_args, rnds, check_args, end_args)).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 15(45): Skip neutral.");
@@ -1389,8 +1390,8 @@ function test_full_game() {
     // 7= .  p  p  p  .  p  .  p
     // 6= .  .  .  .  p  q  p  . // <-- next: queen f6 -> c3
     // 5= .  .  .  .  .  .  .  .
-    // 4= Kn .  .  .  .  .  .  . // <-- next: queen f6 -> c3
-    // 3= .  -  +  .  .  .  P  . // <-- prev: KNIGHTED pawn takes rook via b3 x a1.
+    // 4= Kn .  .  .  .  .  .  . 
+    // 3= .  -  +  .  .  .  P  . // <-- prev: KNIGHTED pawn takes rook via b3 x a1. // <-- next: queen f6 -> c3
     // 2= .  .  Q  P  P  P  .  P 
     // 1= Pk R  B  .  K  B  Kn R // <-- prev: KNIGHTED pawn goes b3 x a1, causing the rook to resurrect at b1.
     // --------------------------
@@ -1411,7 +1412,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
 
-    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, m_args, null, null, check_args)).sign(black_player).run();
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args)).sign(black_player).run();
     last_seen_turn += 1;
     
     log ("Turn 16(48): Skip neutral.");
@@ -1423,8 +1424,8 @@ function test_full_game() {
     // 7= .  p  p  p  .  p  .  p // <-- next: JUMP on queen c2 -> c7
     // 6= .  .  .  .  p  -  p  . // <-- prev: queen f6 -> c3
     // 5= .  .  .  .  .  .  .  .
-    // 4= Kn .  .  .  .  .  .  . // <-- prev: queen f6 -> c3
-    // 3= .  -  q  .  .  .  P  . 
+    // 4= Kn .  .  .  .  .  .  . 
+    // 3= .  .  q  .  .  .  P  . // <-- prev: queen f6 -> c3
     // 2= .  .  Q  P  P  P  .  P // <-- next: fails to put a PORTAL on d2 (causes check), instead JUMP on queen c2 -> c7
     // 1= Pk R  B  .  K  B  Kn R 
     // --------------------------
@@ -1486,7 +1487,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false); // <-- We don't claim to be an enchanted jumper
 
-    failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, m_args, null, null, check_args,
+    failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
     var move_expected_err_msg: text = "Illegal move: type: BISHOP";
@@ -1502,7 +1503,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = true); // <-- NOT TRUE! It's the Queen that got the enchantment.
 
-    failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, m_args, null, null, check_args,
+    failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
     ));
     move_expected_err_msg = "This piece is not an enchanted jumper";
@@ -1531,7 +1532,7 @@ function test_full_game() {
         damage_points = 7 
     );
 
-    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, m_args, att_args, list<rnd_data>(), check_args, null)).sign(white_player).run();
+    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, is_double_move, m_args, att_args, list<rnd_data>(), check_args, null)).sign(white_player).run();
     last_seen_turn += 1;
 
     log ("Turn 17(51): Skip neutral.");
@@ -1547,12 +1548,158 @@ function test_full_game() {
     // 6= .  .  .  .  p  -  p  . 
     // 5= .  .  .  .  .  .  .  .
     // 4= Kn .  .  .  .  .  .  . 
-    // 3= .  -  q  .  .  .  P  . 
+    // 3= .  .  q  .  .  .  P  . 
     // 2= .  .  -  P  P  P  .  P // <-- prev: JUMP on queen c2 -> c7
     // 1= Pk R  B  .  K  B  Kn R 
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
+
+    log("Turn 18(52): Black plays DOUBLE_MOVE");
+    crd_data = card_played_data(
+        card_type_str = "DOUBLE_MOVE",
+        card_order_number = 4,
+        card_picks = [],
+    );
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, crd_data, list<rnd_data>())).sign(black_player).run();
+    last_seen_turn += 1;
+    fetching_rotation_nr += 1;
+
+    log ("Turn 18(53): Black must skip move (due to double move).");
+    end_args = move_end_events_arguments(
+        used_portals = [],
+        resurrection_pos = null, 
+        promotions = list<integer>()
+    );
+    check_args = move_check_arguments(
+        is_check = false,
+        is_checkmate = false,
+        is_stalemate = false
+    );
+    rell.test.tx(skip_primary_move(the_game.game_rowid, last_seen_turn, check_args, end_args)).sign(black_player).run();
+    last_seen_turn += 1;
+
+    log ("Turn 18(54): Skip neutral.");
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    last_seen_turn += 1;
+
+    // +++++++++++++++++++++++++++++++++++++++++ White Move 19 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= p  kn b  .  k  b  kn r // <-- next: Queen c7 -> c8 (check)
+    // 7= .  p  Q  p  .  p  .  p // <-- next: Queen c7 -> c8 (check)
+    // 6= .  .  .  .  p  -  p  .
+    // 5= .  .  .  .  .  .  .  .
+    // 4= Kn .  .  .  .  .  .  . 
+    // 3= .  .  q  .  .  .  P  . 
+    // 2= .  .  .  P  P  P  .  P 
+    // 1= Pk R  B  .  K  B  Kn R 
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    // Whit is acting pretty stupid here, should have taken the black queen on c3, but this way we will get an interesting  end to the game.
+
+    log("Turn 19(55): Skip card.");
+    rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+    fetching_rotation_nr += 1;
+
+    log ("Turn 19(56): White captuers bishop c7->c8, causing check.");
+    val c8 = 58;
+
+    m_args = move_arguments(
+        from_position = c7, 
+        to_position = c8, 
+        piece_type_str = "QUEEN",  
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
+
+
+    // Attack data, mandatory for attacks.
+    att_args = move_attack_arguments (
+        attacked_position = c8, 
+        attack_result_type_str = "KILL", 
+        defender_defense_points = 3, 
+        damage_points = 7 
+    );
+
+    check_args = move_check_arguments(
+        is_check = true,
+        is_checkmate = false,
+        is_stalemate = false
+    );
+
+    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, is_double_move, m_args, att_args, list<rnd_data>(), check_args)).sign(white_player).run();
+    last_seen_turn += 1;
+    
+    log ("Turn 19(57): Skip neutral.");
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    // +++++++++++++++++++++++++++++++++++++++++ Black Move 20 (TWO MOVES!!) ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= p  kn Q  .  k  b  kn r // <-- prev: Queen c7 -> c8 (check) // <-- next: Queen c3 -> c8 (removing check)
+    // 7= .  p  -  p  .  p  .  p // <-- prev: Queen c7 -> c8 (check) 
+    // 6= .  .  .  .  p  -  p  .
+    // 5= .  .  .  .  .  .  .  .
+    // 4= Kn .  .  .  .  .  .  . 
+    // 3= .  .  q  .  .  .  P  . // <-- next: Queen c3 -> c8 (removing check)
+    // 2= .  .  .  P  P  P  .  P 
+    // 1= Pk R  B  .  K  B  Kn R 
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    // --------------------------
+    // 8= p  kn q  .  k  b  kn r // <-- prev: Queen c3 -> c8 (removing check) // <-- next: Queen c8 -> c2 
+    // 7= .  p  .  p  .  p  .  p  
+    // 6= .  .  .  .  p  -  p  .
+    // 5= .  .  .  .  .  .  .  .
+    // 4= Kn .  .  .  .  .  .  . 
+    // 3= .  .  -  .  .  .  P  . // <-- prev: Queen c3 -> c8 (removing check)
+    // 2= .  .  +  P  P  P  .  P // <-- next: Queen c8 -> c2 
+    // 1= Pk R  B  .  K  B  Kn R 
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    log ("Turn 20(58): Black skips spell");
+    rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    last_seen_turn += 1;
+    fetching_rotation_nr += 1;
+
+    log ("Turn 20(59): Black captures queen c3->c8, removing check.");
+
+    m_args = move_arguments(
+        from_position = c3, 
+        to_position = c8, 
+        piece_type_str = "QUEEN",  
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
+
+    // Attack data, mandatory for attacks.
+    att_args = move_attack_arguments (
+        attacked_position = c8, 
+        attack_result_type_str = "KILL", 
+        defender_defense_points = 3, 
+        damage_points = 7 
+    );
+
+    val THIS_IS_NOT_A_DOUBLE_MOVE = false;
+    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, THIS_IS_NOT_A_DOUBLE_MOVE, m_args, att_args, list<rnd_data>())).sign(black_player).run();
+    last_seen_turn += 1;
+
+
+    log ("Turn 20(60): Black moves queen c8 -> c2 (pretty stupid move).");
+    m_args = move_arguments(
+        from_position = c8, // <-- Ok
+        to_position = c2, // <-- Ok
+        piece_type_str = "QUEEN",  // <-- Ok
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
+
+    val ACTUALLY_DOUBLE_MOVE = true;
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, ACTUALLY_DOUBLE_MOVE, m_args, null, null)).sign(black_player).run();
+    last_seen_turn += 1;
+
 }
 
 
