@@ -19,7 +19,7 @@ function check_sb_is_check(data: check_stat_board_calculator_data): boolean {
 // Returns true if the king is in check
 function check_sb_is_check_with_desc(data: check_stat_board_calculator_data): (boolean, text) {
     if (data.checking_attackers.size() > 0) {
-        return (true, "Found piece attacking the king at " + data.checking_attackers[0].attacker_pos + ".");
+        return (true, "Found piece attacking the king at " + data.checking_attackers[0].attacker_pos);
     } else {
         return (false, "No checking attackers found");
     }

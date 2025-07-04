@@ -182,7 +182,7 @@ function move_attack_inner(
     // ----------------
     //log ("Move A.7 - Verify if this move will get us into check ");
     val p_wpaa = with_pos_and_alignment(m_args.from_position, my_color);
-    val get_into_check = will_hypothetical_move_cause_check(
+    val (get_into_check, check_desc) = will_hypothetical_move_cause_check(
             game_id,
             selected_path,
             p_wpaa,
@@ -193,7 +193,7 @@ function move_attack_inner(
     );
 
     // The client should have stopped this move from happening.
-    require(not get_into_check, "Move puts us into check: " + p_dbg + ", id:" + game_id);
+    require(not get_into_check, "Move puts us into check: " + p_dbg + " because: " + check_desc + ", id:" + game_id);
 
 
     log("game_id: " + game_id + " - Move Attack passed verification, piece " + p_dbg + ", flags: " + dbg );

@@ -22,7 +22,7 @@
 
 // Returns:
 // 1. If this causes check
-// 2. If this is a castle move
+// 2. The description what piece causes check
 function will_hypothetical_move_cause_check(
     game_id: integer,
     selected_path: path_base,
@@ -31,7 +31,7 @@ function will_hypothetical_move_cause_check(
     king_orig_pos: integer,
     mating_team: character_team,
     board_pos_all: board_positions_all
-): boolean {
+): (boolean, text) {
     val pos_start = selected_path.path[0]; 
     val pos_dest = selected_path.path[selected_path.path.size() - 1];
     val is_king_move = pos_start == king_orig_pos;
@@ -54,22 +54,22 @@ function will_hypothetical_move_cause_check(
     // ------------------------
     // 2.Calc initial check
     // ------------------------
-    var check = check_sb_is_check(hypothetical_check_calc_data);
+    var (check, check_desc) = check_sb_is_check_with_desc(hypothetical_check_calc_data);
     
     // ------------------------
     // 3. See if a castling king is passing an attacked square
     // ------------------------
     if (is_king_move and not check) {  // Must be a king move for this to be relevant
-        check = whm_check_if_potential_castle_gives_check_inner(
+        return whm_check_if_potential_castle_gives_check_inner(
             game_id,
             selected_path, 
             chr_to_move, 
             mating_team, 
             board_pos_all
         );
+    } else {
+        return (check, check_desc);
     }
-
-    return check;
 }
 
 // Returns the calculator data
@@ -136,15 +136,16 @@ function whm_check_if_potential_castle_gives_check_inner(
     chr_to_move: with_pos_and_alignment,
     mating_team: character_team,
     board_pos_all: board_positions_all
-): boolean {
+): (boolean, text) {
     var check = false;  // We only get here we don't have check
+    var check_desc = "Nothing is checking the king";
     
     log("game_id: "+game_id+ " - King move.");
     when (selected_path.path_type) {
         path_type.GROUND_CASTLE_MOVE -> {
             log("game_id: "+game_id+ " - This is a castle move");
             val mid_positions = path_get_mid_positions(selected_path);
-            check = whm_is_check_on_the_way_to_castle(
+            val (check1, check_desc1) = whm_is_check_on_the_way_to_castle(
                 game_id,
                 mid_positions, 
                 chr_to_move, 
@@ -152,13 +153,16 @@ function whm_check_if_potential_castle_gives_check_inner(
                 mating_team, 
                 board_pos_all
             );
+
+            check = check1;
+            check_desc = check_desc1;
         }
         else -> {
             print("game_id: "+game_id+ " - Normal king move: " + selected_path.path_type);
         }
     }
     
-    return check;
+    return (check, check_desc);
 }
 
 // ----------------------------------------------------------------
@@ -173,13 +177,10 @@ function whm_is_check_on_the_way_to_castle(
     pos_start: integer,
     mating_team: character_team,
     board_positions: board_positions_all
-): boolean {
-    print("game_id: "+game_id+ " - Castling move with " + mid_positions.size() + " mid positions to go.");
+): (boolean, text) {
+    log("game_id: "+game_id+ " - Castling move with " + mid_positions.size() + " mid positions to go.");
     
-    if (mid_positions.empty()) {
-        require(false, "game_id: "+game_id+ " - Error: King should have mid squares when castling. King pos: " + pos_start); 
-        return false;
-    }
+    require(not mid_positions.empty(), "game_id: "+game_id+ " - Error: King should have mid squares when castling. King pos: " + pos_start); 
     
     for (mid_pos in mid_positions) {
         // ----------------------------------------------------------------
@@ -193,12 +194,14 @@ function whm_is_check_on_the_way_to_castle(
             game_id, chr_to_move, pos_start, mid_pos, mating_team, board_positions
         );
         
-        if (check_sb_is_check(hypo_check_calc_data)) {
-            log("game_id: "+game_id+ " - Found check on: " + mid_pos);
-            return true;
+        val (is_check, check_desc) = check_sb_is_check_with_desc(hypo_check_calc_data);
+        if (is_check) {
+            val desc = "Found check on: " + mid_pos + " because: " + check_desc;
+            log("game_id: "+game_id+ " - " + desc);
+            return (true, desc);
         }
     }
     
-    return false;
+    return (false, "No check found");
 }
 
