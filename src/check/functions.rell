@@ -2,6 +2,9 @@
 
 // -----------------------------------------------------------------------------------
 // Main function called from other modules after a move or a card has been played.
+// 
+// Since it's a bit tricky we want to give an exact error message in the require,
+// to help the client figure out what went wrong.
 // -----------------------------------------------------------------------------------
 function check_stale_n_mate(
     game_id: integer,
@@ -14,9 +17,6 @@ function check_stale_n_mate(
     check_args: move_check_arguments? // Optional, since the node will calculate the check/stale/mate status even if the client doen't send it.
 ): (is_check: boolean, is_checkmate: boolean, is_stalemate: boolean) {
 
-    var is_checkmate = false;
-    var is_stalemate = false;
-
     // For check calculation we don't have to use hypothetical moves, since we do the
     // calculation AFTER the move has been saved to the board.
     val check_sb_data = check_sb_build_calculator(
@@ -26,75 +26,103 @@ function check_stale_n_mate(
         board // This isn't a hypothetical move, must use the new board positions
     );
 
-    val is_check = check_sb_is_check(check_sb_data);
+    val (is_check, check_desc) = check_sb_is_check_with_desc(check_sb_data);
     if (is_check) {
         log("game_id: "+game_id+ " - Found CHECK.");
         if (check_args != null) {
-            require(check_args.is_check or check_args.is_checkmate, "Our calculation says check but client didn't claim check?");
+            require(check_args.is_check or check_args.is_checkmate, "Client said is_check = false, but: " + check_desc);
         }
 
-        // -----------------------------------------------------------------------------------
-        // We do this as a two-step rocket, where we only calculate mate if we have check.
-        // For the mate calculation we must use hypothetical moves, which is heavier.
-        // -----------------------------------------------------------------------------------
-        var should_do_mate_calc = true;
-        if (check_args != null) {
-            should_do_mate_calc =  check_args.is_checkmate; // No need to verify checkmate unless the client claims mate.
-        }
-
-        if (should_do_mate_calc) {
-            val king_wpaa = with_pos_and_alignment(opp_king.vuln.position, opp_align);
-            val check_mate_data = check_mate_calc_data_constructor(
-                    game_id,
-                    king_wpaa, // We're supposed to check the opponent's king
-                    our_team, // We are the mating team
-                    board,
-                    check_sb_data
-            );
-            is_checkmate = check_mate_can_escape(game_id, check_mate_data, opp_team);
-
-            if (check_args != null) { 
-                // We wouldn't be here unless the client said is_checkmate, so must be "true" now.
-                require(is_checkmate, "Client said is_checkmate but we could not verify it.");
-            }
-
-            if (is_checkmate) {
-                log("game_id: "+game_id+ " - Found CHECKMATE. Game over");
-                // TODO: Implement this
-            }
-        }
-
+        val calc_checkmate = calc_mate(game_id, board, opp_align, opp_king, our_team, opp_team, check_args, check_sb_data);
+        return (is_check = true, is_checkmate = calc_checkmate, is_stalemate = false);
     } else {
         //log("move_common_check_stale_n_mate() - No CHECK.");
         if (check_args != null) {
-            require(not check_args.is_check, "Client thinks this is check but we could not verify it.");
-            require(not check_args.is_checkmate, "Client thinks this is checkmate but we could not verify it.");
+            require(not check_args.is_check, "Client said is_check = false, but: " + check_desc);
+            require(not check_args.is_checkmate, "Client said is_checkmate = true, but: "+ check_desc);
         }
+        val calc_stalemate = calc_stale(game_id, board, our_team, opp_team, check_args);
+        return (is_check = false, is_checkmate = false, is_stalemate = calc_stalemate);
+    }
+}
 
-        // Only check for stalemated opponent if opp is not in check.
-        // Stalemate MUST be checked for here, since the caller isn't necessarily benefiting from this ending.
-        is_stalemate = check_calc_stalemate(
+function calc_mate(
+    game_id: integer,
+    board: board_positions_all, 
+    opp_align: alignment,
+    opp_king: piece_living_data,
+    our_team: character_team,
+    opp_team: character_team,
+    check_args: move_check_arguments?, 
+    check_sb_data: check_stat_board_calculator_data
+): boolean {
+    var is_checkmate = false;
+    // -----------------------------------------------------------------------------------
+    // We do this as a two-step rocket, where we only calculate mate if we have check.
+    // For the mate calculation we must use hypothetical moves, which is heavier.
+    // -----------------------------------------------------------------------------------
+    val king_wpaa = with_pos_and_alignment(opp_king.vuln.position, opp_align);
+    val check_mate_data = check_mate_calc_data_constructor(
             game_id,
-            opp_team, // kings_team
-            our_team, // mating_team
-            board
-        );
+            king_wpaa, // We're supposed to check the opponent's king
+            our_team, // We are the mating team
+            board,
+            check_sb_data
+    );
+    val (can_escape: boolean, desc: text) = check_mate_can_escape(game_id, check_mate_data, opp_team);
+    is_checkmate = not can_escape;
 
-        if (is_stalemate) {
-            if (check_args != null) {
-                require(check_args.is_stalemate, "Our calculation says stalemate but client didn't claim it?");
-            }
-
-            log("game_id: "+game_id+ " - Found STALEMATE. Game over");
-            // TODO: Implement this
+    // Before we move on, see if client needs verification of its calculations
+    if (check_args != null) { 
+        if (is_checkmate) {
+            require(check_args.is_checkmate, "Client said is_checkmate = false, but: " + desc);
         } else {
-            if (check_args != null) {
-                require(not check_args.is_stalemate, "Client thinks this is stalemate but we could not verify it.");
-            }
+            require(not check_args.is_checkmate, "Client said is_checkmate = true, but: " + desc);
         }
     }
 
-    return (is_check = is_check, is_checkmate = is_checkmate, is_stalemate = is_stalemate);
+    if (is_checkmate) {
+        log("game_id: "+game_id+ " - Found CHECKMATE. Game over");
+        // TODO: Implement this
+    }
+
+    return is_checkmate;
+} 
+
+function calc_stale(
+    game_id: integer,
+    board: board_positions_all, 
+    our_team: character_team,
+    opp_team: character_team,
+    check_args: move_check_arguments?
+): boolean {
+    var is_stalemate = false;
+
+
+    // Only check for stalemated opponent if opp is not in check.
+    // Stalemate MUST be checked for here, since the caller isn't necessarily benefiting from this ending.
+    val (calc_is_stalemate, calc_stalemate_desc) = check_calc_stalemate(
+        game_id,
+        opp_team, // kings_team
+        our_team, // mating_team
+        board
+    );
+    is_stalemate = calc_is_stalemate;
+
+    if (check_args != null) {
+        if (is_stalemate) {
+            require(check_args.is_stalemate, "Client said is_stalemate = true, but: " + calc_stalemate_desc);
+        } else {
+            require(not check_args.is_stalemate, "Client said is_stalemate = false, but: " + calc_stalemate_desc);
+        }
+    }
+
+    if (is_stalemate) {
+        log("game_id: "+game_id+ " - Found STALEMATE. Game over");
+        // TODO: Implement this
+    }
+
+    return is_stalemate;
 }
 
 
@@ -116,14 +144,15 @@ function check_calc_stalemate(
     kings_team: character_team, 
     mating_team: character_team,
     board_all: board_positions_all
-): boolean {
+): (boolean, text) {
     
     // a) Take a random non-king piece, and see if it has any moves in its [move_tree]
     for (subject in team_get_subjects_list(kings_team)) {
         if(inner_single_subject_can_act(game_id, board_all, subject)) {
             // Not stalemate
-            //log("move_common_calc_stalemate() - Not stalemate since subject at " + subject.position + " can take action.");
-            return false;
+            val act_desc = "Not stalemate since subject at " + subject.vuln.position + " can take action.";
+            //log("move_common_calc_stalemate() - " + act_desc);
+            return (false, act_desc);
         }
     }
     
@@ -133,13 +162,14 @@ function check_calc_stalemate(
     val king_wpaa = with_pos_and_alignment(king.vuln.position, king.vuln.align);
     
     val king_escape_data = king_escape_builder(game_id, king_wpaa, mating_team, board_all);
-    val (escape_pos, is_attack) = king_escape_find_first_without_help(game_id, king_escape_data, king_wpaa);
+    val (escape_pos, is_attack, king_desc) = king_escape_find_first_without_help(game_id, king_escape_data, king_wpaa);
     
     if (escape_pos != null) {
-        return false; // Not stalemate, since the king can escape
+        return (false, "Not stalemate, since " + king_desc);
     } else {
-        log("game_id: "+game_id+ " - Stalemate detected! King at " + king.vuln.position + " has no moves and is not in check.");
-        return true;
+        val stalemate_desc = "Stalemate detected! King at " + king.vuln.position + " has no moves and is not in check.";
+        log("game_id: "+game_id+ " - " + stalemate_desc);
+        return (true, stalemate_desc);
     }
 }
 

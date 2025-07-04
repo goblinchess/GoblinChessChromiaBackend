@@ -58,15 +58,23 @@ struct opponents_move_data {
 
 // ------------------------------------------------------------------------------
 // Check and mate etc
-// We don't want to REQUIRE the client to send these, since we want to allow
-// for simple clients that doesn't want to implement these calculations.
+// Calculating check/stale/mate status is extra hard due to portals etc.
+// Therefore we don't require the client to do this, and the "check_args" is optional.
+// When implementing a client you must choose between:
 // 
-// However, IF the client has the capability to do it's own check/stale/mate calculations,
-// the benefit of sending these values will be:
-// 1. Skip checkmate test on the node unless the client claims checkmate, this will save some CPU.
-//    (the node will always verify the is_check and is_stalemate, so nothing to be saved in there). 
-// 2. Discover differences between how the client and the node calculate the 
-//    check/stale/mate status as early as possible.
+// 1. "Small client" without checkmate calculation:
+// Benefit: Simpler client code.
+// Drawback: Due to the nature of the blockchain a new block must be built before 
+//     the small client can see if a move cause checkmate/stalemate. 
+// 
+// 2. "Big client" with checkmate calcuation:
+// Benefit: Client gives player checkmate feedback immeditely.
+// Drawback: Risk of difference between mate calculation between client and node.
+// Note: If the client makes its own calculation and send the "check_args" the node 
+//     will abort with an error message if the node disagrees with the clients calculations.
+//     This is useful for clients that want discover calculation differences.
+//     (If the client shows checkmate to the player, but the node doesn't agree, 
+//     there is a serious bug that shouldn't go unnoticed)
 // ------------------------------------------------------------------------------
 struct move_check_arguments {
     is_check: boolean; // Client thinks this is a check
@@ -77,12 +85,17 @@ struct move_check_arguments {
 // ------------------------------------------------------------------------------
 // Events that might happen after a move.
 // 
+// If none of these events happened, the client can send "null",
+// but if ANY of these events happened, we require the client to know about this
+// and send this struct correctly filled.
+// 
 // Discussion:
-// Is it really needed for the client to calculate these?
+// Is it really needed for the client to calculate these? Not really!
 // The node could calculate these things itself, with the exception of the resurrection_pos.
 // Resurrection requires random on the client side, so the client MUST send this position to the node.
 // And since resurrection cannot happen just anywhere, due to portals that might be used, the 
 // client must calculate the portal usage too. Could just as well send everything.
+// Also, this isn't as hard as the check/stale/mate calculation.
 // ------------------------------------------------------------------------------
 struct move_end_events_arguments {
     used_portals: list<integer>; // Portal entry pos  (Note: just b/c a piece stands on a portal entry pos, doesn't mean it was used)

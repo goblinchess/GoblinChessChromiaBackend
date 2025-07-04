@@ -48,21 +48,22 @@ function check_mate_can_escape(
     game_id: integer,
     data: check_mate_calc_data,
     kings_team: character_team
-): boolean {
+): (can_escape: boolean, desc: text) {
     val maybe_king = team_get_king(kings_team);
     val king = maybe_king!!;
     val kings_align = king.vuln.align;
     val king_wpaa = with_pos_and_alignment(king.vuln.position, kings_align);
     
     // Begin check mate calculation (do the cheapest checks first)
-    val (escape_pos, is_attack) = king_escape_find_first_without_help(game_id, data.king_escape_data, king_wpaa);
+    val (escape_pos, is_attack, king_desc) = king_escape_find_first_without_help(game_id, data.king_escape_data, king_wpaa);
     if (escape_pos != null) {
-        return true; // No prob, king can wiggle free
+        return (can_escape = true, desc = king_desc); 
     }
     
     if (check_sb_is_multi_check(data.check_sb_data)) {
-        log("game_id: "+game_id+ " - There is never any way to beat two attackers = Mate.");
-        return false;
+        val multi_desc = "There is never any way to beat two attackers = Mate.";
+        log("game_id: "+game_id+ " - " + multi_desc);
+        return (can_escape = false, desc = multi_desc);
     }
     
     // We loop all king's subjects to see if ANY of them can
@@ -85,13 +86,15 @@ function check_mate_can_escape(
         // Ignore castle, since this never a king.
         
         log("game_id: "+game_id+ " - Verify if subject " + dbg_str + " can help.");
-        if (check_mate_can_subject_save_king(game_id, data, subject_mt, subject_mt_jump, kings_align, dbg_str)) {
-            return true; // No prob, subject can save the king
+        val (can_save: boolean, piece_desc: text) = check_mate_can_subject_save_king(game_id, data, subject_mt, subject_mt_jump, kings_align, dbg_str);
+        if (can_save)  {
+            return (can_escape = true,  desc = piece_desc); // No prob, subject can save the king
         }
     }
     
-    log("game_id: "+game_id+ " - No subject was able to help the king = Mate.");
-    return false;
+    val mate_desc = "No escape for the king = Mate.";
+    log("game_id: "+game_id+ " - " + mate_desc);
+    return (can_escape = false, desc = mate_desc);
 }
 
 // -----------------------------------------------
@@ -112,15 +115,16 @@ function check_mate_can_subject_save_king(
     subject_mt_jump: move_tree?,
     align_of_mover: alignment,
     dbg_str: text
-): boolean {
+): (can_save: boolean, piece_desc: text) {
     var mt: move_tree? = move_tree_merge(subject_mt_ground, subject_mt_jump);
     require(mt != null, "Internal error, a merged move tree is never null.");
     
     // 1. (The subject) can attack the checker.
     // Note on portals: Portals are NOT relevant for kills, since the kill will solve the problem
     // no matter if there is a portal below the enemy or not.
-    if (check_sb_can_subject_kill_checker(game_id, data.check_sb_data, mt.attackable_sqs, dbg_str)) {
-        return true;
+    val (can_kill, kill_desc) = check_sb_can_subject_kill_checker(game_id, data.check_sb_data, mt.attackable_sqs, dbg_str);
+    if (can_kill){
+        return (can_save = true, piece_desc = kill_desc);
     }
     
     // 2. (The subject) can block the path of the checker.
@@ -142,11 +146,12 @@ function check_mate_can_subject_save_king(
         }
     }
     
-    if (check_sb_can_subject_block_path(game_id, data.check_sb_data, moves_with_portals, dbg_str)) {
-        return true;
+    val (can_block, block_desc) = check_sb_can_subject_block_path(game_id, data.check_sb_data, moves_with_portals, dbg_str);
+    if (can_block) {
+        return (can_save = true, piece_desc = block_desc);
     }
     
-    return false; // Tried everything
+    return (can_save = false, piece_desc = "No way to help the king"); // Tried everything
 }
 
 

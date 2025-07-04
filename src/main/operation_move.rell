@@ -13,22 +13,13 @@ operation skip_primary_move(
     game_id: integer,
     last_seen_turn: integer, // What turn the client last saw.
 
-    // ----------------------
     // Only if the client wants
-    // ----------------------
-    // Calculating check/stale/mate status is extra hard due to portals etc.
-    // Therefore we don't require the client to do this, and the "check_args" is optional.
-    // Note that if the client doesn't do its own calculation it will discover checkmate 
-    // only after it has fetched data from the node, which will cause a delay. 
-    // If the client makes its own calculation and send the "check_args" the node 
-    // will abort with an error message if the node disagrees with the clients calculations.
-    // This is useful for clients that want to abort the game if situation unclear.
-    check_args: move_check_arguments? = null, 
+    check_args: move_check_arguments? = null,  // Client never HAS to send this, see the type for full discussion
 
     // Events that might happen after a move.
     // NOTE: Sometimes end-of-turn events happen even if turn is skipped. 
     // Example: If PORTAL card was played, we will skip the move, but the piece will still use the (new) portal.
-    end_args: move_end_events_arguments? = null
+    end_args: move_end_events_arguments? = null // Client must send this if any "end events" happened.
 ) {
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
@@ -92,20 +83,11 @@ operation move_peaceful(
     castle_rook_from: integer?, // If this is a castle, the rook's starting position.
     castle_rook_to: integer?, // If this is a castle, the rook's ending position.
 
-    // ----------------------
     // Only if the client wants
-    // ----------------------
-    // Calculating check/stale/mate status is extra hard due to portals etc.
-    // Therefore we don't require the client to do this, and the "check_args" is optional.
-    // Note that if the client doesn't do its own calculation it will discover checkmate 
-    // only after it has fetched data from the node, which will cause a delay. 
-    // If the client makes its own calculation and send the "check_args" the node 
-    // will abort with an error message if the node disagrees with the clients calculations.
-    // This is useful for clients that want to abort the game if situation unclear.
-    check_args: move_check_arguments? = null, 
+    check_args: move_check_arguments? = null,  // Client never HAS to send this, see the type for full discussion
 
     // Events that might happen after a move.
-    end_args: move_end_events_arguments? = null
+    end_args: move_end_events_arguments? = null // Client must send this if any "end events" happened.
 ) {
 
     // -----------    
@@ -162,20 +144,11 @@ operation move_attack(
     // ------------------------------------------------------------------
     rnd_numbers: list<rnd_data>,  
 
-    // ----------------------
-    // Only if the client needs to send it
-    // ----------------------
-    // Calculating check/stale/mate status is extra hard due to portals etc.
-    // Therefore we don't require the client to do this, and the "check_args" is optional.
-    // Note that if the client doesn't do its own calculation it will discover checkmate 
-    // only after it has fetched data from the node, which will cause a delay. 
-    // If the client makes its own calculation and send the "check_args" the node 
-    // will abort with an error message if the node disagrees with the clients calculations.
-    // This is useful for clients that want to abort the game if situation unclear.
-    check_args: move_check_arguments? = null,
+    // Only if the client wants
+    check_args: move_check_arguments? = null,  // Client never HAS to send this, see the type for full discussion
 
     // Events that might happen after a move.
-    end_args: move_end_events_arguments? = null,
+    end_args: move_end_events_arguments? = null, // Client must send this if any "end events" happened.
 
     // ----------------------
     // Needed for chaos mode

@@ -714,14 +714,15 @@ function test_full_game() {
     // 5= p  .  .  .  .  .  .  . // <--- prev: pawn a7 -> a5
     // 4= .  .  .  .  .  .  .  .
     // 3= .  .  Kn .  .  .  +  . // <--- next: pawn g2 -> g3 
-    // 2= P  P  P  P  P  P  P  P // <--- card: turn c3 into a knight
+    // 2= P  P  P  P  P  P  P  P // <--- card: turn c2 into a knight
     // 1= R  .  B  Q  K  B  Kn R
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
 
-    log("Turn 3(7): White plays KNIGHTED (on c3 pawn).");
-    val card_picks_knighted = [10]; // Turns c3 pawn into knight
+    log("Turn 3(7): White plays KNIGHTED (on c2 pawn).");
+    val c2 = 10;
+    var card_picks_knighted = [c2]; // Turns c2 pawn into knight
     crd_data = card_played_data(
         card_type_str = "KNIGHTED",
         card_order_number = 2,
@@ -1080,7 +1081,6 @@ function test_full_game() {
     fetching_rotation_nr += 1;
 
     log ("Turn 9(26): White captuers pawn c2->b3, but no resurrection (Note: pawn is KNIGHTED).");
-    val c2 = 10;
 
     m_args = move_arguments(
         from_position = c2, 
@@ -1700,6 +1700,140 @@ function test_full_game() {
     rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, ACTUALLY_DOUBLE_MOVE, m_args, null, null)).sign(black_player).run();
     last_seen_turn += 1;
 
+
+    // +++++++++++++++++++++++++++++++++++++++++ White Move 21 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= p  kn -  .  k  b  kn r // <-- prev: Queen c3 -> c8 (removing check)
+    // 7= .  p  .  p  .  p  .  p 
+    // 6= .  .  .  .  p  -  p  . // <-- next: Knight a4 -> b6 (blunder)
+    // 5= .  .  .  .  .  .  .  .
+    // 4= Kn .  .  .  .  .  .  . // <-- next: Knight a4 -> b6 (blunder)
+    // 3= .  .  .  .  .  .  P  . // <-- prev: Queen c3 -> c8 (removing check)
+    // 2= .  .  q  P  P  P  .  P 
+    // 1= Pk R  B  .  K  B  Kn R 
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    log("Turn 21(61): White skips spell.");
+    rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+    fetching_rotation_nr += 1;
+
+    log("Turn 21(62): White (makes a blunnder and doesn't take the Queen) moves Knight to a4 -> b6.");
+
+    m_args = move_arguments(
+        from_position = a4, // <-- Ok
+        to_position = b6, // <-- Ok
+        piece_type_str = "KNIGHT",  // <-- Ok
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
+
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null)).sign(white_player).run();
+    last_seen_turn += 1;
+
+    log ("Turn 21(63): Skip neutral.");
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+
+
+    // +++++++++++++++++++++++++++++++++++++++++ Black Move 22 = CHECK ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= p  kn -  .  k  b  kn r // <-- next: Pawn a8 -> a7 (just a random move to kick mate)
+    // 7= +  p  .  p  .  p  .  p // <-- next: Pawn a8 -> a7 (just a random move to kick mate)
+    // 6= .  Kn .  .  p  -  p  . // <-- prev: Knight a4 -> b6 (blunder)
+    // 5= .  .  .  .  .  .  .  .
+    // 4= -  .  .  .  .  .  .  . // <-- prev: Knight a4 -> b6 (blunder)
+    // 3= .  .  .  .  .  .  P  . 
+    // 2= .  .  q  P  P  P  .  P // <-- next: Queen at c2 becomes KNIGHTED! Check, but not mate since KNIGHTED pawn at a1 can take.
+    // 1= Pk R  B  .  K  B  Kn R 
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+    log("Turn 22(64): Black plays KNIGHTED card (on c2 Queen).");
+    card_picks_knighted = [c2]; // Turns c3 pawn into knight
+    crd_data = card_played_data(
+        card_type_str = "KNIGHTED",
+        card_order_number = 2,
+        card_picks = card_picks_knighted,
+    );
+
+    rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, crd_data, list<rnd_data>())).sign(black_player).run();
+    last_seen_turn += 1;
+    fetching_rotation_nr += 1;
+
+    // Black's card already put the opponent in Check (via the KNIGHTED Queen).
+    // For performance reasons we don't do the checkmate control until after the move, 
+    // so even if black (incorrectly) thought this was mate they would have to make a dummy move here potentially win. 
+    // (This is not a bug, but by design, a player only ever wins during primary move (skipped or not) OR 
+    // during the hijacked neutral move (second double move)).
+
+    log ("Turn 22(65): Black moves resurrected pawn a8 -> a7.");
+
+    val a7 = 48;
+    m_args = move_arguments(
+        from_position = a8, // <-- Ok
+        to_position = a7, // <-- Ok
+        piece_type_str = "PAWN",  // <-- Ok
+        given_is_knighted = false, 
+        given_is_enchanted_jumper = false);
+
+    // NOTE! You can change "is_checkmate = true" too see what happens.
+    // We cannot test this automatically since the test will break if we update the DB before the require() fails.
+    check_args = move_check_arguments(
+        is_check = true, // Queen at c2 becomes KNIGHTED! 
+        is_checkmate = false, // <-- Not mate since KNIGHTED pawn at a1 can take.
+        is_stalemate = false
+    );
+
+    rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args)).sign(black_player).run();
+    last_seen_turn += 1;
+    
+
+    // This should probably fail since the game is over
+    log ("Turn 22(66): Skip neutral.");
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(black_player).run();
+    last_seen_turn += 1;
+
+    // +++++++++++++++++++++++++++++++++++++++++ White Move 23 ++++++++++++++++++++++++++++++++++++++++++++++++++
+    // 8= -  kn -  .  k  b  kn r // <-- prev: Pawn a8 -> a7 (just a random move to kick mate)
+    // 7= p  p  .  p  .  p  .  p // <-- prev: Pawn a8 -> a7 (just a random move to kick mate)
+    // 6= .  Kn .  .  p  -  p  . 
+    // 5= .  .  .  .  .  .  .  .
+    // 4= .  .  .  .  .  .  .  . 
+    // 3= .  .  .  .  .  .  P  . 
+    // 2= .  .  qk P  P  P  .  P // <-- prev: Queen at c2 becomes KNIGHTED! // <-- next: KNIGHTED pawn takes a1 x c2.
+    // 1= Pk R  B  .  K  B  Kn R // <-- next: KNIGHTED pawn takes a1 x c2.
+    // --------------------------
+    //    a  b  c  d  e  f  g  h
+    // --------------------------
+
+    log("Turn 23(67): Skip card.");
+    rell.test.tx(skip_card(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
+    fetching_rotation_nr += 1;
+
+    log ("Turn 23(68): White captuers bishop c7->c8, causing check.");
+
+    m_args = move_arguments(
+        from_position = a1, 
+        to_position = c2, 
+        piece_type_str = "PAWN",  
+        given_is_knighted = true, 
+        given_is_enchanted_jumper = false);
+
+    // Attack data, mandatory for attacks.
+    att_args = move_attack_arguments (
+        attacked_position = c2, 
+        attack_result_type_str = "KILL", 
+        defender_defense_points = 3, 
+        damage_points = 7 
+    );
+
+    rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, is_double_move, m_args, att_args, list<rnd_data>())).sign(white_player).run();
+    last_seen_turn += 1;
+    
+    log ("Turn 23(69): Skip neutral.");
+    rell.test.tx(skip_neutral_move(the_game.game_rowid, last_seen_turn)).sign(white_player).run();
+    last_seen_turn += 1;
 }
 
 

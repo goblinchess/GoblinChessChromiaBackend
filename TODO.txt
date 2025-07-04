@@ -1,27 +1,5 @@
 
 
-
-Tested
-        TURN_TO_STONE,  
-
-        //--  Enchant change--
-        POTION, 
-        KNIGHTED,  // Promote with new movements
-
-        //--  This-turn-only change--
-        SWITCH_PLACE, // Same as "Fly". Could perhaps be solved by two smoke clouds?
-        FROG, 
-
-        //--  Immediate Spell effecting the entire board --
-        WALL, // TODO: Remove "summon" 
-        PORTAL,
-
-        //--  Delayed Spell --
-        RESURRECT, // Resurrect next killed Enemy 
-        JUMP, 
-Not tested:
-        DOUBLE_MOVE,
-
 TODO: Remove the damage from history in classical mode.
 TODO: Should we remove the option of attacking obstacles in classical mode (we don't allow anyone to survive).
 
@@ -50,7 +28,6 @@ b) Test time_left param.
  
 
 Client Done: 
-
 
 
 

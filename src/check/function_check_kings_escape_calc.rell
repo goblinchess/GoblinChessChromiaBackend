@@ -87,26 +87,29 @@ function king_escape_constructor(game_id: integer, king_pos: integer, king_move_
 // else returns "null".
 // This corresponds to 1) & 2) in the mate rules above. 
 // ---------------------------------------------------
-function king_escape_find_first_without_help(game_id: integer,  data: king_escape_data, king: with_pos_and_alignment): (integer?, boolean) {
+function king_escape_find_first_without_help(game_id: integer,  data: king_escape_data, king: with_pos_and_alignment
+): (integer?, boolean, text) {
 
     // King is in check
     log("game_id: "+game_id+ " - King is in check at: " + king.pos);
 
     for (empty_square in data.empty_squares) {
         if (king_escape_can_go_to_square(game_id, data, empty_square, king)) {
-            log("game_id: "+game_id+ " - King can escape to empty:e: " + empty_square);
-            return (empty_square, false);
+            val desc = "King can escape to empty square: " + empty_square;
+            log("game_id: "+game_id+ " - " + desc);
+            return (empty_square, false, desc);
         }
     }
     
     for (opponent_square in data.opponent_squares) {
         if (king_escape_can_go_to_square(game_id, data, opponent_square, king)) {
-            log("game_id: "+game_id+ " -  King can escape via attack at: " + opponent_square);
-            return (opponent_square, true);
+            val desc = "King can escape via attack at: " + opponent_square;
+            log("game_id: "+game_id+ " -  " + desc) ;
+            return (opponent_square, true, desc);
         }
     }
     
-    return (null, false);
+    return (null, false, "King cannot escape alone");
 }
 
 // Returns true if "pos" is a square that the king can go to.

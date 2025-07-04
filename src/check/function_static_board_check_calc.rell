@@ -16,6 +16,15 @@ function check_sb_is_check(data: check_stat_board_calculator_data): boolean {
     return data.checking_attackers.size() > 0;
 }
 
+// Returns true if the king is in check
+function check_sb_is_check_with_desc(data: check_stat_board_calculator_data): (boolean, text) {
+    if (data.checking_attackers.size() > 0) {
+        return (true, "Found piece attacking the king at " + data.checking_attackers[0].attacker_pos + ".");
+    } else {
+        return (false, "No checking attackers found");
+    }
+}
+
 // Returns true if more than one enemy piece checks the king
 function check_sb_is_multi_check(data: check_stat_board_calculator_data): boolean {
     return data.checking_attackers.size() > 1;
@@ -94,11 +103,13 @@ function check_sb_add_checking_piece_move_tree(game_id: integer, data: check_sta
 // --------------------------------------------------------------------------------------
 // Can the subject kill the checker?
 // --------------------------------------------------------------------------------------
-function check_sb_can_subject_kill_checker(game_id: integer, data: check_stat_board_calculator_data, subject_attacks: set<integer>, dbg_str: text): boolean {
+function check_sb_can_subject_kill_checker(game_id: integer, data: check_stat_board_calculator_data, subject_attacks: set<integer>, dbg_str: text
+): (can_kill: boolean, kill_desc: text) {
     if (check_sb_is_multi_check(data)) {
         // A single subject can never take out multiple attackers
-        log("game_id: "+game_id+ " - Too many attackers, no help possible");
-        return false;
+        val desc = "Too many attackers, no help possible";
+        log("game_id: "+game_id+ " - " + desc);
+        return (can_kill = false, kill_desc = desc);
     }
     
     val checker = check_sb_get_checker(data);
@@ -106,23 +117,26 @@ function check_sb_can_subject_kill_checker(game_id: integer, data: check_stat_bo
     // Can we take out the checker?
     for (pos in subject_attacks) {
         if (pos == checker.attacker_pos) {
-            log("game_id: "+ game_id+" - Yes, the " + dbg_str + " can try to capture the checker at " + checker.attacker_pos);
-            return true;
+            val desc = "The " + dbg_str + " can try to capture the checker at " + checker.attacker_pos;
+            log("game_id: "+ game_id+" - Yes. " + desc);
+            return (can_kill = true, kill_desc = desc);
         } else {
             log("game_id: "+ game_id+" - No, the " + dbg_str + " cannot, by going to " + pos + ", capture the checker at " + checker.attacker_pos);
         }
     }
-    return false;  // This escape method failed.
+    return (can_kill = false, kill_desc = "No way to kill the checker");  // This escape method failed.
 }
 
 // --------------------------------------------------------------------------------------
 // Can the subject block the checker's path?
 // --------------------------------------------------------------------------------------
-function check_sb_can_subject_block_path(game_id: integer, data: check_stat_board_calculator_data, subject_moves: set<integer>, dbg_str: text): boolean {
+function check_sb_can_subject_block_path(game_id: integer, data: check_stat_board_calculator_data, subject_moves: set<integer>, dbg_str: text
+): (can_block: boolean, block_desc: text) {
     if (check_sb_is_multi_check(data)) {
         // A single subject can never block multiple attackers
-        log("game_id: "+game_id+ " - Too many attackers, no help possible");
-        return false;
+        val desc = "Too many attackers, no help possible";
+        log("game_id: "+game_id+ " - " + desc); 
+        return (can_block = false, block_desc = desc);
     }
     
     val checker = check_sb_get_checker(data);
@@ -134,13 +148,14 @@ function check_sb_can_subject_block_path(game_id: integer, data: check_stat_boar
     // Can we block any mid-path position?
     for (pos in subject_moves) {
         if (mid_positions.contains(pos)) {
-            log("game_id: "+game_id+" - Yes, the " + dbg_str + " can block the checker at " + checker.attacker_pos);
-            return true;
+            val desc = "The " + dbg_str + " can block the checker at " + checker.attacker_pos;
+            log("game_id: "+game_id+" - Yes. " + desc);
+            return (can_block = true, block_desc = desc);
         } else {
             log("game_id: "+game_id+" - No, the " + dbg_str + " cannot, by going to " + pos + ", block the checker at  " + checker.attacker_pos);
         }
     }
-    return false;  // This escape method failed.
+    return (can_block = false, block_desc = "No way to block the checker");  // This escape method failed.
 }
 
     
