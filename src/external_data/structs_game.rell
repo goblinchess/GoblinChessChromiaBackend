@@ -31,8 +31,7 @@ struct old_game_stat {
     // Neutral data
     is_winner: boolean; // This player won
     is_draw: boolean; // No player won, it's a draw
-    is_timeout: boolean; // Game ended because of a timeout
-    is_error: boolean; // Game ended because of an error (it's always the client that made the error that lost)
+    finish_reason: text; // Why the game ended
 }
 
 // Holds all time-related info we need to calculate timeouts.

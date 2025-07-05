@@ -13,10 +13,10 @@ function _inner_game_terminate_full_claim_win(gme: game,
     winner_pg: player_game, loser_pg: player_game, 
     winner_name: text, loser_name: text, 
     winner_old_elo: integer, loser_old_elo: integer,
-    winner_seed: byte_array, is_err: boolean
+    winner_seed: byte_array, end_reason: game_end_type
 ) {
 
-    update gme (.is_finished = true, .is_draw = false);
+    update gme (.is_finished = true, .finish_reason = end_reason, .is_terminated = true);
 
     // Timeout is just like any other win.
     val (winner_new_elo, loser_new_elo) = elo.update_chess_ratings_on_win(winner_old_elo, loser_old_elo);
@@ -34,8 +34,7 @@ function _inner_game_terminate_full_claim_win(gme: game,
         .player = winner_p,
         .is_winner = true,
         .is_draw = false, 
-        .is_timeout = false, // No timeout
-        .is_error = is_err, // Could be due to error
+        .finish_reason = end_reason,
         .new_elo_rating = winner_new_elo, // The new ELO rating after the game.
         .player_seed = winner_seed, // Winner must have a valid seed.
         .opp_name = loser_name,
@@ -50,8 +49,7 @@ function _inner_game_terminate_full_claim_win(gme: game,
         .player = loser_p,
         .is_winner = false,
         .is_draw = false, 
-        .is_timeout = false,  // No timeout
-        .is_error = is_err, // Could be due to error
+        .finish_reason = end_reason,
         .new_elo_rating = loser_new_elo, // The new ELO rating after the game.
         .player_seed = byte_array(''), // Loser doesn't have to provide seed, but cannot be null, but doesn't matter what it is.
         .opp_name = winner_name,

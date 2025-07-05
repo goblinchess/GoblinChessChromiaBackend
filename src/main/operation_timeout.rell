@@ -46,12 +46,12 @@ operation claim_timeout(game_rowid: integer) {
     if (maximal_game == null) {
         // There is a chance that the opponent has ended the game already
         // Let's look again using the game_rowid.
-        val res = game @? {.rowid == rowid(game_rowid)} (ended = .is_finished);
-        require(res != null, "Game does not exist?"); // Error
+        val res = game @? {.rowid == rowid(game_rowid)} (ended = .is_finished, end_reason = .finish_reason);
+        require(res != null, "Game does not exist? game_id: " + game_rowid); // Error
 
         if (res.ended) {
             // Since we know that the game isn't ongoing, this is the message we expect to return to the client. 
-            require(false, "The game has ended already, did the opponent end game " + game_rowid + "?");
+            require(false, "The game has ended already as: " + res.end_reason.name + ", did the opponent end game " + game_rowid + "?");
         } else {
             // Error, should never happen
             require(false, "Internal error: didn't expect to find this game ongoing (already checked for that)?");

@@ -68,8 +68,7 @@ query get_old_games(
         new_elo = pgs_my.new_elo_rating,
         winner = pgs_my.is_winner,
         draw = pgs_my.is_draw,
-        timeout = pgs_my.is_timeout,
-        error = pgs_my.is_error
+        end_reason = pgs_my.finish_reason
     ) limit 100;
 
     val return_list = list<old_game_stat>();
@@ -88,8 +87,7 @@ query get_old_games(
             // Neutral
             is_winner = res.winner,
             is_draw = res.draw,
-            is_timeout = res.timeout,
-            is_error = res.error
+            finish_reason = res.end_reason.name
         );
 
         return_list.add(ogs);

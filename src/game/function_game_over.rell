@@ -24,7 +24,7 @@ function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkma
             game_update_time_left(minimal_game);
         } else {
             // Stalemate
-            _inner_game_end_draw(minimal_game.game, new_turn.number, minimal_game.player_game);
+            _inner_game_end_stalemate(minimal_game.game, new_turn.number, minimal_game.player_game);
             game_update_time_left(minimal_game);
         }
 
@@ -36,13 +36,13 @@ function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkma
 
 // We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
 function _inner_game_end_checkmate(gme: game, curr_turn_nr: integer, winner_pg: player_game) {
-    update gme (.current_turn_nr = curr_turn_nr, .is_finished = true, .is_draw = false);
+    update gme (.current_turn_nr = curr_turn_nr, .is_finished = true, .finish_reason = game_end_type.CHECKMATE);
 
 }
 
 // We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
-function _inner_game_end_draw(gme: game, curr_turn_nr: integer, winner_pg: player_game) {
-    update gme (.current_turn_nr = curr_turn_nr, .is_finished = true, .is_draw = true);
+function _inner_game_end_stalemate(gme: game, curr_turn_nr: integer, winner_pg: player_game) {
+    update gme (.current_turn_nr = curr_turn_nr, .is_finished = true, .finish_reason = game_end_type.STALEMATE);
 }
 
 // -------------------------------------
@@ -63,7 +63,7 @@ function game_over_resign(caller_pubkey: pubkey, game_id: integer) {
     // We don't care if the game is out of sync, since we might be doing this during the opponent's rotation anyways.
     val curr_turn = minimal_game.curr_turn_nr;
 
-    update minimal_game.game (.is_finished = true, .is_draw = false);
+    update minimal_game.game (.is_finished = true, .finish_reason = game_end_type.RESIGN);
 
     // TODO: We should create a game_end_event, but shouldn't that hang on the "rotation" (not on the "turn")
 }
@@ -106,7 +106,7 @@ function _inner_game_terminate_full_timeout(gme: game,
     winner_old_elo: integer, loser_old_elo: integer
 ) {
 
-    update gme (.is_finished = true, .is_draw = false);
+    update gme (.is_finished = true, .finish_reason = game_end_type.TIMEOUT, .is_terminated = true);
 
     // Timeout is just like any other win.
     val (winner_new_elo, loser_new_elo) = elo.update_chess_ratings_on_win(winner_old_elo, loser_old_elo);
@@ -124,8 +124,7 @@ function _inner_game_terminate_full_timeout(gme: game,
         .player = winner_p,
         .is_winner = true,
         .is_draw = false, 
-        .is_timeout = true, 
-        .is_error = false, // Timeout isn't considered an error
+        .finish_reason = game_end_type.TIMEOUT,
         .new_elo_rating = winner_new_elo, // The new ELO rating after the game.
         .player_seed = byte_array(''), // Cannot be null, but doesn't matter what it is.
         .opp_name = loser_name,
@@ -140,8 +139,7 @@ function _inner_game_terminate_full_timeout(gme: game,
         .player = loser_p,
         .is_winner = false,
         .is_draw = false, 
-        .is_timeout = true, 
-        .is_error = false, // Timeout isn't considered an error
+        .finish_reason = game_end_type.TIMEOUT,
         .new_elo_rating = loser_new_elo, // The new ELO rating after the game.
         .player_seed = byte_array(''), // Cannot be null, but doesn't matter what it is.
         .opp_name = winner_name,
