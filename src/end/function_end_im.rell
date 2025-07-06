@@ -50,10 +50,11 @@ function team_has_sufficient_mating_material(team: character_team, game_id: inte
     var count = 0;
     
     for (piece in pieces) {
-        when (piece.original_type) { // We care about the ACTIVE type
+        when (piece.active_type) { // We care about the ACTIVE type
             piece_type.QUEEN,
             piece_type.ROOK,
-            piece_type.PAWN, -> return true; // Any of these and there is a chance of mate
+            piece_type.PAWN -> return true; // Any of these and there is a chance of mate
+            piece_type.FROG -> return true; // As long as this is enchanted we don't know if mate is possible or not, so assume it is.
             piece_type.BISHOP -> {
                 if (piece.is_knighted) {
                     return true; // We have a chance
