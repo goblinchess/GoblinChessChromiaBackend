@@ -4,6 +4,7 @@ function move_primary_skip_inner(
     caller_pubkey: pubkey,
     game_id: integer,
     last_seen_turn: integer,
+    m_type: move_type, // If this move is part of a double move or not.
     check_args: move_check_arguments?, 
     end_args: move_end_events_arguments?
 ) {
@@ -112,6 +113,12 @@ function move_primary_skip_inner(
 
         // The "is_check" status of the opponent should be saved.
         game_update_turn_and_check_status(minimal_game, is_check);
+
+        if (m_type == move_type.NORMAL) {
+            // We only add a skipped neutral (filler) move if we don't do double move.
+            val neutral_last_seen_turn = last_seen_turn + 1;
+            move_neutral_skip_inner(caller_pubkey, game_id, neutral_last_seen_turn);
+        }
     }
 
     log("game_id: "+game_id+" - /Skip Move End: new turn type: " + new_turn_type + ", is_game_over: " + is_game_over + ", opp in check: " + is_check );

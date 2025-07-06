@@ -12,6 +12,7 @@
 operation skip_primary_move(
     game_id: integer,
     last_seen_turn: integer, // What turn the client last saw.
+    move_type: move_type, // If this move is part of a double move or not.
 
     // Only if the client wants
     check_args: move_check_arguments? = null,  // Client never HAS to send this, see the type for full discussion
@@ -29,6 +30,7 @@ operation skip_primary_move(
         caller_pubkey,
         game_id,
         last_seen_turn,
+        move_type,
         check_args,
         end_args
     );
@@ -36,6 +38,7 @@ operation skip_primary_move(
 
 
 // ------------------------------------------------------------------
+// TODO: Remove, this is replaced by the "move_type" in the other moves
 // Skip the "neutral" (=extra) move.
 // We usually skip neutral move in but we don't skip it for for double move.
 // For double move this operation should NOT be called, instead make 
@@ -75,7 +78,7 @@ operation skip_neutral_move(
 operation move_peaceful(
     game_id: integer,
     last_seen_turn: integer, // What turn the client last saw.
-    is_double_move: boolean, // If the piece is doing a double move, and this is the second move of the rotation.
+    move_type: move_type, // If this move is part of a double move or not.
 
     m_args: move_arguments,
 
@@ -101,7 +104,7 @@ operation move_peaceful(
         caller_pubkey, 
         game_id,
         last_seen_turn,
-        is_double_move,
+        move_type,
         m_args,
         castle_rook_from,
         castle_rook_to,
@@ -121,7 +124,7 @@ operation move_peaceful(
 operation move_attack(
     game_id: integer,
     last_seen_turn: integer, // What turn the client last saw.
-    is_double_move: boolean, // If the piece is doing a double move, and this is the second move of the rotation.
+    move_type: move_type, // If this move is part of a double move or not.
 
     m_args: move_arguments,
 
@@ -171,7 +174,7 @@ operation move_attack(
         caller_pubkey, 
         game_id,
         last_seen_turn,
-        is_double_move,
+        move_type,
         m_args,
         att_args,
         rnd_numbers,

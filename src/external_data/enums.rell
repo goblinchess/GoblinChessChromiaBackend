@@ -1,0 +1,14 @@
+// Represents game configuration
+enum game_type {
+    SPEED_5_CHAOTIC,
+    SPEED_10_CHAOTIC,
+    SPEED_5_CLASSIC,
+    SPEED_10_CLASSIC
+}
+
+
+enum move_type {
+    NORMAL, // A primary move that's not a double move.
+    DOUBLE_MOVE_FIRST, // The first of two double moves in the rotation.
+    DOUBLE_MOVE_LAST // The second (and last) of two double moves in the rotation.
+}

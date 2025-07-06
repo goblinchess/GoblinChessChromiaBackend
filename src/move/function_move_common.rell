@@ -25,15 +25,17 @@ function move_debug_str(m_args: move_arguments, check_args: move_check_arguments
     return dbg;
 }
 
-function move_common_get_turn_type(is_double_move: boolean, is_white: boolean): turn_type {
+function move_common_get_turn_type(
+    m_type: move_type, 
+    is_white: boolean): turn_type {
     if (is_white) { 
-        if (is_double_move) {
+        if (m_type == move_type.DOUBLE_MOVE_LAST) {
             return turn_type.NEUTRAL_MOVE_1_HIJACKED;
         } else {
             return turn_type.WHITE_MOVE;
         }
     } else {
-        if (is_double_move) {
+        if (m_type == move_type.DOUBLE_MOVE_LAST) {
             return turn_type.NEUTRAL_MOVE_2_HIJACKED;
         } else {
             return turn_type.BLACK_MOVE;

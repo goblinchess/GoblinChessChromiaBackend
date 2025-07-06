@@ -6,7 +6,7 @@ function move_peaceful_inner(
 
     game_id: integer,
     last_seen_turn: integer,
-    is_double_move: boolean, // If the piece is doing a double move, and this is the second move of the rotation.
+    m_type: move_type, // If this move is part of a double move or not.
 
     m_args: move_arguments,
 
@@ -165,7 +165,7 @@ function move_peaceful_inner(
     // ----------------------------------------------    
     // B. Updates 
     // ----------------------------------------------    
-    val new_turn_type = move_common_get_turn_type(is_double_move, minimal_game.is_white);
+    val new_turn_type = move_common_get_turn_type(m_type, minimal_game.is_white);
 
     // ----------------
     // Create the turn record
@@ -228,6 +228,12 @@ function move_peaceful_inner(
 
         // The "is_check" status of the opponent should be saved.
         game_update_turn_and_check_status(minimal_game, is_check);
+        
+        if (m_type == move_type.NORMAL) {
+            // We only add a skipped neutral (filler) move if we don't do double move.
+            val neutral_last_seen_turn = last_seen_turn + 1;
+            move_neutral_skip_inner(caller_pubkey, game_id, neutral_last_seen_turn);
+        }
     }
 
     log("game_id: " + game_id + " - /Move Peaceful End, new turn type: " + new_turn_type + ", piece " + p_dbg + ", flags: " + dbg + 
