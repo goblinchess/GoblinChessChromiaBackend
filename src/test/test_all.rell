@@ -528,7 +528,7 @@ function test_full_game() {
     assert_equals(recent_actions.card_played_data.card_picks[0], a8);
 
     last_seen_turn += 1;
-    var m_type = move_type.NORMAL;
+    var m_type = move_type.NORMAL.name;
 
     // --------------------
     // Failed White moves
@@ -1668,7 +1668,7 @@ function test_full_game() {
         damage_points = 7 
     );
 
-    val THIS_IS_THE_FIRST_DOUBLE_MOVE = move_type.DOUBLE_MOVE_FIRST;
+    val THIS_IS_THE_FIRST_DOUBLE_MOVE = move_type.DOUBLE_MOVE_FIRST.name;
     rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, THIS_IS_THE_FIRST_DOUBLE_MOVE, m_args, att_args, list<rnd_data>())).sign(black_player).run();
     last_seen_turn += 1;
 
@@ -1681,7 +1681,7 @@ function test_full_game() {
         given_is_knighted = false, 
         given_is_enchanted_jumper = false);
 
-    val ACTUALLY_DOUBLE_MOVE = move_type.DOUBLE_MOVE_LAST;
+    val ACTUALLY_DOUBLE_MOVE = move_type.DOUBLE_MOVE_LAST.name;
     rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, ACTUALLY_DOUBLE_MOVE, m_args, null, null)).sign(black_player).run();
     last_seen_turn += 1;
 

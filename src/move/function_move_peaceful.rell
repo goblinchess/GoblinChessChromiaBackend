@@ -6,7 +6,7 @@ function move_peaceful_inner(
 
     game_id: integer,
     last_seen_turn: integer,
-    m_type: move_type, // If this move is part of a double move or not.
+    move_type_str: text, // If this move is part of a double move or not.
 
     m_args: move_arguments,
 
@@ -31,8 +31,11 @@ function move_peaceful_inner(
     }
     val p_dbg = "type: " + m_args.piece_type_str + " (from: " + m_args.from_position + " to: " + m_args.to_position + ")";
 
-    log("game_id: " + game_id + " - Move Peaceful Begin: last_turn: " + last_seen_turn, ", piece " + p_dbg + ", flags: " + dbg );
+    log("game_id: " + game_id + " - Move Peaceful Begin: last_turn: " + last_seen_turn, ", m_type: " + move_type_str + ", piece " + p_dbg + ", flags: " + dbg );
     
+    val m_type_upper = move_type_str.upper_case();
+    val m_type: move_type = move_type.value(m_type_upper);
+
     // ----------------
     // A.1. Check player entity
     // ----------------

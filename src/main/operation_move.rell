@@ -12,7 +12,7 @@
 operation skip_primary_move(
     game_id: integer,
     last_seen_turn: integer, // What turn the client last saw.
-    move_type: move_type, // If this move is part of a double move or not.
+    move_type_str: text, // If this move is part of a double move or not.
 
     // Only if the client wants
     check_args: move_check_arguments? = null,  // Client never HAS to send this, see the type for full discussion
@@ -30,7 +30,7 @@ operation skip_primary_move(
         caller_pubkey,
         game_id,
         last_seen_turn,
-        move_type,
+        move_type_str,
         check_args,
         end_args
     );
@@ -78,7 +78,7 @@ operation skip_neutral_move(
 operation move_peaceful(
     game_id: integer,
     last_seen_turn: integer, // What turn the client last saw.
-    move_type: move_type, // If this move is part of a double move or not.
+    move_type_str: text, // If this move is part of a double move or not.
 
     m_args: move_arguments,
 
@@ -99,12 +99,13 @@ operation move_peaceful(
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
 
+
     // We do it this way so we can test failure cases.
     move_peaceful_inner(
         caller_pubkey, 
         game_id,
         last_seen_turn,
-        move_type,
+        move_type_str,
         m_args,
         castle_rook_from,
         castle_rook_to,
@@ -124,7 +125,7 @@ operation move_peaceful(
 operation move_attack(
     game_id: integer,
     last_seen_turn: integer, // What turn the client last saw.
-    move_type: move_type, // If this move is part of a double move or not.
+    move_type_str: text, // If this move is part of a double move or not.
 
     m_args: move_arguments,
 
@@ -174,7 +175,7 @@ operation move_attack(
         caller_pubkey, 
         game_id,
         last_seen_turn,
-        move_type,
+        move_type_str,
         m_args,
         att_args,
         rnd_numbers,
