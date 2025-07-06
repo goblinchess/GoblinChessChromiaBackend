@@ -33,7 +33,7 @@ query get_opponents_recent_actions (
 ): player_rotation_actions? {
 
     // Get the player's current game
-    val (minimal_game: minimal_game_result?, opp_timeout_data: opponent_timeout_data?) =
+    val (minimal_game: minimal_game_result?, opp_timeout_data: opponent_timeout_data?, g_end_data_org: game_end_data?) =
         minimal_game_and_timeout_data_get_even_if_finished(player_signer, game_id);
     if (minimal_game == null) { 
         log("game_id " + game_id + ", game not found, or not owned by the caller.");
@@ -55,7 +55,12 @@ query get_opponents_recent_actions (
 
     // We won't allow the caller to fetch his own moves this way, too expensive and likely a bug.
     player_rotation_validate_curr_vs_last_seen(game_id, fetching_rotation_nr, minimal_game.curr_rotation_nr);
+
+    var g_end_data: game_end_data? = null;
+    if (g_end_data_org != null and g_end_data_org.is_finished) {
+        g_end_data = g_end_data_org; // Only send this if the game is finished.
+    }
     
     // Get everything that happened since last seen turn
-    return player_rotation_get_all_actions(game_id, fetching_rotation_nr, max_turn_nr_of_the_player_rotation, minimal_game, last_seen_turn, opp_timeout_data, calc_timeout); 
+    return player_rotation_get_all_actions(game_id, fetching_rotation_nr, max_turn_nr_of_the_player_rotation, minimal_game, last_seen_turn, opp_timeout_data, calc_timeout, g_end_data); 
 }

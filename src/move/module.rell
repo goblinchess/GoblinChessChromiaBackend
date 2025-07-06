@@ -3,6 +3,7 @@ import ^.piece_type.*;
 import ^.move_tree.*;
 import ^.move_rule.*;
 import ^.dice.*;
+import ^.end.*;
 import ^.battle.*;
 import ^.external_data.*;
 // Heavy modules

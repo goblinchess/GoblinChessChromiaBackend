@@ -44,15 +44,37 @@ entity game {
 // Why did the game end? 
 // At least according to the player ending the game.
 enum game_end_type {
-    CHECKMATE,
-    STALEMATE, // = Dram
-    MOVE_REPETITION, // = Draw 
-    NO_MATING_MATERIAL, // = Draw 
-    RESIGN,
+    // ------------------------------------------------
+    // Calculated at the end of primary move or double extra move
+    // meaning they (could) be sent with the move operation.
+    // ------------------------------------------------
+    CHECKMATE, // = Win
+    STALEMATE, // = Draw 
+    INSUFFICIENT_MATING_MATERIAL, // = Draw 
+    // ------------------------------------------------
+    // Calculated end of neutral/extra move, and should
+    // never be sent. Only node does this calculation.
+    // ------------------------------------------------
+    MOVE_REPETITION, // = Draw due to 3x repetition. (Calculated end of neutral/extra move.)
+    MOVES_50, // = Draw (50 moves without anyone taking anything or moving a pawn) (Calculated end of neutral/extra move.)
+    // ------------------------------------------------
+    // Client can send these claims anytime.
+    // ------------------------------------------------
+    RESIGNATION,
     TIMEOUT, // Game ended because of a timeout
     ABANDONED, // Much like timeout, but player failed to "check in" on the game.
     ERROR, // A client experienced an error at had to abort (it's always the client that made the error that lost)
     NOTHING // Not ended.
+}
+
+
+// When one user claims to have won, resigned or something.
+// (For draws it doesn't matter who claimed it)
+entity game_over_claim {
+    index game;
+    key player_game;
+    claim_type: game_end_type;
+    created_at: timestamp;
 }
 
 // One for each player in a game 

@@ -18,6 +18,9 @@ function move_debug_str(m_args: move_arguments, check_args: move_check_arguments
         if (check_args.is_stalemate) {
             dbg += "SM ";
         }
+        if (check_args.is_insufficient_mating_material) {
+            dbg += "IM ";
+        }
     }
     return dbg;
 }

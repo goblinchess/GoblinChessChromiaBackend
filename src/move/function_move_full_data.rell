@@ -157,13 +157,14 @@ function move_full_data_inner_get_check_args(e: event?, is_move_a_check: boolean
     
 
     if (e != null) {
-        val (is_final, is_checkmate, is_stalemate) = event_game_end_get_from_event(e);
+        val (is_final, is_checkmate, is_stalemate, is_insufficient_mating_material) = event_game_end_get_from_event(e);
 
         // Final move
         return check_data(
             is_check = is_move_a_check,
             is_checkmate = is_checkmate,
             is_stalemate = is_stalemate,
+            is_insufficient_mating_material = is_insufficient_mating_material
         );
     } else {
         // Not the final move.
@@ -171,6 +172,7 @@ function move_full_data_inner_get_check_args(e: event?, is_move_a_check: boolean
             is_check = is_move_a_check,
             is_checkmate = false, 
             is_stalemate = false, 
+            is_insufficient_mating_material = false
         );
     }
 }

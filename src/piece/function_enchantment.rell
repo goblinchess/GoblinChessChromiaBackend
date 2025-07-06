@@ -36,7 +36,7 @@ function piece_set_stone(pld: piece_living_data): vulnerable {
     alive_move_to_limbo(pld.vuln);
 
     // 2. Create a new obstacle on the original position
-    return alive_obstacle_create(pld.vuln.g, pld.vuln.owned_by, pld.vuln.position);
+    return alive_obstacle_create(pld.vuln.g, pld.vuln.owned_by, pld.vuln.position, true);
 }
 
 // 3. POTION (cannot be removed)

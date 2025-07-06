@@ -69,6 +69,12 @@ struct player_rotation_actions {
     // ----------------------
     // Only filled with data if the [calc_timeout] flag is set to "true".
     timeout_data: timeout_data? = null;
+
+    // ----------------------
+    // 7. Game end info
+    // ----------------------
+    // Only filled with data if the [curr_turn_nr] indicates that the game has ended.
+    game_end_data: game_end_data? = null;
 }
 
 

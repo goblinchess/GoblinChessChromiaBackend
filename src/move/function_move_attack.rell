@@ -276,8 +276,16 @@ function move_attack_inner(
     // ----------------
     // 5. Check/stale/mate
     // ----------------
-    // B.5 Verify if we just won via checkmate?
+    // B.5.a Verify if we just won via checkmate?
     val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_align, opp_king, our_team, opp_team, check_args);
+
+    // B.5.b Verify our attack generated a draw?
+    var is_insufficient_mating_material = false;
+    if (not is_checkmate and not is_stalemate) { // No point checking this if game is over.
+        is_insufficient_mating_material = end_calc_insufficient_mating_material(game_id, minimal_game, our_team, opp_team, check_args);
+    } else if (check_args != null) {
+        require(not check_args.is_insufficient_mating_material, "Cannot have both checkmate/stalemate and insufficient mating material");
+    }
 
     // B.6 Turn and static move
     val is_castle = false; // Must be false for attacks
@@ -340,7 +348,7 @@ function move_attack_inner(
     // ----------------
     // B.8 Is it over?
     // ----------------
-    val is_game_over = game_over(minimal_game, new_turn, is_checkmate, is_stalemate);
+    val is_game_over = game_over(minimal_game, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material);
     if (not is_game_over) {
         // Usually we don't set "time_left" during regular moves, but there is one case where we must make an exception:
         if (turn_is_last_double_move(new_turn_type)) {

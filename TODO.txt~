@@ -1,31 +1,8 @@
+Finish IM calc, on frontend too.
 
-Bug in double move.
-
-Tested
-        TURN_TO_STONE,  
-
-        //--  Enchant change--
-        POTION, 
-        KNIGHTED,  // Promote with new movements
-
-        //--  This-turn-only change--
-        SWITCH_PLACE, // Same as "Fly". Could perhaps be solved by two smoke clouds?
-        FROG, 
-
-        //--  Immediate Spell effecting the entire board --
-        WALL, // TODO: Remove "summon" 
-        PORTAL,
-
-        //--  Delayed Spell --
-        RESURRECT, // Resurrect next killed Enemy 
-        JUMP, 
-Not tested:
-        DOUBLE_MOVE,
 
 TODO: Remove the damage from history in classical mode.
 TODO: Should we remove the option of attacking obstacles in classical mode (we don't allow anyone to survive).
-
-TODO: Sholud show the opponents spell in the top corner, like in Local.
 
 TODO: Draw the game on 1) repetition 2) lack of mating material.
 
@@ -64,6 +41,9 @@ Client Done:
 
 
 Node DONE:
+
+1. Adding IM as check_data flag. 2. Calculate IM after a successful attack. 3. Returning a new game_end_data struct when
+fetching the opp rotation. 
 
  Videos
 -------------

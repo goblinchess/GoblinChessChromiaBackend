@@ -1,0 +1,81 @@
+// Figure out if opponent (or any player really)
+// has insufficient mating material.
+function end_calc_insufficient_mating_material(
+    game_id: integer, 
+    minimal_game: minimal_game_result, 
+    our_team: character_team,
+    opp_team: character_team,
+    move_check_arguments: move_check_arguments?
+    ): boolean
+{
+    
+    val our_sufficient = team_has_sufficient_mating_material(our_team, game_id);
+    val opp_sufficient = team_has_sufficient_mating_material(opp_team, game_id);
+
+    // Any team has sufficient mating material, the game can go on
+    val sufficinet = our_sufficient or opp_sufficient;
+    val is_maybe_insufficient_mating_material = not sufficinet;
+    var is_insufficient_mating_material = false;
+    
+    if (is_maybe_insufficient_mating_material) {
+        log("game_id: " + game_id + " - Maybe insufficient mating material detected. Our sufficient: " + our_sufficient + ", Opp sufficient: " + opp_sufficient);
+
+        // We might have a piece temporarily turned into stone. 
+        // We want to wait until it is back before we take decision.
+        // This check is expensive, so we do it last!
+        val res: list<vulnerable> = (v: vulnerable)@* { v.game == minimal_game.game and v.is_obstacle and v.is_obstacle_enchanted_piece };
+        if (res.size() > 0) {
+            log("game_id: " + game_id + " - Found " + res.size() + " enchanted pieces that are obstacles, so we can't be sure if the game is insufficient mating material.");
+        } else {
+            is_insufficient_mating_material = true;
+        }
+    }
+    
+    // Validate client's calculation if provided
+    if (move_check_arguments != null) {
+        if (is_insufficient_mating_material) {
+            require(move_check_arguments.is_insufficient_mating_material, "Client said is_insufficient_mating_material = false, but both teams have insufficient mating material");
+        } else {
+            require(not move_check_arguments.is_insufficient_mating_material, "Client said is_insufficient_mating_material = true, but at least one team has sufficient mating material");
+        }
+    }
+    
+    return is_insufficient_mating_material;
+}
+
+// Returns "true" if a team has sufficient mating material.
+function team_has_sufficient_mating_material(team: character_team, game_id: integer): boolean {
+    val pieces = team_get_list(team);
+    
+    var count = 0;
+    
+    for (piece in pieces) {
+        when (piece.original_type) { // We care about the ACTIVE type
+            piece_type.QUEEN,
+            piece_type.ROOK,
+            piece_type.PAWN, -> return true; // Any of these and there is a chance of mate
+            piece_type.BISHOP -> {
+                if (piece.is_knighted) {
+                    return true; // We have a chance
+                }
+                count++;
+            } 
+            piece_type.KNIGHT -> 
+            {
+                if (piece.is_knighted) {
+                    return true; // We have a chance
+                }
+                count++;
+            } 
+            piece_type.KING -> 
+            { 
+                // We always have a king, so this has no influence
+            }
+            else -> {
+                log("game_id: " + game_id + " - team_has_sufficient_mating_material() - ERROR: Unknown piece type: " + piece.original_type);
+            }
+        }
+    }
+
+    return count > 1; // With more than just one knight or one bishop there is still a chance.
+}

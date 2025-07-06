@@ -49,20 +49,19 @@ entity event {
 // (even if the move is skipped!).
 //
 // How can this happen? 
-// 1. In a "normal" game, a move results in a stale/mate.
+// 1. In a "normal" game, a move results in a stale/mate/im.
 //    (This is during the move turn).
 //    
-// 2. In GoblinChess, a card played can result in a skipped move, 
-//    and this skipped move results in a stale/mate, ending the game.
+// 2. In GoblinChess, a card played can result in a skipped primary move, 
+//    and this skipped move results in a stale/mate/im, ending the game.
 //    The end is ALSO during the skipped-move-turn, not the card-turn.
 //    But, this is why we cannot tie this entity to a "move", since there
 //    is no move entity in this case.
 //
-// 3. A player times out, and loses this way.
-//    Note that a timeout is a bit different, it doesn't 
-//    generate a new "turn" per se, but goes to the game and ends it.
-//    This is a bit strange, since we need someone to try to make a move 
-//    on the game to actually time it out.
+// However 
+//    If a player times out (and loses this way) it is a bit different, 
+//    it doesn't generate a new "turn" per se, but goes to the game and ends it.
+//    There are other ways to end the game too, that won't have this event.
 //
 // Note: we also have roughly the same end data on the [player_game_stats] entity,
 // but we use this as a first step before finally shutting down the game.
@@ -73,6 +72,7 @@ entity game_end_event {
     key event;
     is_checkmate: boolean;
     is_stalemate: boolean;
+    is_insufficient_mating_material: boolean;
     // is_timeout: boolean; // We cannot put the timeout here, since a timeout doesn't generate a new turn.
     // is_error: boolean; // We cannot put error here, since we might not know if we have an error at this point?
 }

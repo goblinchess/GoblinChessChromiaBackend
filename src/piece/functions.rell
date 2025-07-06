@@ -201,6 +201,7 @@ function piece_create_full(g: game, owner: player_game, pos: integer, align: ali
     val v = create vulnerable (
         .game = g,
         .is_obstacle = false,
+        .is_obstacle_enchanted_piece = false,
         .can_retaliate = can_retaliate,
         .color = align,
         .start_hit_points = hp,

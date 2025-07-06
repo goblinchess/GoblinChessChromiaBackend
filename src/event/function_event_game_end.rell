@@ -4,21 +4,23 @@
 // Inspectors
 // ----------------------------------
 
-function event_game_end_get_from_event(e: event): (is_final: boolean, is_checkmate: boolean, is_stalemate: boolean) {
+function event_game_end_get_from_event(e: event): (is_final: boolean, is_checkmate: boolean, is_stalemate: boolean, is_insufficient_mating_material: boolean) {
 
-    val x = (gee: game_end_event) @? {gee.event == e} (gee.is_checkmate, gee.is_stalemate);
+    val x = (gee: game_end_event) @? {gee.event == e} (gee.is_checkmate, gee.is_stalemate, gee.is_insufficient_mating_material);
 
     if (x == null) {
         return (
             is_final = false, 
             is_checkmate = false, // Doesn't matter
-            is_stalemate = false // Doesn't matter
+            is_stalemate = false, // Doesn't matter
+            is_insufficient_mating_material = false // Doesn't matter
             );
     } else {
         return (
             is_final = true,
             is_checkmate = x.is_checkmate, 
-            is_stalemate = x.is_stalemate
+            is_stalemate = x.is_stalemate,
+            is_insufficient_mating_material = x.is_insufficient_mating_material
             );
     }
 
@@ -28,9 +30,18 @@ function event_game_end_get_from_event(e: event): (is_final: boolean, is_checkma
 // Constructors
 // ----------------------------------
 
-function event_game_end_create(game, turn, is_checkmate: boolean, is_stalemate: boolean) {
+function event_game_end_create(game, turn, is_checkmate: boolean, is_stalemate: boolean, is_im: boolean) {
 
-    require(is_checkmate or is_stalemate, "Cannot have both or neither");
+    require(is_checkmate or is_stalemate or is_im, "At least one of the end conditions must be true");
+    if (is_checkmate) {
+        require(not is_stalemate and not is_im, "Cannot have both checkmate and other end conditions");
+    }
+    if (is_stalemate) {
+        require(not is_checkmate and not is_stalemate, "Cannot have both insufficient mating material and other end conditions");
+    }
+    if (is_im) {
+        require(not is_checkmate and not is_im, "Cannot have both stalemate and other end conditions");
+    }
 
     // New event
     val new_event = turn_create_event(game, turn, event_type.GAME_END_EVENT);
@@ -39,7 +50,8 @@ function event_game_end_create(game, turn, is_checkmate: boolean, is_stalemate: 
     create game_end_event(
         .event = new_event,
         .is_checkmate = is_checkmate,
-        .is_stalemate = is_stalemate
+        .is_stalemate = is_stalemate,
+        .is_insufficient_mating_material = is_im
     );
 }
 

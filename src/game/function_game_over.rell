@@ -16,18 +16,24 @@
 // so if the opponent challenges this result with a "timeout" claim, the winner might be switched. 
 // => All we know at this point is that the game is over.
 // -------------------------------------
-function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkmate: boolean, is_stalemate: boolean) :boolean {
-    if (is_checkmate or is_stalemate) {
+function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkmate: boolean, is_stalemate: boolean, is_insufficient_mating_material: boolean) :boolean {
+    if (is_checkmate or is_stalemate or is_insufficient_mating_material) {
         log("game_id: " + minimal_game.game_id + " - Game Over");
         if (is_checkmate) {
             _inner_game_end_checkmate(minimal_game.game, new_turn.number, minimal_game.player_game);
-            game_update_time_left(minimal_game);
-        } else {
+        } else if (is_stalemate) {
             // Stalemate
-            _inner_game_end_stalemate(minimal_game.game, new_turn.number, minimal_game.player_game);
-            game_update_time_left(minimal_game);
+            _inner_game_end_stalemate(minimal_game.game, new_turn.number);
+        } else {
+            // Insufficient mating material
+            _inner_game_end_insufficient_mating_material(minimal_game.game, new_turn.number);
         }
 
+        // Why bother? B/c the winning player might be out of time already.
+        game_update_time_left(minimal_game);
+
+        // Create the "game end" event (tied to this turn)
+        event_game_end_create(minimal_game.game, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material);
         return true;
     } else {
         return false;
@@ -36,13 +42,23 @@ function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkma
 
 // We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
 function _inner_game_end_checkmate(gme: game, curr_turn_nr: integer, winner_pg: player_game) {
+    create game_over_claim (
+        .game = gme,
+        .player_game = winner_pg,
+        .claim_type = game_end_type.CHECKMATE,
+        .created_at = op_context.last_block_time
+    );
     update gme (.current_turn_nr = curr_turn_nr, .is_finished = true, .finish_reason = game_end_type.CHECKMATE);
-
 }
 
 // We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
-function _inner_game_end_stalemate(gme: game, curr_turn_nr: integer, winner_pg: player_game) {
+function _inner_game_end_stalemate(gme: game, curr_turn_nr: integer) {
     update gme (.current_turn_nr = curr_turn_nr, .is_finished = true, .finish_reason = game_end_type.STALEMATE);
+}
+
+// We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
+function _inner_game_end_insufficient_mating_material(gme: game, curr_turn_nr: integer) {
+    update gme (.current_turn_nr = curr_turn_nr, .is_finished = true, .finish_reason = game_end_type.INSUFFICIENT_MATING_MATERIAL);
 }
 
 // -------------------------------------
@@ -63,7 +79,7 @@ function game_over_resign(caller_pubkey: pubkey, game_id: integer) {
     // We don't care if the game is out of sync, since we might be doing this during the opponent's rotation anyways.
     val curr_turn = minimal_game.curr_turn_nr;
 
-    update minimal_game.game (.is_finished = true, .finish_reason = game_end_type.RESIGN);
+    update minimal_game.game (.is_finished = true, .finish_reason = game_end_type.RESIGNATION);
 
     // TODO: We should create a game_end_event, but shouldn't that hang on the "rotation" (not on the "turn")
 }

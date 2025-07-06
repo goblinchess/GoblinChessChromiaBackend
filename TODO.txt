@@ -1,9 +1,8 @@
+Finish IM calc, on frontend too.
 
 
 TODO: Remove the damage from history in classical mode.
 TODO: Should we remove the option of attacking obstacles in classical mode (we don't allow anyone to survive).
-
-TODO: Sholud show the opponents spell in the top corner, like in Local.
 
 TODO: Draw the game on 1) repetition 2) lack of mating material.
 
@@ -42,6 +41,8 @@ Client Done:
 
 
 Node DONE:
+
+ 
 
  Videos
 -------------

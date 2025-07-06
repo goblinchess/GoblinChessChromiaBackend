@@ -18,6 +18,7 @@ entity vulnerable {
     //start_position: integer; // 0-63 - This is needed since we put dead pieces on "-start_position"
 
     is_obstacle: boolean; // If true, this vulnerable is an obstacle
+    is_obstacle_enchanted_piece: boolean; // If true, this obstacle is an enchanted piece (no meaning for a non-obstacle)
     can_retaliate: boolean; // If true, this vulnerable can retaliate during chaos mode.
 
     mutable color: alignment; // This can change via recruitment or resurrect 

@@ -1,8 +1,9 @@
 
 struct check_data {
     is_check: boolean; // True if this is a check
-    is_checkmate: boolean; // True if this is a checkmate
-    is_stalemate: boolean; // True if this is a stalemate
+    is_checkmate: boolean; // True if this move was a checkmate
+    is_stalemate: boolean; // True if this move was a stalemate
+    is_insufficient_mating_material: boolean; // True if this move caused insufficient mating material
 }
 
 struct card_played_data {
@@ -46,4 +47,12 @@ struct timeout_data {
     curr_time_ms: integer; // The time the node sees
     last_player_rotation_at: timestamp; // When the last player rotation was
     game_started_at: timestamp; // When the game was started
+}
+
+
+// Holding general game end info, specifically why the game ended.
+struct game_end_data {
+    is_finished: boolean; // True if this game is "finished", first step in ending the game. 
+    is_terminated: boolean; // True if this game is "terminated", everything has been validated.
+    finish_reason: text; // Reason for ending the game.
 }

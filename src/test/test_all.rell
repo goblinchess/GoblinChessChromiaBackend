@@ -560,7 +560,8 @@ function test_full_game() {
     var check_args = move_check_arguments(
         is_check = false, 
         is_checkmate = false, 
-        is_stalemate = false);
+        is_stalemate = false,
+        is_insufficient_mating_material = false);
 
     var failed_move = assert_fails(move_peaceful_inner(white_player.pub, the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args,
         * // Note, this star is what makes it work.
@@ -983,7 +984,8 @@ function test_full_game() {
     check_args = move_check_arguments(
         is_check = false,
         is_checkmate = false,
-        is_stalemate = false
+        is_stalemate = false,
+        is_insufficient_mating_material = false
     );
     rell.test.tx(skip_primary_move(the_game.game_rowid, last_seen_turn, check_args, end_args)).sign(white_player).run();
     last_seen_turn += 1;
@@ -1574,7 +1576,8 @@ function test_full_game() {
     check_args = move_check_arguments(
         is_check = false,
         is_checkmate = false,
-        is_stalemate = false
+        is_stalemate = false,
+        is_insufficient_mating_material = false
     );
     rell.test.tx(skip_primary_move(the_game.game_rowid, last_seen_turn, check_args, end_args)).sign(black_player).run();
     last_seen_turn += 1;
@@ -1625,7 +1628,8 @@ function test_full_game() {
     check_args = move_check_arguments(
         is_check = true,
         is_checkmate = false,
-        is_stalemate = false
+        is_stalemate = false,
+        is_insufficient_mating_material = false
     );
 
     rell.test.tx(move_attack(the_game.game_rowid, last_seen_turn, is_double_move, m_args, att_args, list<rnd_data>(), check_args)).sign(white_player).run();
@@ -1781,7 +1785,8 @@ function test_full_game() {
     check_args = move_check_arguments(
         is_check = true, // Queen at c2 becomes KNIGHTED! 
         is_checkmate = false, // <-- Not mate since KNIGHTED pawn at a1 can take.
-        is_stalemate = false
+        is_stalemate = false,
+        is_insufficient_mating_material = false
     );
 
     rell.test.tx(move_peaceful(the_game.game_rowid, last_seen_turn, is_double_move, m_args, null, null, check_args)).sign(black_player).run();
