@@ -8,7 +8,7 @@
 // Some cards need many square picks, some need none.
 entity card_pick {
     picked_square: integer; // Could be a piece or an empty square (file + 8 * rank). Example: 9 => b2  
-    index card: card;
+    index card;
     order_number: integer; // The order number of the pick
     is_piece: boolean;  // Most picks are pieces, but some picks are empty squares.
     key card, order_number; // Cannot pick the same square twice

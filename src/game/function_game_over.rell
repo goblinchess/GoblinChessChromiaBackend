@@ -11,32 +11,102 @@
 // -------------------------------------
 
 // -------------------------------------
-// 1. This will "end" the game (we don't know who won until we verify the random numbers),
-// 2. Remember that this player might deliver the mate AFTER timeout has occurred,
+// This move will "end" the game, but there are many ways this can turn out.
+// We don't know who won until we verify the random numbers. Here we will verify the 
+// the seed of the "claiming player". 
+//   A) Seed Verification Success
+//      What we do here is to create a "claim" on the result we're suggesting.
+//      But many things can happen still:
+//      A.1) If Checkmate, we give full points to the claiming player. The claiming player will 
+//           keep the points UNLESS this is a timeout. If opponent claims timeout the claiming player 
+//           will instead lose.
+//      A.2) If Draw, the we give the claiming FULL(!) points!
+//           Only when the opponent send their seed the points will be divided between the players.
+//           The timeout will agin cause the claiming player to lose.
+//   B) Seed Verification Failure
+//      It's pretty simple, for all situations the claiming player will lose the game. 
+// 
+// Note on 
+// Remember that this player might deliver the mate AFTER timeout has occurred,
 // so if the opponent challenges this result with a "timeout" claim, the winner might be switched. 
 // => All we know at this point is that the game is over.
 // -------------------------------------
-function game_over(minimal_game: minimal_game_result, new_turn: turn, is_checkmate: boolean, is_stalemate: boolean, is_insufficient_mating_material: boolean) :boolean {
+function game_over_move_claim(
+    minimal_game: minimal_game_result, 
+    new_turn: turn, 
+    is_checkmate: boolean, 
+    is_stalemate: boolean, 
+    is_insufficient_mating_material: boolean,
+    random_seed: integer?
+) :boolean {
     if (is_checkmate or is_stalemate or is_insufficient_mating_material) {
+        // This move ended the game
+
+        // ------------------------------------------- 
+        // 1. Update [game] to "finished"
+        // ------------------------------------------- 
         log("game_id: " + minimal_game.game_id + " - Game Over");
+        var end_reason = game_end_type.NOTHING;
         if (is_checkmate) {
             _inner_game_end_checkmate(minimal_game.game, new_turn.number, minimal_game.player_game);
+            end_reason = game_end_type.CHECKMATE;
         } else if (is_stalemate) {
             // Stalemate
             _inner_game_end_stalemate(minimal_game.game, new_turn.number);
+            end_reason = game_end_type.STALEMATE;
         } else {
             // Insufficient mating material
             _inner_game_end_insufficient_mating_material(minimal_game.game, new_turn.number);
+            end_reason = game_end_type.INSUFFICIENT_MATING_MATERIAL;
         }
 
+        // ------------------------------------------- 
+        // 2. Update the time left
+        // ------------------------------------------- 
         // Why bother? B/c the winning player might be out of time already.
         game_update_time_left(minimal_game);
 
-        // Create the "game end" event (tied to this turn)
+        // ------------------------------------------- 
+        // 3. Create the "game end" event (tied to this turn)
+        // ------------------------------------------- 
         event_game_end_create(minimal_game.game, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material);
+
+        // ------------------------------------------- 
+        // 4. Verify seed. The status of the verification will be saved to the [game]
+        // ------------------------------------------- 
+        // Some client doesn't calculate mate and won't know the the game is over. 
+        // These client will send the seed at some later point.
+        if (random_seed != null) { 
+            // We don't use "require()" on this, since we want to save 
+            // the seed even if it's wrong. This means that the client wont
+            // get any feedback if the wrong seed was sent.
+            val x = rnd_validation_of_player(
+                game_id = minimal_game.game_id,
+                g_type = minimal_game.game_type,
+                g = minimal_game.game,
+                pg = minimal_game.player_game,
+                org_seed = random_seed
+            );
+
+
+            // This doesn't happen often, so we can afford it
+            val maximal_game = maximal_game_get_via_pg(minimal_game.player_game);
+
+            // Note: it doesn't matter if the player claims draw or win,
+            // we'll set them as a winner since we AT LEAST know the 
+            // random seed was valid.
+            if (x == null) {
+                // Success
+                game_stats_set_me_as_winner(maximal_game!!, end_reason);
+            } else {
+                // Error
+                game_stats_set_opp_as_winner(maximal_game!!, end_reason);
+            }
+        }
+
         return true;
     } else {
-        return false;
+        return false; // This move didn't end the game.
     }
 }
 
@@ -84,82 +154,4 @@ function game_over_resign(caller_pubkey: pubkey, game_id: integer) {
     // TODO: We should create a game_end_event, but shouldn't that hang on the "rotation" (not on the "turn")
 }
 
-// -------------------------------------
-// Terminate the game
-// -------------------------------------
 
-// Opponent timeout
-function _inner_game_terminate_full_timeout_opponent(maximal_game: maximal_game_result) {
-    _inner_game_terminate_full_timeout(maximal_game.game, 
-        maximal_game.my_p, maximal_game.opp_p,
-        maximal_game.my_pg, maximal_game.opp_pg,
-        maximal_game.my_name, maximal_game.opp_name,
-        maximal_game.my_elo, maximal_game.opp_elo
-    );
-}
-
-// My timeout
-function _inner_game_terminate_full_timeout_self(maximal_game: maximal_game_result) {
-    _inner_game_terminate_full_timeout(maximal_game.game, 
-        maximal_game.opp_p, maximal_game.my_p, 
-        maximal_game.opp_pg, maximal_game.my_pg, 
-        maximal_game.opp_name, maximal_game.my_name, 
-        maximal_game.opp_elo, maximal_game.my_elo
-    );
-}
-
-// -------------------------------------
-// FULL terminate the game as a timeout WITHOUT any timeout checks.
-//
-// We will never get a chance to validate the random numbers,
-// so we can go ahead and create the [player_game_stats] record
-// immediately, but with empty [player_seed].
-// -------------------------------------
-function _inner_game_terminate_full_timeout(gme: game, 
-    winner_p: player, loser_p: player, 
-    winner_pg: player_game, loser_pg: player_game, 
-    winner_name: text, loser_name: text, 
-    winner_old_elo: integer, loser_old_elo: integer
-) {
-
-    update gme (.is_finished = true, .finish_reason = game_end_type.TIMEOUT, .is_terminated = true);
-
-    // Timeout is just like any other win.
-    val (winner_new_elo, loser_new_elo) = elo.update_chess_ratings_on_win(winner_old_elo, loser_old_elo);
-
-    // Update player statistics
-    update winner_p (.games_won += 1, .games_played += 1);
-    update loser_p (.games_lost += 1, .games_played += 1);
-
-    val created_time = op_context.last_block_time;
-
-    // Create Winner's stats
-    create player_game_stats (
-        .player_game = winner_pg,
-        .game = gme,
-        .player = winner_p,
-        .is_winner = true,
-        .is_draw = false, 
-        .finish_reason = game_end_type.TIMEOUT,
-        .new_elo_rating = winner_new_elo, // The new ELO rating after the game.
-        .player_seed = byte_array(''), // Cannot be null, but doesn't matter what it is.
-        .opp_name = loser_name,
-        .opp_elo = loser_old_elo, // Here it only matters what the opponent's ELO was when the game started
-        .created_at = created_time
-    );
-
-    // Create Loser's stats
-    create player_game_stats (
-        .player_game = loser_pg,
-        .game = gme,
-        .player = loser_p,
-        .is_winner = false,
-        .is_draw = false, 
-        .finish_reason = game_end_type.TIMEOUT,
-        .new_elo_rating = loser_new_elo, // The new ELO rating after the game.
-        .player_seed = byte_array(''), // Cannot be null, but doesn't matter what it is.
-        .opp_name = winner_name,
-        .opp_elo = winner_old_elo, // Here it only matters what the opponent's ELO was when the game started
-        .created_at = created_time
-    );
-}

@@ -29,23 +29,27 @@ struct maximal_game_result {
     opp_p: player;
     opp_pg: player_game;
     game;
-    turn;
-    turn_owner: player_game; // The player who currently owns the turn.
+
     // Data
     game_id: integer; // The game's rowid.
     game_type;
-    curr_turn_nr: integer; // We always check this, so best to store it.
     in_check: boolean; // Our king is in check.
     is_white: boolean; // True if this player is white.
-    // Timestamps
-    last_player_rotation_at: timestamp; // When the last "move" was finished. 
-    game_created_at: timestamp; // When the game was created.
-    total_time_left_since_player_rotation_ms: integer; // Total time left for this player
     // Extra
     my_name: text;
     opp_name: text;
     my_elo: integer;
     opp_elo: integer;
+}
+
+struct game_time_result {
+    turn;
+    rotation_owner: player_game; // The player who currently holds the "rotation" Needed for timeout calc.
+    // Timestamps
+    curr_turn_nr: integer; // Taken from the [game]
+    last_player_rotation_at: timestamp; // When the last "move" was finished. 
+    game_created_at: timestamp; // When the game was created.
+    total_time_left_since_player_rotation_ms: integer; // Total time left for this player
 }
 
 

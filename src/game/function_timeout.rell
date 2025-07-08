@@ -155,19 +155,24 @@ function game_timeout_build_timeout_data(
 //     won't lose rating. This could lead to a majority of games being aborted early on, so we don't allow it.
 // -------------------------------------
 
-function game_timeout_any_player_if_possible(maximal_game: maximal_game_result, opp_timeout_data: opponent_timeout_data): boolean {
+function game_timeout_any_player_if_possible(maximal_game: maximal_game_result, game_time: game_time_result, opp_timeout_data: opponent_timeout_data): boolean {
 
     var am_i_winner = game_timeout_did_i_make_the_last_move(
-            maximal_game.curr_turn_nr, 
+            game_time.curr_turn_nr, 
             maximal_game.is_white,
             maximal_game.my_p, 
             maximal_game.my_pg, 
-            maximal_game.turn_owner);
+            game_time.rotation_owner);
 
     if (am_i_winner) {
             if (game_timeout_inactive_calc(op_context.last_block_time, opp_timeout_data.opp_last_heartbeat)) {
-                // Opponent is inactive, and we are the winner, so we terminate the game fully.
-                _inner_game_terminate_full_timeout_opponent(maximal_game);
+
+                // Note: we're not counting up the seed_count since no player can provide 
+                // a seed (probably abandoned by both).
+                update maximal_game.game (.is_finished = true, .finish_reason = game_end_type.TIMEOUT);
+
+                // Opponent is inactive, and we are the winner.
+                game_stats_set_me_as_winner(maximal_game, game_end_type.TIMEOUT);
                 return true;
             } else {
                 return false; // Opponent is active, must abort everything.
@@ -182,7 +187,13 @@ function game_timeout_any_player_if_possible(maximal_game: maximal_game_result, 
             // would not trigger any action that's bad for them.
             // But here we must assume that the player simply wants to play,
             // EVEN if (s)he will lose rating on this old one (which we cannot return to).
-            _inner_game_terminate_full_timeout_self(maximal_game);
+
+
+            // Note: we're not counting up the seed_count since no player can provide 
+            // a seed (probably abandoned by both).
+            update maximal_game.game (.is_finished = true, .finish_reason = game_end_type.TIMEOUT);
+
+            game_stats_set_opp_as_winner(maximal_game, game_end_type.TIMEOUT);
             return true;
         }
 

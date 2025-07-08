@@ -1,4 +1,4 @@
-Finish IM calc, on frontend too.
+Finish with checkmate via WALL and knight.
 
 
 TODO: Remove the damage from history in classical mode.
@@ -42,8 +42,7 @@ Client Done:
 
 Node DONE:
 
-1. Adding IM as check_data flag. 2. Calculate IM after a successful attack. 3. Returning a new game_end_data struct when
-fetching the opp rotation. 
+ 
 
  Videos
 -------------

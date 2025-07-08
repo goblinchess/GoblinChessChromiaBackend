@@ -1,3 +1,57 @@
+
+// -------------------------------------
+// Resturns the [maximal_game_result] for the given game.
+// (Game doesn't have to be ongoing)
+// -------------------------------------
+function maximal_game_get_via_pg(this_player: player_game) :maximal_game_result? {
+
+    val res = (p_my: player, pg_my: player_game, g: game, pg_opp: player_game, p_opp: player)@? {
+        pg_my == this_player, // This is how we find everything
+        pg_my.player == p_my,
+        pg_my.game == g,
+        g == pg_opp.game,
+        pg_opp.is_white != pg_my.is_white, // Only one is white
+        pg_opp.player == p_opp
+    } (gme = g, 
+        my_p = p_my, opp_p = p_opp,  // Player
+        my_pg = pg_my, opp_pg = pg_opp,  // P.G.
+        my_name = p_my.name, opp_name = p_opp.name, // Names
+        my_elo = p_my.elo_rating, opp_elo = p_opp.elo_rating, // ELO
+        g_id = g.rowid.to_integer(), game_type = g.game_type,  is_white = pg_my.is_white, in_check = pg_my.in_check, black_player = g.black_player // General
+        );
+
+
+    if (res != null) {
+
+        // Build the maximal game result
+        return maximal_game_result(
+            // Primary keys
+            my_p = res.my_p,
+            my_pg = res.my_pg,
+            opp_p = res.opp_p,
+            opp_pg = res.opp_pg,
+            game = res.gme,
+            // Data
+            game_id = res.g_id,
+            game_type = res.game_type,
+            in_check = res.in_check,
+            is_white =res.is_white,
+            // Extra
+            my_name = res.my_name,
+            opp_name = res.opp_name,
+            my_elo = res.my_elo,
+            opp_elo = res.opp_elo
+        );
+
+    } else {
+        return null; // This is an error, don't bother timeout data.
+    }
+}
+
+
+
+
+
 // -------------------------------------
 // A more complex version of the above function.
 // Will find various data:
@@ -9,7 +63,7 @@
 // -------------------------------------
 function maximal_game_and_timeout_data_get(
     player_pubkey: pubkey,
-) :(maximal_game_result?, opponent_timeout_data?) {
+) :(maximal_game_result?, game_time_result?, opponent_timeout_data?) {
 
    val res = (p_my: player, pg_my: player_game, g: game, pg_opp: player_game, p_opp: player, ct: current_turn, t: turn, rot: player_rotation)@? {
         p_my.signer == player_pubkey,
@@ -30,7 +84,7 @@ function maximal_game_and_timeout_data_get(
         my_elo = p_my.elo_rating, opp_elo = p_opp.elo_rating, // ELO
         cr_at = g.last_player_rotation_at, game_created_at = g.created_at, opp_last_heartbeat = pg_opp.last_heartbeat, // Timeout
         my_time_left_ms = pg_my.total_time_left, opp_time_left_ms = pg_opp.total_time_left, // Total time left
-        turn_owner = rot.created_by, curr_turn_nr = g.current_turn_nr, turn_nr = t.number, // Turn data
+        rot_owner = rot.created_by, curr_turn_nr = g.current_turn_nr, turn_nr = t.number, // Turn data
         g_id = g.rowid.to_integer(), game_type = g.game_type,  is_white = pg_my.is_white, in_check = pg_my.in_check, black_player = g.black_player // General
         );
 
@@ -48,18 +102,11 @@ function maximal_game_and_timeout_data_get(
             opp_p = res.opp_p,
             opp_pg = res.opp_pg,
             game = res.gme,
-            turn = res.trn,
-            turn_owner = res.turn_owner,
             // Data
             game_id = res.g_id,
             game_type = res.game_type,
-            curr_turn_nr = res.curr_turn_nr,
             in_check = res.in_check,
             is_white =res.is_white,
-            // Timestamps
-            last_player_rotation_at = res.cr_at,
-            game_created_at = res.game_created_at,
-            total_time_left_since_player_rotation_ms = res.my_time_left_ms,
             // Extra
             my_name = res.my_name,
             opp_name = res.opp_name,
@@ -67,15 +114,26 @@ function maximal_game_and_timeout_data_get(
             opp_elo = res.opp_elo
         );
 
+        val game_time = game_time_result(
+            turn = res.trn,
+            rotation_owner = res.rot_owner,
+            // Timestamps
+            curr_turn_nr = res.curr_turn_nr,
+            last_player_rotation_at = res.cr_at,
+            game_created_at = res.game_created_at,
+            total_time_left_since_player_rotation_ms = res.my_time_left_ms,
+        );
+    
+
         // Build the timeout data
         val opp_timeout_data = opponent_timeout_data(
             opp_last_heartbeat = res.opp_last_heartbeat, 
             last_player_rotation_at = res.cr_at,
             opp_tot_time_left_since_player_rotation_ms = res.opp_time_left_ms
         );
-        return (maximal_game, opp_timeout_data);
+        return (maximal_game, game_time, opp_timeout_data);
     } else {
-        return (null, null); // This is an error, don't bother timeout data.
+        return (null, null, null); // This is an error, don't bother timeout data.
     }
 }
 

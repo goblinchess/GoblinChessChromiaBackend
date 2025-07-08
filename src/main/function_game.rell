@@ -21,10 +21,10 @@ function game_create_via_lobby_inner(opponent_player: player, game_type_str_raw:
     require(existing_lobby != null, "Opponent is not in the lobby");
     
     // Just before creating the game, we terminate any running games 
-    val (maximal_game, opp_timeout_data) = maximal_game_and_timeout_data_get(caller_player.signer);
+    val (maximal_game, game_time, opp_timeout_data) = maximal_game_and_timeout_data_get(caller_player.signer);
     if (maximal_game != null) {
         // We have an ongoing game, so we must try to terminate it.
-        val can_go_on = game_timeout_any_player_if_possible(maximal_game, opp_timeout_data!!);
+        val can_go_on = game_timeout_any_player_if_possible(maximal_game, game_time!!, opp_timeout_data!!);
         require(can_go_on, "Cannot create game, since you are in an existing game that has not been timed out yet.");
     }
 

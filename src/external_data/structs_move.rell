@@ -81,6 +81,7 @@ struct move_check_arguments {
     is_checkmate: boolean; // Client thinks this is a checkmate
     is_stalemate: boolean; // Client thinks this is a stalemate
     is_insufficient_mating_material: boolean; // Client thinks this is insufficient mating material
+    random_seed: integer?; // The random seed used for the game. Only sent if game is over.
 }
 
 // ------------------------------------------------------------------------------

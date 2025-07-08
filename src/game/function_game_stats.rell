@@ -1,0 +1,89 @@
+
+
+// -------------------------------------
+// Terminate the game
+// -------------------------------------
+
+// Opponent timeout
+function game_stats_set_me_as_winner(maximal_game: maximal_game_result, end_reason: game_end_type) {
+    game_stats_claim_win_inner(maximal_game.game, 
+        maximal_game.my_p, maximal_game.opp_p,
+        maximal_game.my_pg, maximal_game.opp_pg,
+        maximal_game.my_name, maximal_game.opp_name,
+        maximal_game.my_elo, maximal_game.opp_elo,
+        end_reason
+    );
+}
+
+// My timeout
+function game_stats_set_opp_as_winner(maximal_game: maximal_game_result, end_reason: game_end_type) {
+    game_stats_claim_win_inner(maximal_game.game, 
+        maximal_game.opp_p, maximal_game.my_p, 
+        maximal_game.opp_pg, maximal_game.my_pg, 
+        maximal_game.opp_name, maximal_game.my_name, 
+        maximal_game.opp_elo, maximal_game.my_elo,
+        end_reason
+    );
+}
+
+
+// -------------------------------------
+// Creating the [player_game_stats] rows for BOTH players 
+// as the winner claims the win.
+// Here we don't care if the win is a checkmate, resignation etc.
+//
+// We create this data after the "claiming player" has 
+// If the opponent never sends the seed, this data will remain and still
+// count as a valid win, so the opponent cannot "cheat" by not sending their seed.
+// -------------------------------------
+function game_stats_claim_win_inner(gme: game, 
+    winner_p: player, loser_p: player, 
+    winner_pg: player_game, loser_pg: player_game, 
+    winner_name: text, loser_name: text, 
+    winner_old_elo: integer, loser_old_elo: integer,
+    end_reason: game_end_type
+) {
+
+    // Timeout is just like any other win.
+    val (winner_new_elo, loser_new_elo) = elo.update_chess_ratings_on_win(winner_old_elo, loser_old_elo);
+
+    // Update player statistics
+    update winner_p (.games_won += 1, .games_played += 1);
+    update loser_p (.games_lost += 1, .games_played += 1);
+
+    val created_time = op_context.last_block_time;
+
+    // Create Winner's stats
+    create player_game_stats (
+        .player_game = winner_pg,
+        .game = gme,
+        .player = winner_p,
+        .finish_reason = end_reason,
+        .claim_is_winner = true,
+        .is_winner = true,
+        .claim_is_draw = false, 
+        .is_draw = false, 
+        .claim_new_elo_rating = winner_new_elo, // The new ELO rating after the game.
+        .new_elo_rating = winner_new_elo, // The new ELO rating after the game.
+        .opp_name = loser_name,
+        .opp_elo = loser_old_elo, // Here it only matters what the opponent's ELO was when the game started
+        .created_at = created_time
+    );
+
+    // Create Loser's stats
+    create player_game_stats (
+        .player_game = loser_pg,
+        .game = gme,
+        .player = loser_p,
+        .finish_reason = end_reason,
+        .claim_is_winner = false,
+        .is_winner = false,
+        .claim_is_draw = false, 
+        .is_draw = false, 
+        .claim_new_elo_rating = loser_new_elo, // The new ELO rating after the game.
+        .new_elo_rating = loser_new_elo, // The new ELO rating after the game.
+        .opp_name = winner_name,
+        .opp_elo = winner_old_elo, // Here it only matters what the opponent's ELO was when the game started
+        .created_at = created_time
+    );
+}

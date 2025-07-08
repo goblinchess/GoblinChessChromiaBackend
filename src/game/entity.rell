@@ -24,14 +24,25 @@ entity game {
                                           // and Rell doesn't allow two-way FKs.
 
     // -----------------------------------------------------------
-    // End of game data
-    // NOTE: we "finish" the game BEFORE we validate the random numbers.
-    // So far this is just a claim that one player makes, to really check the winner 
-    // we must "terminate" the game, which means that the [player_game_stats] have
-    // been created and the random numbers checked.
+    // End of game data. Typical flow:
+    // 1. We "finish" the game BEFORE we validate the random numbers.
+    // 2. After seed verification the "seed_count" number will increased.
+    //    The [player_game_seed] entity gets created for this player.
+    //    The [player_game_stats] entity gets created for both players.
+    //    even if we only have one seed.
+    // 3. If the opponent send their seed for verification (with or without a timeout claim)
+    //    the "seed_count" number will increased to the maximum (=2).
+    //    This will also update the [player_game_stats] instances to their final result. 
+    //    It's fully possible that the opponent NEVER sends their seed for verification, 
+    //    and for these cases we need a valid result for the game.
     // -----------------------------------------------------------
+    // First step
     mutable is_finished: boolean = false;  // First step of ending a game, no more moves/turns can be made.
     mutable finish_reason: game_end_type = game_end_type.NOTHING;     
+    // Second step
+    mutable valid_seeds_count: integer = 0; // Number of players who have provided a valid random seed.
+    mutable invalid_seeds_count: integer = 0; // Number of players who have provided a random seed that failed verification.
+    // Final step
     mutable is_terminated: boolean = false; // Final step of ending a game, we know who won at this point.
 
     // Timestamps
@@ -91,8 +102,13 @@ entity player_game {
 }
 
 // -------------------------------------
-// Will be create after the game is finished, and
-// AFTER we validated the random numbers.
+// Will be create after the game is finished.
+// 
+// When the claiming player ends the game, (s)he will set the
+// the situation ASSUMING that the opponent is cheating and never 
+// sends their seed. When/if the opponent sends their seed,
+// and it turns out to be valid, we'll update the status of
+// this table to reflect this new truth.
 //
 // Main purpose is for showing history.
 // Ok to duplicate data here, since it will be 
@@ -101,19 +117,40 @@ entity player_game {
 // was during this game, not what it is now.
 // -------------------------------------
 entity player_game_stats {
-    key player_game: player_game;
-    index game: game; // Shortcut FK, not strictly necessary
-    index player: player; // Shortcut FK, not strictly necessary
-    is_winner: boolean; // This player won
-    is_draw: boolean; // No player won, it's a draw
-    finish_reason: game_end_type;
-    new_elo_rating: integer; // The new ELO rating after the game.
-    player_seed: byte_array; // The personal seed of the player. Only known at the end of the game.
+    key player_game;
+    index game; // Shortcut FK, not strictly necessary
+    index player; // Shortcut FK, not strictly necessary
+
+    finish_reason: game_end_type; // (duplicated) The reason the claiming player ended the game.
+
+    claim_is_winner: boolean; // "true" if the claiming player set this player as winner intitally.
+    mutable is_winner: boolean; // If "true" this player won
+
+    claim_is_draw: boolean; // "true" if the claiming player set this to a draw initially
+    mutable is_draw: boolean; // No player won, it's a draw
+
+    claim_new_elo_rating: integer; // The ELO rating the claiming player set.
+    mutable new_elo_rating: integer; // The new ELO rating after the game.
+
     // Dupcliated data (only to avoid a large JOIN)
     opp_name: text; // Name of the opponent
     opp_elo: integer; // ELO rating of the opponent
     created_at: timestamp;
 }
+
+
+// -------------------------------------
+// Will be create after the game is finished and
+// AFTER we validated the random numbers.
+// -------------------------------------
+entity player_game_seed {
+    key player_game;
+    index game; // Shortcut FK, not strictly necessary
+    seed: integer; // The personal seed of the player. Only known at the end of the game.
+    validation_success: boolean; // "true" if the seed verification was successful.
+    created_at: timestamp;
+}
+
 
 // -------------------------------------
 // A player makes something illegal, and loses this way (hacked the client?).

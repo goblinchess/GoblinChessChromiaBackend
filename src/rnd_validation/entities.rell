@@ -20,7 +20,7 @@ entity rnd_nr_from_player {
 // We keep track of when this fails.
 // It might not be hacks but bugs.
 entity rnd_validation_err {
-    key game_error; // Unique, we stop after the first validation error.
+    key player_game_seed; // Unique, we stop after the first validation error.
     key rnd_nr_from_player;
 }
 

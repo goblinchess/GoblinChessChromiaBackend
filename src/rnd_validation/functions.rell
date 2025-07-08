@@ -44,6 +44,55 @@ function rnd_validation_of_player(
 
     log("game_id: "+game_id+" - Begin");
 
+    val (err_msg, rnd_nr) = rnd_validation_of_player_inner(game_id, g_type, g, pg, org_seed);
+    val success = err_msg == null;
+    if (success) {
+        update g (.valid_seeds_count = g.valid_seeds_count + 1);
+
+        create player_game_seed (
+            .game = g, 
+            .player_game = pg, 
+            .seed = org_seed, 
+            .validation_success = true,
+            .created_at = op_context.last_block_time);
+
+    } else {
+        update g (.invalid_seeds_count = g.invalid_seeds_count + 1);
+
+        // Save the seed
+        val new_pg_seed = create player_game_seed (
+            .game = g, 
+            .player_game = pg, 
+            .seed = org_seed, 
+            .validation_success = false,
+            .created_at = op_context.last_block_time);
+
+        if (rnd_nr != null) {
+            // Save the connection between the seed and the rnd_nr
+            create rnd_validation_err(
+                player_game_seed = new_pg_seed,
+                rnd_nr_from_player = rnd_nr
+            );
+        }
+    }
+
+    return err_msg;
+}
+
+
+// ------------------------------------------------------------------
+// If successful only null is returned. 
+// If failed, and error text is returned and
+// sometimes the entity of the failing [rnd_nr_from_player].
+// ------------------------------------------------------------------
+function rnd_validation_of_player_inner(
+    game_id: integer,
+    g_type: game_type,
+    g: game,
+    pg: player_game,
+    org_seed: integer // Client's seed, unique for each game/player
+): (text?, rnd_nr_from_player?)
+{
     var curr_seed = org_seed;
 
     // --------------------------
@@ -80,12 +129,11 @@ function rnd_validation_of_player(
                 .error_type = error_type.RND_VALIDATION_CARD_ERROR,  // Unique for this case
                 .error_message = err_msg);
 
-            return err_msg;
+            return (err_msg, null);
         }
     }
 
     log("game_id: "+game_id+" - Cards validated");
-
 
     // --------------------------
     // 2. Find all saved rnd numbers for the player
@@ -101,7 +149,6 @@ function rnd_validation_of_player(
     // --------------------------
     var idx: integer = 0;
     for(res in res_list) {
-    //for(rnd_result in rnd_results) {
         val r = random_generate_number(curr_seed, res.min, res.max);
         curr_seed = r.curr_seed;
         if(r.result != res.result) {
@@ -111,27 +158,23 @@ function rnd_validation_of_player(
                 " (min: " + res.min + ", max: " + res.max + "), type: " + res.type + " for game: " + game_id;
             log(err_msg);
 
-            // Save the error
-            val new_error = create game_error (
-                .game =  g, 
+
+            // Save the error (useful for client messages)
+            create game_error (
+                .game = g, 
                 .player_game = pg, 
                 .error_type = error_type.RND_VALIDATION_TURN_ERROR, // <-- we can connect the rnd_nr to a turn.
                 .error_message = err_msg);
 
-            // Save the connection between the error and the rnd_nr
-            create rnd_validation_err(
-                game_error = new_error,
-                rnd_nr_from_player = res.playa_rnd_nr
-            );
-
-            return err_msg; // No need to go on, one error is enough!
+            return (err_msg, res.playa_rnd_nr); // No need to go on, one error is enough!
         }
 
         idx++;
     }
 
+    // Success
     log("game_id: "+game_id+" - Everything successfully validated");
-    return null; // No errors
+    return (null, null); // No errors
 }
 
 // --------------------------------------------------------------
