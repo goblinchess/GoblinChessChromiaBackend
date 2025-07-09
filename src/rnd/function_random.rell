@@ -33,6 +33,8 @@ function generate_random_numbers(seed: integer, count: integer, max_value: integ
     val a = 1664525;
     val c = 1013904223;
     val modu = 4294967296; // = 2^32. We CANNOT use integer.MAX_VALUE (=2^64) since it would give us integer overflow
+
+    require(seed < modu, "Seed must be less than 2^32. Given seed: " + seed);
     
     var current = seed;
     val results = list<integer>();
