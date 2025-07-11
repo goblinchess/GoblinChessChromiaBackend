@@ -1,0 +1,87 @@
+
+
+// "Terminate" is the word we use when the second player sends the seed.
+// The first player "claimed" game over, and put the game in state "finished".
+// The second player discovers that the game has finished and will call this
+// method. The game has to be "finished" at this point or we have some sort of bug.
+//
+// After "termination" nothing more can be done, it will be too late to claim
+// timeout etc.
+
+function game_terminate_with_seed(caller_pubkey: pubkey, game_id: integer, random_seed: integer) 
+{
+    log("game_terminate_with_seed() - started, game: " + game_id.to_text());
+
+    // ----------------
+    // A.1. Validate the state of the game
+    // ----------------
+    //log("End A.1");
+    val (max_game, g_end_data, finish_reason) = maximal_game_and_end_data_get_even_if_finished(caller_pubkey, game_id);
+    require(max_game != null, "No such game, id:" + game_id);
+    require(g_end_data != null, "Game end data is null, id:" + game_id); // Useless, since checking the max_game is enough.
+    require(g_end_data.is_finished, "Game is not over, why are we terminating it?, id:" + game_id); 
+
+    val tot_seeds = g_end_data.valid_seeds_count + g_end_data.invalid_seeds_count;
+
+    if (tot_seeds == 2) { // Client error, don't send seed twice
+        require(false, "Game is already terminated and bouth players sent seeds, why are doing this again?, id:" + game_id); 
+    } 
+    // Count == 0 and 3 are obvious errors, and only the node can cause this problem.
+    require(tot_seeds == 1, "Unexpected, how come we have a finished game with " + tot_seeds + " seeds?, id:" + game_id); 
+    
+    // Ok, but let's check if WE ended the game?
+    val my_stored_seeds = (s: player_game_seed)@* {s.player_game == max_game.my_pg} (s.validation_success);
+    if (my_stored_seeds.size() > 0) {
+        require(false, "You claimed game over, so you cannot also terminate this game, opponent must terminate with seed, id:" + game_id); 
+    }
+
+    var opp_validation_success = false;
+    if (g_end_data.invalid_seeds_count == 0) {
+        opp_validation_success = true;
+    }
+
+    // We don't care if the game is out of sync, since we might be doing this during the opponent's rotation anyways.
+
+    // ----------------
+    // B.1. Validate the seed
+    // ----------------
+    // We don't use "require()" on this, since we want to save 
+    // the seed even if it's wrong. This means that the client wont
+    // get any feedback if the wrong seed was sent.
+    val x = rnd_validation_of_player(
+        game_id = max_game.game_id,
+        g_type = max_game.game_type,
+        g = max_game.game,
+        pg = max_game.my_pg,
+        org_seed = random_seed
+    );
+
+    val my_validation_success = x == null;
+
+    if (opp_validation_success) {
+        // Opponent succeeded, standard case
+        if (my_validation_success) {
+            // Standard case. The "finish_reason" is correct and should be used for ELO calc.
+            log("game_terminate_with_seed() - Both opponent and you sent valid seeds, game: " + game_id.to_text());
+            game_stats_use_finish_reason(finish_reason, max_game);
+        } else {
+            // The opponent's claim should stand. 
+            log("game_terminate_with_seed() - Both opponent and you sent valid seeds, game: " + game_id.to_text());
+            // Don't change the [player_game_stats] data.
+        }
+    } else {
+        // Opponent failed
+        if (my_validation_success) {
+            log("game_terminate_with_seed() - Opponent sent an invalid seed, but yours is valid, you claim the win, game: " + game_id.to_text());
+            // No matter what, we win
+            game_stats_terminate_me_as_winner(max_game);
+        } else {
+            // Extremely unusual, doesn't matter who gets the win since both are cheaters, but let's treat this as if both seeds are valid.
+            log("game_terminate_with_seed() - Both opponent and you sent invalid seeds, very unusual! game: " + game_id.to_text());
+            game_stats_use_finish_reason(finish_reason, max_game);
+
+        }
+
+    }
+
+}

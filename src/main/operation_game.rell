@@ -41,24 +41,43 @@ operation create_game(white_player_name: text, black_player_name: text, game_typ
 
 // -------------------------------------
 // Game Resignation
-// -------------------------------------
-
-// Note:
-// To resign the game is only the first step of ending the game.
-// To really claim the win the opponent must send his/her seed.
-// Only if the seed is valid the opponent's rating is increased.
-// If the opponent fails to send the seed you still win this game!
+//
+// If you resign and the opponent fails to send the seed you still 
+// win this game!
 // 
 // Motivation:
 // If a hacker plays with hacked cards, causing this resignation (s)he
 // will still lose rating when it's time to provide the seed.
+// -------------------------------------
 
-operation resign_game(game_rowid: integer) {
+operation resign_game(game_rowid: integer, random_seed: integer) {
     // -----------    
     // Get the caller from the signature.
     // -----------    
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
 
-    game_over_resign(caller_pubkey, game_rowid);
+    game_over_resign(caller_pubkey, game_rowid, random_seed);
+}
+
+
+// -------------------------------------
+// Terminate the game
+//
+// "Terminate" is the word we use when the second player sends the seed.
+// The first player "claimed" game over, and put the game in state "finished".
+// The second player discovers that the game has finished and will call this
+// method. The game has to be "finished" at this point or we have some sort of bug.
+//
+// After "termination" nothing more can be done, it will be too late to claim
+// timeout etc.
+// -------------------------------------
+operation terminate_game_with_seed(game_rowid: integer, random_seed: integer) {
+    // -----------    
+    // Get the caller from the signature.
+    // -----------    
+    val current_signers = op_context.get_signers();
+    val caller_pubkey = current_signers[0];
+
+    game_terminate_with_seed(caller_pubkey, game_rowid, random_seed);
 }

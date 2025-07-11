@@ -1,0 +1,111 @@
+
+
+
+// Will update the [player_game_stats] ELO based only upon the given finish_reason.
+function game_stats_use_finish_reason(finish_reason: game_end_type, maximal_game: maximal_game_result) {
+
+    if (game_end_type_is_claim_win(finish_reason)) {
+        log("game_stats_use_finish_reason() - Opponent won, no update needed.");
+        // No change
+    } else if (game_end_type_is_claim_draw(finish_reason)) {
+        log("game_stats_use_finish_reason() - Draw.");
+        game_stats_terminate_draw(maximal_game);
+    } else if (game_end_type_is_claim_lose(finish_reason)) {
+        log("game_stats_use_finish_reason() - Opponent lost, set player as winner.");
+        game_stats_terminate_me_as_winner(maximal_game);
+    } else {
+        require(false, "game_stats_use_finish_reason() - Invalid finish reason: " + finish_reason.name);
+    }
+}
+
+// -------------------------------------
+// Terminate the game
+// -------------------------------------
+
+// Opponent timeout
+function game_stats_terminate_me_as_winner(maximal_game: maximal_game_result) {
+    game_stats_switch_winner(
+        maximal_game.my_p, maximal_game.opp_p,
+        maximal_game.my_pg, maximal_game.opp_pg,
+        maximal_game.my_elo_before_game, maximal_game.opp_elo_before_game
+    );
+}
+
+// Opponent timeout
+function game_stats_terminate_draw(maximal_game: maximal_game_result) {
+    game_stats_switch_win_to_draw(
+        maximal_game.my_p, maximal_game.opp_p,
+        maximal_game.my_pg, maximal_game.opp_pg,
+        maximal_game.my_elo_before_game, maximal_game.opp_elo_before_game
+    );
+}
+
+// -------------------------------------
+// Update the [player_game_stats] rows for BOTH players 
+// where we change the claimed win into a loss, and the loss into a win.
+// -------------------------------------
+function game_stats_switch_winner(
+    winner_p: player, loser_p: player, 
+    winner_pg: player_game, loser_pg: player_game,
+    winner_old_elo: integer, loser_old_elo: integer
+) {
+
+    // Timeout is just like any other win.
+    val (winner_new_elo, loser_new_elo) = elo.update_chess_ratings_on_win(winner_old_elo, loser_old_elo);
+
+    // Update player statistics
+    // Note we have to REMOVE the initial "games_won/lost" updates when we do this.
+    update winner_p (.games_won += 1, .games_lost -= 1, .elo_rating = winner_new_elo);
+    update loser_p  (.games_won -= 1, .games_lost += 1, .elo_rating = loser_new_elo);
+
+    val created_time = op_context.last_block_time;
+
+    // Create Winner's stats
+    update (pgs: player_game_stats)@ {pgs.player_game == winner_pg} (
+        .is_winner = true,
+        .is_draw = false, 
+        .new_elo_rating = winner_new_elo // The new ELO rating after the game.
+    );
+
+    // Create Loser's stats
+    update (pgs: player_game_stats)@ {pgs.player_game == loser_pg} (
+        .is_winner = false,
+        .is_draw = false, 
+        .new_elo_rating = loser_new_elo // The new ELO rating after the game.
+    );
+}
+
+// -------------------------------------
+// Update the [player_game_stats] rows for BOTH players 
+// where we change the claimed win/loss into a draw.
+// -------------------------------------
+function game_stats_switch_win_to_draw(
+    me_p: player, you_p: player, 
+    me_pg: player_game, you_pg: player_game,
+    my_old_elo: integer, your_old_elo: integer
+) {
+
+    // Timeout is just like any other win.
+    val (my_new_elo, your_new_elo) = elo.update_chess_ratings_on_draw(my_old_elo, your_old_elo);
+
+    // Update player statistics
+    // Note we have to REMOVE the initial "games_won/lost" updates when we do this.
+    update me_p  (.games_drawn += 1, .games_lost -= 1, .elo_rating = my_new_elo);
+    update you_p (.games_drawn += 1, .games_won -= 1,  .elo_rating = your_new_elo);
+
+    val created_time = op_context.last_block_time;
+
+    // Create my stats
+    update (pgs: player_game_stats)@ {pgs.player_game == me_pg} (
+        .is_winner = false,
+        .is_draw = true, 
+        .new_elo_rating = my_new_elo // The new ELO rating after the game.
+    );
+
+    // Create your stats
+    update (pgs: player_game_stats)@ {pgs.player_game == you_pg} (
+        .is_winner = false,
+        .is_draw = true, 
+        .new_elo_rating = your_new_elo // The new ELO rating after the game.
+    );
+}

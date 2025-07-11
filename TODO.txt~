@@ -1,14 +1,7 @@
-Finish with checkmate via WALL and knight.
-
-
 TODO: Remove the damage from history in classical mode.
 TODO: Should we remove the option of attacking obstacles in classical mode (we don't allow anyone to survive).
 
 TODO: Draw the game on 1) repetition 2) lack of mating material.
-
-- We had White/Black in cleartext for My/Opp in the Board._reportXAction() for
-  portal??
-  This is now replaced, but must be tested.
 
 a) Test time-out of old ongoing games.
 b) Test time_left param.
@@ -16,12 +9,6 @@ b) Test time_left param.
  TODO Client: 
 -------------
 - Impl RESIGN button
-
-- Call the "fetch data" method for moves and cards.
-
-- Should we send "is_knighted" and "is_enchanted_jumper" on every call? Is it perhaps too hard to find this info?
-
-- Create a C# Chromia client.
 
 - Use Timeout and put clock on the chess scene.
  
@@ -33,8 +20,6 @@ Client Done:
  TODO Node: 
 -------------
  
- 2. Finish the game when mate
-
  4. Use Luck
 
  6. Look in [move] entity before allowing castle.

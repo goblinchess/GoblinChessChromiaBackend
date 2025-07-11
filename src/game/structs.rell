@@ -38,8 +38,10 @@ struct maximal_game_result {
     // Extra
     my_name: text;
     opp_name: text;
-    my_elo: integer;
-    opp_elo: integer;
+    my_elo_before_game: integer; 
+    opp_elo_before_game: integer;
+    my_elo: integer;  // This might have been updated if we are in the end of the game
+    opp_elo: integer; // This might have been updated if we are in the end of the game
 }
 
 struct game_time_result {

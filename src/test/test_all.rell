@@ -109,7 +109,7 @@ function test_player_rotation_find_max_turn_nr() {
 // rnd_validation.rnd_validation_of_player().
 // ------------------------------------------
 function test_same_as_on_client_side() {
-    val org_seed = 123172398125;
+    val org_seed = 1231723;
 
     // Generate hand
     val x: random_results = generate_random_numbers(org_seed, 5, 9);
@@ -1978,6 +1978,13 @@ function test_full_game() {
 
     log ("Turn 27(81): Skip neutral.");
     last_seen_turn += 1;
+
+
+    // ------------------------------------
+    // Black sends seed
+    // ------------------------------------
+    val black_seed = 42; // Just made up number, but since BOTH seed verifations fail we'll get a "normal" ELO calculation.
+    rell.test.tx(terminate_game_with_seed(the_game.game_rowid, black_seed)).sign(black_player).run();
 
 }
 

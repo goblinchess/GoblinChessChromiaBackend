@@ -172,7 +172,7 @@ function game_timeout_any_player_if_possible(maximal_game: maximal_game_result, 
                 update maximal_game.game (.is_finished = true, .finish_reason = game_end_type.TIMEOUT);
 
                 // Opponent is inactive, and we are the winner.
-                game_stats_set_me_as_winner(maximal_game, game_end_type.TIMEOUT);
+                game_stats_claim_me_as_winner(maximal_game, game_end_type.TIMEOUT);
                 return true;
             } else {
                 return false; // Opponent is active, must abort everything.
@@ -193,7 +193,7 @@ function game_timeout_any_player_if_possible(maximal_game: maximal_game_result, 
             // a seed (probably abandoned by both).
             update maximal_game.game (.is_finished = true, .finish_reason = game_end_type.TIMEOUT);
 
-            game_stats_set_opp_as_winner(maximal_game, game_end_type.TIMEOUT);
+            game_stats_claim_opp_as_winner(maximal_game, game_end_type.TIMEOUT);
             return true;
         }
 

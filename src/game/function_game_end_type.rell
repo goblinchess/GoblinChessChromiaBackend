@@ -1,0 +1,42 @@
+
+
+
+
+// Should the one claiming game_finish win?
+function game_end_type_is_claim_win(claim_type: game_end_type) {
+    when (claim_type) {
+        game_end_type.CHECKMATE ->
+            return true;
+        game_end_type.TIMEOUT ->
+            return true;
+        game_end_type.ABANDONED ->
+            return true;
+        else -> return false;
+    }
+}
+
+// Should the one claiming game_finish get a draw?
+function game_end_type_is_claim_draw(claim_type: game_end_type) {
+    when (claim_type) {
+        game_end_type.STALEMATE ->
+            return true;
+        game_end_type.INSUFFICIENT_MATING_MATERIAL ->
+            return true;
+        game_end_type.MOVE_REPETITION ->
+            return true;
+        game_end_type.MOVES_50 ->
+            return true;
+        else -> return false;
+    }
+}
+
+// Should the one claiming game_finish win?
+function game_end_type_is_claim_lose(claim_type: game_end_type) {
+    when (claim_type) {
+        game_end_type.RESIGNATION ->
+            return true;
+        game_end_type.ERROR ->
+            return true;
+        else -> return false;
+    }
+}

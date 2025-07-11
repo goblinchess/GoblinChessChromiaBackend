@@ -59,23 +59,29 @@ enum game_end_type {
     // Calculated at the end of primary move or double extra move
     // meaning they (could) be sent with the move operation.
     // ------------------------------------------------
-    CHECKMATE, // = Win
-    STALEMATE, // = Draw 
+    CHECKMATE,                    // = Win
+    STALEMATE,                    // = Draw 
     INSUFFICIENT_MATING_MATERIAL, // = Draw 
     // ------------------------------------------------
-    // Calculated end of neutral/extra move, and should
-    // never be sent. Only node does this calculation.
+    // Only calculated at the node (should never be sent). 
+    // The only way for the client to find this status is
+    // via error message or by asking the node.
     // ------------------------------------------------
-    MOVE_REPETITION, // = Draw due to 3x repetition. (Calculated end of neutral/extra move.)
-    MOVES_50, // = Draw (50 moves without anyone taking anything or moving a pawn) (Calculated end of neutral/extra move.)
+    MOVE_REPETITION, // = Draw, due to 3x repetition. (Only calculated at the node.)
+    MOVES_50,        // = Draw, due to 50 moves without anyone taking anything or moving a pawn. (Only calculated at the node.)
     // ------------------------------------------------
-    // Client can send these claims anytime.
+    // Client can send these claims anytime, meaning
+    // that the other player might get an error back on a 
+    // card/move tx since the game is now over.
     // ------------------------------------------------
-    RESIGNATION,
-    TIMEOUT, // Game ended because of a timeout
-    ABANDONED, // Much like timeout, but player failed to "check in" on the game.
-    ERROR, // A client experienced an error at had to abort (it's always the client that made the error that lost)
-    NOTHING // Not ended.
+    RESIGNATION,   // = Lose
+    TIMEOUT,       // = Win, game ended because of opponent's timeout
+    ABANDONED,     // = Win, much like timeout, but opponent failed to "check in" on the game.
+    ERROR,         // = Lose, a client experienced an error at had to abort (it's always the client that made the error that lost)
+    // ------------------------------------------------
+    // Start value
+    // ------------------------------------------------
+    NOTHING        // Not ended.
 }
 
 
@@ -94,6 +100,7 @@ entity player_game {
     index game: game;
     key player, game;
     is_white: boolean;
+    elo_rating_before_game: integer;  // We must remember the original ELO, since we might update [player.elo_rating] more than once during the end of the game.
     mutable in_check: boolean;  // Also in [move]  and [skipped_move], but we need it here since card picks it up.
     mutable cards_left: integer; // Should never go negative
     mutable total_time_left: integer; // Game-Time left in milliseconds (10 min game => 10 * 60 * 1000 = 600_000)
@@ -144,7 +151,7 @@ entity player_game_stats {
 // AFTER we validated the random numbers.
 // -------------------------------------
 entity player_game_seed {
-    key player_game;
+    key player_game; // Only one seed can be added per game
     index game; // Shortcut FK, not strictly necessary
     seed: integer; // The personal seed of the player. Only known at the end of the game.
     validation_success: boolean; // "true" if the seed verification was successful.
@@ -163,8 +170,8 @@ entity player_game_seed {
 // the game will indeed end with an error.
 // -------------------------------------
 entity game_error {
-    key game; // There is no game left after an error.
-    key player_game; // The player that made the error.
+    index game; 
+    key player_game; // Each player can make one error per game. 
     error_type;
     error_message: text;
 }

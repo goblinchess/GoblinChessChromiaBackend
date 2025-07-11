@@ -46,15 +46,16 @@ function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
 }
 
 // -------------------------------------
-// Will find various data EVEN if the game is finished ("terminated"?):
+// Will find various data EVEN if the game is finished 
 // 1. [minimal_game_result], 
 // 2. [opponent_timeout_data].
+// 3. [game_end_data].
 //
 // Note:
-// In some situations we cannot use the function above, like when fetching
-// the opponent's recent actions. Here we need to to see FINISHED games since we 
-// must see the winning move (since the opponent might just have won the game 
-// and turned it into "finished").
+// In some situations we cannot use the [minimal_game_data_get()] function above, 
+// like when fetching the opponent's recent actions. Here we need to to see 
+// FINISHED games since we must see the winning move (since the opponent might 
+// just have won the game and turned it into "finished").
 // -------------------------------------
 function minimal_game_and_timeout_data_get_even_if_finished(
     player_pubkey: pubkey, 

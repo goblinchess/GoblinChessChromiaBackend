@@ -97,10 +97,10 @@ function game_over_move_claim(
             // random seed was valid.
             if (x == null) {
                 // Success
-                game_stats_set_me_as_winner(maximal_game!!, end_reason);
+                game_stats_claim_me_as_winner(maximal_game!!, end_reason);
             } else {
                 // Error
-                game_stats_set_opp_as_winner(maximal_game!!, end_reason);
+                game_stats_claim_opp_as_winner(maximal_game!!, end_reason);
             }
         }
 
@@ -135,7 +135,12 @@ function _inner_game_end_insufficient_mating_material(gme: game, curr_turn_nr: i
 // Resign
 // -------------------------------------
 
-function game_over_resign(caller_pubkey: pubkey, game_id: integer) {
+
+// What to do if the game is already over? (Could be that the opponent just resigned too or whatever.)
+// Best is to simply validate the seed and don't report an error, since 
+// we got the seed and it shouldn't go to waste.
+// Remember, the player WANTED to end the game, so if it's already over that's a good thing.
+function game_over_resign(caller_pubkey: pubkey, game_id: integer, random_seed: integer) {
     log("game_over_resign() - started, game: " + game_id.to_text());
 
     // ----------------

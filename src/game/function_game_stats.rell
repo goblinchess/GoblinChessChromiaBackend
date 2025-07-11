@@ -1,27 +1,27 @@
 
 
 // -------------------------------------
-// Terminate the game
+// Claim the game
 // -------------------------------------
 
 // Opponent timeout
-function game_stats_set_me_as_winner(maximal_game: maximal_game_result, end_reason: game_end_type) {
+function game_stats_claim_me_as_winner(maximal_game: maximal_game_result, end_reason: game_end_type) {
     game_stats_claim_win_inner(maximal_game.game, 
         maximal_game.my_p, maximal_game.opp_p,
         maximal_game.my_pg, maximal_game.opp_pg,
         maximal_game.my_name, maximal_game.opp_name,
-        maximal_game.my_elo, maximal_game.opp_elo,
+        maximal_game.my_elo_before_game, maximal_game.opp_elo_before_game,
         end_reason
     );
 }
 
 // My timeout
-function game_stats_set_opp_as_winner(maximal_game: maximal_game_result, end_reason: game_end_type) {
+function game_stats_claim_opp_as_winner(maximal_game: maximal_game_result, end_reason: game_end_type) {
     game_stats_claim_win_inner(maximal_game.game, 
         maximal_game.opp_p, maximal_game.my_p, 
         maximal_game.opp_pg, maximal_game.my_pg, 
         maximal_game.opp_name, maximal_game.my_name, 
-        maximal_game.opp_elo, maximal_game.my_elo,
+        maximal_game.opp_elo_before_game, maximal_game.my_elo_before_game,
         end_reason
     );
 }
