@@ -42,8 +42,6 @@ entity game {
     // Second step
     mutable valid_seeds_count: integer = 0; // Number of players who have provided a valid random seed.
     mutable invalid_seeds_count: integer = 0; // Number of players who have provided a random seed that failed verification.
-    // Final step
-    mutable is_terminated: boolean = false; // Final step of ending a game, we know who won at this point.
 
     // Timestamps
     created_at: timestamp;

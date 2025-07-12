@@ -22,7 +22,7 @@ function game_stats_use_finish_reason(finish_reason: game_end_type, maximal_game
 // Terminate the game
 // -------------------------------------
 
-// Opponent timeout
+// Opponent claimed win, but we now terminate as the real winner.
 function game_stats_terminate_me_as_winner(maximal_game: maximal_game_result) {
     game_stats_switch_winner(
         maximal_game.my_p, maximal_game.opp_p,
@@ -31,12 +31,23 @@ function game_stats_terminate_me_as_winner(maximal_game: maximal_game_result) {
     );
 }
 
-// Opponent timeout
+// Opponent claimed win, but we change it to a draw.
 function game_stats_terminate_draw(maximal_game: maximal_game_result) {
     game_stats_switch_win_to_draw(
         maximal_game.my_p, maximal_game.opp_p,
         maximal_game.my_pg, maximal_game.opp_pg,
         maximal_game.my_elo_before_game, maximal_game.opp_elo_before_game
+    );
+}
+
+// Opponent failed seed verification, but we did too, so we change it to a draw.
+// (Not super important code, since this should never happen IRL unless 
+// there are some bad clients circulating)
+function game_stats_terminate_draw_2_fails(maximal_game: maximal_game_result) {
+    game_stats_switch_win_to_draw(
+        maximal_game.opp_p, maximal_game.my_p,
+        maximal_game.opp_pg, maximal_game.my_pg,
+        maximal_game.opp_elo_before_game, maximal_game.my_elo_before_game
     );
 }
 

@@ -49,11 +49,3 @@ struct timeout_data {
     game_started_at: timestamp; // When the game was started
 }
 
-
-// Holding general game end info, specifically why the game ended.
-struct game_end_data {
-    is_finished: boolean; // True if this game is "finished", first step in ending the game. 
-    finish_reason: text; // Reason for ending the game.
-    valid_seeds_count: integer; // Number of players who have successfully verified their seeds.
-    invalid_seeds_count: integer; // Number of players who have bad seeds.
-}

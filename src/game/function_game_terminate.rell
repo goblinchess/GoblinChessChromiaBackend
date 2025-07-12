@@ -58,30 +58,27 @@ function game_terminate_with_seed(caller_pubkey: pubkey, game_id: integer, rando
 
     val my_validation_success = x == null;
 
-    if (opp_validation_success) {
-        // Opponent succeeded, standard case
-        if (my_validation_success) {
-            // Standard case. The "finish_reason" is correct and should be used for ELO calc.
+    if (my_validation_success) {
+        if (opp_validation_success) {
+            // Standard case. The "game.finish_reason" should determine who won.
             log("game_terminate_with_seed() - Both opponent and you sent valid seeds, game: " + game_id.to_text());
             game_stats_use_finish_reason(finish_reason, max_game);
         } else {
-            // The opponent's claim should stand. 
-            log("game_terminate_with_seed() - Both opponent and you sent valid seeds, game: " + game_id.to_text());
-            // Don't change the [player_game_stats] data.
+            log("game_terminate_with_seed() - Your seed is valid, but the opponent sent an invalid seed (you are already set as winner so we do nothing), game: " + game_id.to_text());
+            // Don't change the [player_game_stats] data, this player is already set as winner.
         }
     } else {
-        // Opponent failed
-        if (my_validation_success) {
-            log("game_terminate_with_seed() - Opponent sent an invalid seed, but yours is valid, you claim the win, game: " + game_id.to_text());
-            // No matter what, we win
-            game_stats_terminate_me_as_winner(max_game);
+        if (opp_validation_success) {
+            // The opponent's claim should stand. 
+            log("game_terminate_with_seed() - Opponent sent a valid seed, but yours is bad (you are already set as loser so we do nothing), game: " + game_id.to_text());
+            // Don't change the [player_game_stats] data, this player is already set as loser.
         } else {
-            // Extremely unusual, doesn't matter who gets the win since both are cheaters, but let's treat this as if both seeds are valid.
-            log("game_terminate_with_seed() - Both opponent and you sent invalid seeds, very unusual! game: " + game_id.to_text());
-            game_stats_use_finish_reason(finish_reason, max_game);
-
+            // Both failed! Should be extremely unusual, unless we are swamped by broken bots.
+            // Doesn't matter who gets the win since both are cheaters, but let's make it a draw.
+            log("game_terminate_with_seed() - Both opponent and you sent invalid seeds!? Calling it a draw, game: " + game_id.to_text());
+            game_stats_terminate_draw_2_fails(max_game);
         }
-
     }
+
 
 }

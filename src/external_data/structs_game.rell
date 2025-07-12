@@ -34,3 +34,11 @@ struct opponent_timeout_data {
     last_player_rotation_at: timestamp; // The last time the player rotation was completed.
     opp_tot_time_left_since_player_rotation_ms: integer; // How much time the opponent had left when the "move" (= player rotation) began.
 }
+
+// Holding general game end info, specifically why the game ended.
+struct game_end_data {
+    is_finished: boolean; // True if this game is "finished", first step in ending the game. 
+    finish_reason: text; // Reason for ending the game.
+    valid_seeds_count: integer; // Number of players who have successfully verified their seeds.
+    invalid_seeds_count: integer; // Number of players who have bad seeds.
+}

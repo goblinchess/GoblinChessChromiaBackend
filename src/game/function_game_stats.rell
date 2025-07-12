@@ -48,8 +48,9 @@ function game_stats_claim_win_inner(gme: game,
     val (winner_new_elo, loser_new_elo) = elo.update_chess_ratings_on_win(winner_old_elo, loser_old_elo);
 
     // Update player statistics
-    update winner_p (.games_won += 1, .games_played += 1);
-    update loser_p (.games_lost += 1, .games_played += 1);
+    update winner_p (.games_won += 1, .games_played += 1, .elo_rating = winner_new_elo);
+    update loser_p (.games_lost += 1, .games_played += 1, .elo_rating = loser_new_elo);
+
 
     val created_time = op_context.last_block_time;
 

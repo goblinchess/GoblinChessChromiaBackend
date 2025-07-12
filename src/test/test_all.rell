@@ -1979,12 +1979,109 @@ function test_full_game() {
     log ("Turn 27(81): Skip neutral.");
     last_seen_turn += 1;
 
+    /*
+    // ------------------------------------------------
+    // Before Termination
+    // ------------------------------------------------
+    // White = Charlie 
+    // Black = Alice 
+    // White made the CHECKMATE, but since Charlie provided the incorrect seed he lost.
+
+    postchain=> SELECT rowid, name, games_played, games_won, games_lost, games_drawn, elo_rating 
+    FROM "c0.player" order by rowid;
+
+    rowid |  name   | games_played | games_won | games_lost | games_drawn | elo_rating
+    -------+---------+--------------+-----------+------------+-------------+------------
+        1 | Alice   |            1 |         1 |          0 |           0 |       1216
+        2 | Bob     |            0 |         0 |          0 |           0 |       1200
+        3 | Charlie |            1 |         0 |          1 |           0 |       1184
+        4 | Dave    |            0 |         0 |          0 |           0 |       1200
+    (4 rows)
+
+    postchain=> SELECT white_player, black_player, current_turn_nr, is_finished, finish_reason, 
+    valid_seeds_count, invalid_seeds_count FROM "c0.game";
+
+    white_p  | black_p | turn_nr | is_finished | finish_r | valid_seeds | invalid_seeds
+    ---------+---------+---------+-------------+----------+-------------+--------------
+           3 |       1 |      80 | t           |        0 |           0 |             1
+    (1 row)
+
+    postchain=> SELECT rowid, player, is_white FROM "c0.player_game";
+
+    rowid | player | is_white
+    -------+--------+----------
+        10 |      1 | f
+         9 |      3 | t
+    (2 rows)
+
+    postchain=> SELECT player_game, seed, validation_success FROM "c0.player_game_seed";
+
+    player_game | seed | validation_success
+    -- ---------+------+--------------------
+              9 |    7 | f
+    (1 row)
+
+    postchain=> SELECT player, finish_reason, claim_is_winner, is_winner, claim_new_elo_rating, new_elo_rating 
+    FROM "c0.player_game_stats";
+
+    player | finish_reason | claim_is_winner | is_winner | claim_new_elo_rating | new_elo_rating
+    -------+---------------+-----------------+-----------+----------------------+----------------
+         1 |             0 | t               | t         |                 1216 |           1216
+         3 |             0 | f               | f         |                 1184 |           1184
+    (2 rows)
+
+    // ------------------------------------------------
+    */
+
 
     // ------------------------------------
     // Black sends seed
     // ------------------------------------
     val black_seed = 42; // Just made up number, but since BOTH seed verifations fail we'll get a "normal" ELO calculation.
     rell.test.tx(terminate_game_with_seed(the_game.game_rowid, black_seed)).sign(black_player).run();
+
+    /*
+    // ------------------------------------------------
+    // After Termination
+    // ------------------------------------------------
+    // White = Charlie 
+    // Black = Alice 
+    // Black provided the incorrect seed too, so we're changing the result to draw.
+
+    postchain=> SELECT rowid, name, games_played, games_won, games_lost, games_drawn, elo_rating FROM "c0.player" order by rowid;
+    rowid |  name   | games_played | games_won | games_lost | games_drawn | elo_rating
+    ------+---------+--------------+-----------+------------+-------------+------------
+        1 | Alice   |            1 |         0 |          0 |           1 |       1200
+        2 | Bob     |            0 |         0 |          0 |           0 |       1200
+        3 | Charlie |            1 |         0 |          0 |           1 |       1200
+        4 | Dave    |            0 |         0 |          0 |           0 |       1200
+    (4 rows)
+
+    postchain=> SELECT white_player, black_player, current_turn_nr, is_finished, finish_reason, 
+    valid_seeds_count, invalid_seeds_count FROM "c0.game";
+
+    white_p | black_p | turn_nr | is_finished | finish_r | valid_seeds | invalid_seeds
+    --------+---------+---------+-------------+----------+-------------+--------------
+          3 |       1 |      80 | t           |        0 |           0 |             2
+    (1 row)
+
+    postchain=> SELECT player_game, seed, validation_success FROM "c0.player_game_seed";
+    player_game | seed | validation_success
+    ------------+------+--------------------
+              9 |    7 | f
+             10 |   42 | f
+    (2 rows)
+
+    postchain=> SELECT player, finish_reason, claim_is_winner, is_winner, claim_is_draw, is_draw, claim_new_elo_rating, new_elo_rating 
+    FROM "c0.player_game_stats";
+
+    player | finish_reason | claim_is_winner | is_winner | claim_is_draw | is_draw | claim_new_elo_rating | new_elo_rating
+    -------+---------------+-----------------+-----------+---------------+---------+----------------------+----------------
+         3 |             0 | f               | f         | f             | t       |                 1184 |           1200
+         1 |             0 | t               | f         | f             | t       |                 1216 |           1200
+    (2 rows)
+    // ------------------------------------------------
+    */
 
 }
 
