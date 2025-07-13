@@ -89,6 +89,8 @@ function rnd_validation_of_player(
             .validation_success = true,
             .created_at = op_context.last_block_time);
 
+        return null;
+
     } else {
         log("game_id: "+game_id+" - "+err_msg);
 
@@ -112,9 +114,9 @@ function rnd_validation_of_player(
                 rnd_nr_from_player = rnd_nr
             );
         }
+        return err_msg;
     }
 
-    return err_msg;
 }
 
 
