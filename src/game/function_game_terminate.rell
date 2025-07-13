@@ -8,7 +8,7 @@
 // After "termination" nothing more can be done, it will be too late to claim
 // timeout etc.
 
-function game_terminate_with_seed(caller_pubkey: pubkey, game_id: integer, random_seed: integer) 
+function game_terminate_with_seed(caller_pubkey: pubkey, game_id: integer, random_seed: integer, seed_signature: byte_array) 
 {
     log("game_terminate_with_seed() - started, game: " + game_id.to_text());
 
@@ -45,6 +45,12 @@ function game_terminate_with_seed(caller_pubkey: pubkey, game_id: integer, rando
     // ----------------
     // B.1. Validate the seed
     // ----------------
+    val seed_input = seed_validation_input(
+        pubk = caller_pubkey,
+        seed_material = max_game.seed_material,
+        org_seed = random_seed,
+        seed_signature = seed_signature
+    );
     // We don't use "require()" on this, since we want to save 
     // the seed even if it's wrong. This means that the client wont
     // get any feedback if the wrong seed was sent.
@@ -53,7 +59,7 @@ function game_terminate_with_seed(caller_pubkey: pubkey, game_id: integer, rando
         g_type = max_game.game_type,
         g = max_game.game,
         pg = max_game.my_pg,
-        org_seed = random_seed
+        seed_input = seed_input
     );
 
     val my_validation_success = x == null;

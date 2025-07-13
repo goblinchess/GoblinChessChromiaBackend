@@ -13,6 +13,7 @@ struct minimal_game_result {
     curr_turn_nr: integer; // We always check this
     in_check: boolean; // Our king is in check.
     is_white: boolean; // True if this player is white.
+    seed_material: byte_array; // The basis of the seed
     // Timestamps
     last_player_rotation_at: timestamp; // When the last "move" was finished, i.e. when it became this player's turn..
     game_created_at: timestamp; // When the game was created.
@@ -35,6 +36,8 @@ struct maximal_game_result {
     game_type;
     in_check: boolean; // Our king is in check.
     is_white: boolean; // True if this player is white.
+    seed_material: byte_array; // The basis of the seed
+
     // Extra
     my_name: text;
     opp_name: text;
@@ -50,7 +53,6 @@ struct game_time_result {
     // Timestamps
     curr_turn_nr: integer; // Taken from the [game]
     last_player_rotation_at: timestamp; // When the last "move" was finished. 
-    game_created_at: timestamp; // When the game was created.
     total_time_left_since_player_rotation_ms: integer; // Total time left for this player
 }
 

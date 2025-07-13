@@ -1,0 +1,68 @@
+
+// ------------------------------------------------------------------
+// We can validate the seed in a few steps.
+// 1. Validate that the given signature is indeed correct.
+// 2. Validate that the given_seed is indeed extracted from the signature.
+// 
+// If 1) and 2) are true we have success, and return null.
+// ------------------------------------------------------------------
+function seed_validation_validate(
+    game_id: integer,
+    input: seed_validation_input
+): (text?, error_type?) {
+
+    // ------------------------------------------------------------------
+    // 1. Validate that the given signature is indeed correct.
+    // ------------------------------------------------------------------
+    // First conver to hex string, and print to log so that the client 
+    // can compare if this goes wrong on client side.
+    val hex_material = input.seed_material.to_hex();
+    val hex_signature = input.seed_signature.to_hex();
+    log("game_id: "+game_id+" - Begin validate seed signature: "+ hex_signature + ", material hex: "+hex_material+", pubkey size "+ input.pubk.size());
+    require(input.seed_signature.size() == 64 or input.seed_signature.size() == 65, "Seed signature must be 64 or 65 bytes");
+
+    if (verify_signature(input.seed_material, input.pubk, input.seed_signature)) {
+        // Success
+        log("game_id: "+game_id+" - Seed signature valid, check seed extraction");
+        // ------------------------------------------------------------------
+        // 2. Validate that the given_seed is indeed extracted from the signature.
+        // ------------------------------------------------------------------
+        val calc_seed = seed_validation_signature_to_seed(input.seed_signature);
+        if (calc_seed == input.org_seed) {
+            // Success
+            log("game_id: "+game_id+" - Seed correctly built.");
+            return (null, null);
+        } else {
+            // Failure
+            return("Seed mismatch, calculated: "+calc_seed+" but client sent: "+input.org_seed, error_type.SEED_CALCULATION_ERROR); 
+        }
+    } else {
+        // Failure
+        return ("Seed signature invalid", error_type.SEED_SIGNATURE_ERROR); 
+    } 
+}
+
+// Validates that the given signature really signs the timestamp,
+// and that the timestamp 
+// Returns "null" on success or the error message.
+function seed_validation_signature_to_seed(
+    seed_signature: byte_array
+): integer {
+    var random_seed: integer = 0;
+    
+    
+    var factor: integer = 1; // Calculate 256^i manually since Rell doesn't have power operator
+    for (i in range(0, 3)) { // Process first 3 bytes of the signature
+        val x: integer = seed_signature[i];
+        
+        if (i > 0) {
+            factor = factor * 256;
+        }
+
+        random_seed = random_seed + factor * x;
+        log("seed x: "+x+" factor: "+factor+" random_seed: "+random_seed);
+    }
+    
+    // Ensure positive value (equivalent to Math.Abs)
+    return abs(random_seed);
+}

@@ -33,11 +33,13 @@
 // -------------------------------------
 function game_over_move_claim(
     minimal_game: minimal_game_result, 
+    caller_pubkey: pubkey,
     new_turn: turn, 
     is_checkmate: boolean, 
     is_stalemate: boolean, 
     is_insufficient_mating_material: boolean,
-    random_seed: integer?
+    random_seed: integer?,
+    seed_signature: byte_array?
 ) :boolean {
     if (is_checkmate or is_stalemate or is_insufficient_mating_material) {
         // This move ended the game
@@ -77,6 +79,12 @@ function game_over_move_claim(
         // Some client doesn't calculate mate and won't know the the game is over. 
         // These client will send the seed at some later point.
         if (random_seed != null) { 
+            val seed_input = seed_validation_input(
+                pubk = caller_pubkey,
+                seed_material = minimal_game.seed_material,
+                org_seed = random_seed,
+                seed_signature = seed_signature!!
+            );
             // We don't use "require()" on this, since we want to save 
             // the seed even if it's wrong. This means that the client wont
             // get any feedback if the wrong seed was sent.
@@ -85,7 +93,7 @@ function game_over_move_claim(
                 g_type = minimal_game.game_type,
                 g = minimal_game.game,
                 pg = minimal_game.player_game,
-                org_seed = random_seed
+                seed_input = seed_input
             );
 
 

@@ -16,6 +16,7 @@ entity game {
     index white_player: player;
     index black_player: player;
     index game_type: game_type;
+    seed_material: byte_array; // The base data used by the client to generate the seed (by signing this data and extract the seed from the signature.)
 
     // Denormalization for performance reasons
     mutable current_rotation_nr: integer; //A GAME cannot have a reference to the (current) PLAYER_ROTATION entity since it references GAME, 
@@ -178,6 +179,9 @@ enum error_type {
     ILLEGAL_CARD, // Played a card in an illegal way (cannot really happen, since require() will roll back)
     ILLEGAL_MOVE, // Moved in an illegal way (cannot really happen, since require() will roll back)
     TURN_SKIPPED, // Skipped a turn, something wrong with the client's turn count? (cannot really happen, since require() will roll back)
+    // End-of-game errors
+    SEED_SIGNATURE_ERROR, // The seed signature was invalid.
+    SEED_CALCULATION_ERROR, // The signature is valid, but the seed wasn't calculated correctly from signature.
     RND_VALIDATION_CARD_ERROR, // In the end of the game, when random numbers are validated, a number was wrong. In this case the generated card, before the game started, was wrong.
     RND_VALIDATION_TURN_ERROR // In the end of the game, when random numbers are validated, a number was wrong. In this case a random number provided during a turn was wrong.
 }

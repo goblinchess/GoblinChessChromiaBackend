@@ -1,0 +1,12 @@
+
+
+// Create a game error. 
+// This can only happen once per player (via unique constraint)
+function game_error_create(g: game, pg: player_game, err_msg: text, err_type: error_type) {
+
+    val new_error = create game_error (
+        .game =  g, 
+        .player_game = pg, 
+        .error_type = err_type, 
+        .error_message = err_msg);
+}

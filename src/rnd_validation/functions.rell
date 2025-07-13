@@ -28,7 +28,11 @@ function rnd_validation_create_player_rnd_nr(
 
 
 // ------------------------------------------------------------------
-// Find all random numbers that the player used during the game and validate them.
+// 1. Validate 
+// 1.a) Validate the seed, and 
+// 1.b) find all random numbers that the player used during the game and validate them.
+//
+// 2. Update blockchain depending on status
 // If something is wrong we return an error message and save the error!
 //
 // We do this after the game, b/c in the end of the game the client will send us 
@@ -39,31 +43,65 @@ function rnd_validation_of_player(
     g_type: game_type,
     g: game,
     pg: player_game,
-    org_seed: integer // Client's seed, unique for each game/player
+    seed_input: seed_validation_input
 ): text? {
+    var success = false;
+    var err_msg = "";
+    var err_type = error_type.SEED_SIGNATURE_ERROR;
+    var rnd_nr: rnd_nr_from_player? = null;
 
-    log("game_id: "+game_id+" - Begin");
+    log("game_id: "+game_id+" - Begin.");
+    // ----------------------------
+    // 1. Validate 
+    // ----------------------------
 
-    val (err_msg, rnd_nr) = rnd_validation_of_player_inner(game_id, g_type, g, pg, org_seed);
-    val success = err_msg == null;
+    val (s_err, s_err_type) = seed_validation_validate(game_id, seed_input);
+    if (s_err == null) {
+        // Success
+        log("game_id: "+game_id+" - Seed correctly built, check random numbers");
+        val (r_err, rnd_nr_tmp, r_err_type) = rnd_validation_of_player_inner(game_id, g_type, g, pg, seed_input.org_seed);
+        if (r_err == null) {
+            // Success 
+            log("game_id: "+game_id+" - Random numbers all correct");
+            success = true;
+        } else {
+            err_msg = r_err;
+            rnd_nr = rnd_nr_tmp;
+            err_type = r_err_type!!;
+        }
+    } else {
+        // Failure
+        err_msg = s_err;
+        err_type = s_err_type!!;
+    }
+
+    // ----------------------------
+    // 2. Update depending on status
+    // ----------------------------
+
     if (success) {
         update g (.valid_seeds_count = g.valid_seeds_count + 1);
 
         create player_game_seed (
             .game = g, 
             .player_game = pg, 
-            .seed = org_seed, 
+            .seed = seed_input.org_seed, 
             .validation_success = true,
             .created_at = op_context.last_block_time);
 
     } else {
+        log("game_id: "+game_id+" - "+err_msg);
+
+        // Save the error
+        game_error_create(g, pg, err_msg, err_type);
+
         update g (.invalid_seeds_count = g.invalid_seeds_count + 1);
 
         // Save the seed
         val new_pg_seed = create player_game_seed (
             .game = g, 
             .player_game = pg, 
-            .seed = org_seed, 
+            .seed = seed_input.org_seed, 
             .validation_success = false,
             .created_at = op_context.last_block_time);
 
@@ -80,6 +118,9 @@ function rnd_validation_of_player(
 }
 
 
+
+
+
 // ------------------------------------------------------------------
 // If successful only null is returned. 
 // If failed, and error text is returned and
@@ -91,7 +132,7 @@ function rnd_validation_of_player_inner(
     g: game,
     pg: player_game,
     org_seed: integer // Client's seed, unique for each game/player
-): (text?, rnd_nr_from_player?)
+): (text?, rnd_nr_from_player?, error_type?)
 {
     var curr_seed = org_seed;
 
@@ -120,16 +161,7 @@ function rnd_validation_of_player_inner(
             val err_msg = "game_id: "+game_id+" - The nr " + card_hist.draw_order_nr + 
                 " drawn should have been a " + calculated_type + " but client played type: " + card_hist.card_type;
 
-            log(err_msg);
-
-            // Save the error
-            val new_error = create game_error (
-                .game =  g, 
-                .player_game = pg, 
-                .error_type = error_type.RND_VALIDATION_CARD_ERROR,  // Unique for this case
-                .error_message = err_msg);
-
-            return (err_msg, null);
+            return (err_msg, null, error_type.RND_VALIDATION_CARD_ERROR);
         }
     }
 
@@ -156,17 +188,8 @@ function rnd_validation_of_player_inner(
             // If it's a bug, it will be pretty hard to find unless we have a detailed error message.
             val err_msg = "Invalid random number at turn " + res.turn_nr +" (index "+ idx + "), our number: "+ r.result +", client number: " + res.result + 
                 " (min: " + res.min + ", max: " + res.max + "), type: " + res.type + " for game: " + game_id;
-            log(err_msg);
 
-
-            // Save the error (useful for client messages)
-            create game_error (
-                .game = g, 
-                .player_game = pg, 
-                .error_type = error_type.RND_VALIDATION_TURN_ERROR, // <-- we can connect the rnd_nr to a turn.
-                .error_message = err_msg);
-
-            return (err_msg, res.playa_rnd_nr); // No need to go on, one error is enough!
+            return (err_msg, res.playa_rnd_nr, error_type.RND_VALIDATION_TURN_ERROR); // No need to go on, one error is enough!
         }
 
         idx++;
@@ -174,7 +197,7 @@ function rnd_validation_of_player_inner(
 
     // Success
     log("game_id: "+game_id+" - Everything successfully validated");
-    return (null, null); // No errors
+    return (null, null, null); // No errors
 }
 
 // --------------------------------------------------------------

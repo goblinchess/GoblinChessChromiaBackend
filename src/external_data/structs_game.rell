@@ -9,7 +9,8 @@ struct in_game_result {
     opponent_name: text;
     opponent_elo: integer;
     curr_turn_nr: integer; // If the game just started, this will be 0
-    created_at: timestamp; // When the game was created
+    created_at: integer; // Unix timestamp
+    seed_material: byte_array; // The base data used by the client to generate the seed (by signing this data and extract the seed from the signature.)
 }
 
 // Returned so that the client can see a list of old games

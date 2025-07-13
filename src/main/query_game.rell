@@ -21,7 +21,7 @@ query in_game (
     if (minimal_game == null) {
         return null;
     } else {
-        val g_data = game@ {.rowid == minimal_game.game.rowid} (.rowid, .black_player, .white_player, .created_at);
+        val g_data = game@ {.rowid == minimal_game.game.rowid} (.rowid, .black_player, .white_player, .seed_material, .created_at);
 
 
         val plays_white = minimal_game.is_white;
@@ -41,7 +41,8 @@ query in_game (
             opponent_name = opp.name,
             opponent_elo = opp.elo_rating,
             curr_turn_nr = minimal_game.curr_turn_nr,
-            created_at = g_data.created_at
+            created_at = g_data.created_at,
+            seed_material = g_data.seed_material
         );
     }
 }

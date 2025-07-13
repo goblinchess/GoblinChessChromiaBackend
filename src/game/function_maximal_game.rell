@@ -18,7 +18,7 @@ function maximal_game_get_via_pg(this_player: player_game) :maximal_game_result?
         my_name = p_my.name, opp_name = p_opp.name, // Names
         my_elo_before = pg_my.elo_rating_before_game, opp_elo_before = pg_opp.elo_rating_before_game, // initial ELO 
         my_elo = p_my.elo_rating, opp_elo = p_opp.elo_rating, // ELO
-        g_id = g.rowid.to_integer(), game_type = g.game_type,  is_white = pg_my.is_white, in_check = pg_my.in_check, black_player = g.black_player // General
+        g_id = g.rowid.to_integer(), game_type = g.game_type,  is_white = pg_my.is_white, in_check = pg_my.in_check, g_mat = g.seed_material // General
         );
 
 
@@ -37,6 +37,7 @@ function maximal_game_get_via_pg(this_player: player_game) :maximal_game_result?
             game_type = res.game_type,
             in_check = res.in_check,
             is_white =res.is_white,
+            seed_material = res.g_mat,
             // Extra
             my_name = res.my_name,
             opp_name = res.opp_name,
@@ -77,7 +78,7 @@ function maximal_game_and_end_data_get_even_if_finished(
         my_name = p_my.name, opp_name = p_opp.name, // Names
         my_elo_before = pg_my.elo_rating_before_game, opp_elo_before = pg_opp.elo_rating_before_game, // initial ELO 
         my_elo = p_my.elo_rating, opp_elo = p_opp.elo_rating, // curr ELO
-        g_id = g.rowid.to_integer(), game_type = g.game_type,  is_white = pg_my.is_white, in_check = pg_my.in_check, black_player = g.black_player, // General
+        g_id = g.rowid.to_integer(), game_type = g.game_type,  is_white = pg_my.is_white, in_check = pg_my.in_check, g_mat = g.seed_material, // General
         game_finished = g.is_finished,  game_finish_reason = g.finish_reason, // End data
         game_valid_seeds = g.valid_seeds_count, game_invalid_seeds = g.invalid_seeds_count // End data
         );
@@ -98,6 +99,7 @@ function maximal_game_and_end_data_get_even_if_finished(
             game_type = res.game_type,
             in_check = res.in_check,
             is_white =res.is_white,
+            seed_material = res.g_mat,
             // Extra
             my_name = res.my_name,
             opp_name = res.opp_name,
@@ -159,7 +161,7 @@ function maximal_game_and_timeout_data_get(
         cr_at = g.last_player_rotation_at, game_created_at = g.created_at, opp_last_heartbeat = pg_opp.last_heartbeat, // Timeout
         my_time_left_ms = pg_my.total_time_left, opp_time_left_ms = pg_opp.total_time_left, // Total time left
         rot_owner = rot.created_by, curr_turn_nr = g.current_turn_nr, turn_nr = t.number, // Turn data
-        g_id = g.rowid.to_integer(), game_type = g.game_type,  is_white = pg_my.is_white, in_check = pg_my.in_check, black_player = g.black_player // General
+        g_id = g.rowid.to_integer(), game_type = g.game_type,  is_white = pg_my.is_white, in_check = pg_my.in_check, g_mat = g.seed_material // General
         );
 
 
@@ -181,6 +183,7 @@ function maximal_game_and_timeout_data_get(
             game_type = res.game_type,
             in_check = res.in_check,
             is_white =res.is_white,
+            seed_material = res.g_mat,
             // Extra
             my_name = res.my_name,
             opp_name = res.opp_name,
@@ -196,7 +199,6 @@ function maximal_game_and_timeout_data_get(
             // Timestamps
             curr_turn_nr = res.curr_turn_nr,
             last_player_rotation_at = res.cr_at,
-            game_created_at = res.game_created_at,
             total_time_left_since_player_rotation_ms = res.my_time_left_ms,
         );
     

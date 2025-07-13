@@ -1,3 +1,8 @@
+Send the seed back when fetching game over.
+
+
+
+
 TODO: Remove the damage from history in classical mode.
 TODO: Should we remove the option of attacking obstacles in classical mode (we don't allow anyone to survive).
 

@@ -82,9 +82,9 @@ struct move_check_arguments {
     is_stalemate: boolean; // Client thinks this is a stalemate
     is_insufficient_mating_material: boolean; // Client thinks this is insufficient mating material
 
-    // The random seed used for the game. Only sent if game is over.
-    // Seed cannot be too big, must be less than 2^32
-    random_seed: integer?; 
+    // The seed data used for the game. Only sent if game is over.
+    random_seed: integer?;  // Random seed cannot be too big, must be less than 2^32
+    seed_signature: byte_array?; // The signature of the [seed_material] (used to create the [random_seed].)
 }
 
 // ------------------------------------------------------------------------------

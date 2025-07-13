@@ -1,0 +1,11 @@
+
+
+
+// All the data we need to validate the seed
+// (Each player has a unique seed for each game)
+struct seed_validation_input {
+    pubk: pubkey;                // 1. Client's pubkey, used to sign seed_material
+    seed_material: byte_array;   // 2. What client signed (to extract the seed)
+    seed_signature: byte_array;  // 3. The resulting signature.
+    org_seed: integer;           // 4. The seed, extracted from the signature.
+}

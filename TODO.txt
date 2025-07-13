@@ -1,3 +1,5 @@
+Use last block RID as the base for the seed.
+
 Send the seed back when fetching game over.
 
 

@@ -353,11 +353,13 @@ function move_attack_inner(
     // B.8 Is it over?
     // ----------------
     var rnd_seed: integer? = null;
+    var seed_signature: byte_array? = null;
     if (check_args != null) {
         rnd_seed = check_args.random_seed;
+        seed_signature = check_args.seed_signature;
     }
     val is_game_over = game_over_move_claim(
-        minimal_game, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material, rnd_seed);
+        minimal_game, caller_pubkey, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material, rnd_seed, seed_signature);
     if (not is_game_over) {
         // Usually we don't set "time_left" during regular moves, but there is one case where we must make an exception:
         if (turn_is_last_double_move(new_turn_type)) {

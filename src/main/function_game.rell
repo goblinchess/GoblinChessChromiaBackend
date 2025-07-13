@@ -57,6 +57,15 @@ function game_create_inner(white_player: player, black_player: player, game_type
 
     val game_type_str = game_type_str_raw.upper_case();
     val g_type: game_type = game_type.value(game_type_str);
+
+    // Fetching the most recent Block RID 
+    val last_height = op_context.block_height - 1;
+    var last_block_rid = byte_array("00").repeat(32);
+    if (last_height >= 0) {
+        last_block_rid = (b: block)@ {b.block_height == last_height} (.block_rid);
+    } else {
+        log("Warning: Are we really building the block 0? "+last_height);
+    }
     
     val new_game = create game(
         .white_player = white_player,
@@ -65,7 +74,8 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .current_rotation_nr = 0, // Starting at 0 means first (actual) rotation will be 1.
         .current_turn_nr = 0, // Starting at 0 means first (actual) turn will be 1.
         .created_at = op_context.last_block_time,
-        .last_player_rotation_at = op_context.last_block_time
+        .last_player_rotation_at = op_context.last_block_time,
+        .seed_material = last_block_rid
     );
 
     val start_time_remaining = game_type_to_time_left(g_type);

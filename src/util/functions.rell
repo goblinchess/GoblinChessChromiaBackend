@@ -78,3 +78,15 @@ function ln(x: decimal): decimal {
 
     return res;
 }
+
+
+function int_to_hex_text(x: integer): text {
+    val start_hex = x.to_hex();
+
+    if (start_hex.size() % 2 == 0) {
+        return start_hex;
+    } else {
+        return "0" + start_hex;
+    }
+}
+
