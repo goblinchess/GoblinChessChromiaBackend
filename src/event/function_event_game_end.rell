@@ -32,16 +32,7 @@ function event_game_end_get_from_event(e: event): (is_final: boolean, is_checkma
 
 function event_game_end_create(game, turn, is_checkmate: boolean, is_stalemate: boolean, is_im: boolean) {
 
-    require(is_checkmate or is_stalemate or is_im, "At least one of the end conditions must be true");
-    if (is_checkmate) {
-        require(not is_stalemate and not is_im, "Cannot have both checkmate and other end conditions");
-    }
-    if (is_stalemate) {
-        require(not is_checkmate and not is_stalemate, "Cannot have both insufficient mating material and other end conditions");
-    }
-    if (is_im) {
-        require(not is_checkmate and not is_im, "Cannot have both stalemate and other end conditions");
-    }
+    event_game_end_validate(is_checkmate, is_stalemate, is_im);
 
     // New event
     val new_event = turn_create_event(game, turn, event_type.GAME_END_EVENT);
@@ -53,5 +44,25 @@ function event_game_end_create(game, turn, is_checkmate: boolean, is_stalemate: 
         .is_stalemate = is_stalemate,
         .is_insufficient_mating_material = is_im
     );
+}
+
+// We validate that we have exactly ONE ending condition.
+function event_game_end_validate(is_checkmate: boolean, is_stalemate: boolean, is_im: boolean) {
+    var at_least_one = false;
+    if (is_checkmate) {
+        require(not is_stalemate, "Cannot have both checkmate and stalemate");
+        require(not is_im, "Cannot have both checkmate and insufficient mating material");
+        at_least_one = true;
+    }
+    if (is_stalemate) {
+        //require(not is_checkmate, "Cannot have both stalemate and checkmate"); // Tested
+        require(not is_im, "Cannot have both stalemate and insufficient mating material");
+        at_least_one = true;
+    } 
+    if (is_im) {
+        at_least_one = true;
+    }
+
+    require(at_least_one, "At least one of the end conditions must be true");
 }
 
