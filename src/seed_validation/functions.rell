@@ -60,7 +60,7 @@ function seed_validation_signature_to_seed(
         }
 
         random_seed = random_seed + factor * x;
-        log("seed x: "+x+" factor: "+factor+" random_seed: "+random_seed);
+        //log("seed x: "+x+" factor: "+factor+" random_seed: "+random_seed);
     }
     
     // Ensure positive value (equivalent to Math.Abs)

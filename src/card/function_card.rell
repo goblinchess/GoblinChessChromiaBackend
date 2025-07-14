@@ -310,7 +310,7 @@ function card_play_inner_core(
         }
         PORTAL -> {
             // Portal needs a random number
-            require(rnd_numbers.size() == 1, "Portal needs one random number used when the exit is calculated.");
+            require(rnd_numbers.size() == 1, "Portal needs one random number used when the exit is calculated, you gave: " + rnd_numbers.size() + " numbers?");
             val rnd_data = rnd_numbers[0];
 
             val portal_entry_pos = card_picks[0];

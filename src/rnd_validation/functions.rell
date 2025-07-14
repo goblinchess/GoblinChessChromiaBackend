@@ -116,12 +116,7 @@ function rnd_validation_of_player(
         }
         return err_msg;
     }
-
 }
-
-
-
-
 
 // ------------------------------------------------------------------
 // If successful only null is returned. 
@@ -153,6 +148,7 @@ function rnd_validation_of_player_inner(
     for (idx in range(0, 5)) {
         val rnd_val = five_generated_cards.results[idx];
         val card_type = card_get_type_from_index(rnd_val);
+        log("game_id: "+game_id+" - Rnd: "+ rnd_val + ", card type: " + card_type);
         card_map[idx] = card_type;
     }
 

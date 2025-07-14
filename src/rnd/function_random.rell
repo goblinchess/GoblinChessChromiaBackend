@@ -43,7 +43,9 @@ function generate_random_numbers(seed: integer, count: integer, max_value: integ
         // Generate next number using LCG formula: X(n+1) = (a * X(n) + c) mod MODU
         current = (a * current + c) % modu;
         // Scale to desired range (0 to max_value)
-        results.add(abs(current % (max_value + 1)));
+        val res = abs(current % (max_value + 1));
+        log(" - Curr seed set to : "+ current + ", result: " + res);
+        results.add(res);
     }
     
     return random_results(results, base_seed = seed, new_seed = current);
