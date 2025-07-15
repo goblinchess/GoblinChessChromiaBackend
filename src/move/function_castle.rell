@@ -11,18 +11,18 @@ function move_castle_verify_and_return_rook(
     is_white: boolean, 
     g: game
 ): alive {
-    require(p_type == piece_type.KING, "Only kings can castle, id:" + game_id);
+    require(p_type == piece_type.KING, "Only kings can castle, game_id:" + game_id);
 
     if (is_white) {
-        require(from_position == 4, "White king must not have moved, " + from_position + ", id: " + game_id);
-        require(castle_rook_from == 0 or castle_rook_from == 7, "Rook must not have moved: " + castle_rook_from + ", id:" + game_id);
+        require(from_position == 4, "White king must not have moved, " + from_position + ", game_id: " + game_id);
+        require(castle_rook_from == 0 or castle_rook_from == 7, "Rook must not have moved: " + castle_rook_from + ", game_id:" + game_id);
     } else {
-        require(from_position == 60, "Black king must not have moved, " + from_position + ", id: " + game_id);
-        require(castle_rook_from == 63 or castle_rook_from == 56, "Rook must not have moved: " + castle_rook_from + ", id:" + game_id);
+        require(from_position == 60, "Black king must not have moved, " + from_position + ", game_id: " + game_id);
+        require(castle_rook_from == 63 or castle_rook_from == 56, "Rook must not have moved: " + castle_rook_from + ", game_id:" + game_id);
     }
 
     val rook = alive_get_via_game_and_position(g, castle_rook_from);
-    require(rook != null, "No rook at position " + castle_rook_from + ", id:" + game_id);
+    require(rook != null, "No rook at position " + castle_rook_from + ", game_id:" + game_id);
     return rook;
 }
 
@@ -40,20 +40,22 @@ function move_castle_get_king_path(
         if (to_position == 6) {
             // Short castle
             king_path.add(5);
-        } if (to_position == 2) {
+        } else if (to_position == 2) {
             // Long castle
             king_path.add(3);
         } else {
-            require(false, "Invalid white castle to position: " + to_position + ", id:" + game_id);
+            require(false, "Invalid white castle to position: " + to_position + ", game_id:" + game_id);
         }
     } else {
         // Must be black
         if (to_position == 62) {
             // Short castle
             king_path.add(61);
-        } if (to_position == 58) {
+        } else if (to_position == 58) {
             // Long castle
             king_path.add(59);
+        } else {
+            require(false, "Invalid white castle to position: " + to_position + ", game_id:" + game_id);
         }
     }
 
