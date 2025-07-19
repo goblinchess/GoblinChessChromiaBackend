@@ -41,12 +41,22 @@ query get_opponents_recent_actions (
     } 
     // Should never happen, since we just checked maximal_game.
     require(opp_timeout_data != null, "game_id " + game_id + ", ERROR opp_timeout_data not found. Internal error.");
+    require(g_end_data_org != null, "game_id " + game_id + ", ERROR g_end_data_org not found. Internal error.");
     
     // Find the latest turn where it was the opponent's move
     // (This is the current turn if it's the opponent's turn, 
     // or the previous turn if it's the player's turn)
     val curr_turn_nr = minimal_game.curr_turn_nr;
-    if (curr_turn_nr == last_seen_turn) return null; // No new turns, quit.
+
+    var g_end_data: game_end_data? = null;
+    if (g_end_data_org.is_finished) {
+        g_end_data = g_end_data_org; // Only send this if the game is finished.
+    } else {
+        // For ongoing games we can quit immediately if nothing new
+        if (curr_turn_nr == last_seen_turn) return null; // No new turns, quit.
+        // ... but for finished games we might not have created a new turn for the "end"
+        // and therefor we must always move on here, to be certain we'll send the [game_end_data].
+    }
 
     // --------------------------------
     // 1. Look for logical errors when comparing last_seen_turn_nr to fetched_rotation_nr.
@@ -56,11 +66,6 @@ query get_opponents_recent_actions (
     // We won't allow the caller to fetch his own moves this way, too expensive and likely a bug.
     player_rotation_validate_curr_vs_last_seen(game_id, fetching_rotation_nr, minimal_game.curr_rotation_nr);
 
-    var g_end_data: game_end_data? = null;
-    if (g_end_data_org != null and g_end_data_org.is_finished) {
-        g_end_data = g_end_data_org; // Only send this if the game is finished.
-    }
-    
     // Get everything that happened since last seen turn
     return player_rotation_get_all_actions(game_id, fetching_rotation_nr, max_turn_nr_of_the_player_rotation, minimal_game, last_seen_turn, opp_timeout_data, calc_timeout, g_end_data); 
 }

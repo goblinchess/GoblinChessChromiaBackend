@@ -107,13 +107,17 @@ function player_rotation_get_all_actions(
         (@sort nr = t.number, t.turn_type, trn = t);
     
     var turns_found = recent_turns.size();
-    if (turns_found == 0) { 
+    if (turns_found > 0) {
+        log("game_id " + game_id + " - Found " + turns_found + " turns to fetch! last_seen_turn: " + last_seen_turn + ", max_turn_nr_of_the_player_rotation: " + max_turn_nr_of_the_fetched_rotation);
+    } else if(g_end_data != null) { 
+        log("game_id " + game_id + " - No turns found (last_seen_turn: " + last_seen_turn + "), but we have game_end_data: " + g_end_data.finish_reason + 
+        ", seeds, valid: " + g_end_data.valid_seeds_count + ", invalid: " + g_end_data.invalid_seeds_count);
+    } else {
         // Let's exit early (since we wan't to do minimal SELECTs)
         log("game_id " + game_id + " - Nothing new to fetch. last_seen_turn: " + last_seen_turn + ", max_turn_nr_of_the_player_rotation: " + max_turn_nr_of_the_fetched_rotation);
         return null; 
     } 
 
-    log("game_id " + game_id + " - Found " + turns_found + " turns to fetch! last_seen_turn: " + last_seen_turn + ", max_turn_nr_of_the_player_rotation: " + max_turn_nr_of_the_fetched_rotation);
 
     // The idea is that this variable will be updated without gaps, else sorting is broken.
     var return_turn_nr: integer = last_seen_turn;  // The new last seen turn nr

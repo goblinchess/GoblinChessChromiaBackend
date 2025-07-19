@@ -2,6 +2,20 @@
 
 
 
+// Is this end "caused by" a move? 
+// In that case the opponent will disicover the end when fetching 
+// the moves.
+function game_end_type_is_move_end(g_end: game_end_type) {
+    when (g_end) {
+        game_end_type.CHECKMATE,
+        game_end_type.STALEMATE,
+        game_end_type.INSUFFICIENT_MATING_MATERIAL ->
+            return true;
+        else -> return false;
+    }
+}
+
+
 // Should the one claiming game_finish win?
 function game_end_type_is_claim_win(claim_type: game_end_type) {
     when (claim_type) {
