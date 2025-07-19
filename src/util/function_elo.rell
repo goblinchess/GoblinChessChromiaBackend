@@ -86,7 +86,7 @@ namespace elo {
         p1_is_higher: boolean
     ): (integer, integer) {
         val draw_points_diff = (K_FACTOR_DEFAULT * (0.5 - expected_score)).to_integer();
-        log("draw_points_diff: " + draw_points_diff);
+        log("- draw_points_diff: " + draw_points_diff);
 
         // The player with higher rating is the one who loses points
         if (p1_is_higher) {
@@ -107,7 +107,7 @@ namespace elo {
     ): (integer, integer) {
         // A positive number, added to the winners ELO 
         val points_diff = (K_FACTOR_DEFAULT * (1.0 - expected_score)).to_integer();
-        log("win_points_diff: " + points_diff);
+        log("- win_points_diff: " + points_diff);
 
         // Winner gains as much as the loser loses
         val new_winner_rating = winner_old_rating + points_diff;

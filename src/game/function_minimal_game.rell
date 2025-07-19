@@ -47,6 +47,55 @@ function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
 }
 
 // -------------------------------------
+// Will find the [minimal_game_result] (which holds the player, 
+// the game and the color) from the player's pubkey and game_id.
+// Doesn't matter if the game is ongoing or finished.
+// -------------------------------------
+function minimal_game_data_get_even_if_finished(
+    player_pubkey: pubkey, 
+    game_id: integer
+) :minimal_game_result? {
+
+    val game_rowid = rowid(game_id);
+
+    // Return data
+    val res = (p: player, pg: player_game, g: game)@?  {
+        p.signer == player_pubkey, 
+        pg.player == p, 
+        g.rowid == game_rowid, // <-- THE GAME WE ARE LOOKING FOR
+        g == pg.game,
+        g.is_finished == false 
+    }
+        (gme = g, player = pg.player, player_game = pg,  // Primary keys 
+        g_id = g.rowid.to_integer(), game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, is_white = pg.is_white, in_check = pg.in_check, g_mat = g.seed_material, // General Data
+        prev_move_time = g.last_player_rotation_at, game_created_at = g.created_at, my_time_left_ms = pg.total_time_left // Minimal Timestamps
+        );
+
+    if (res != null) {
+        return minimal_game_result(
+            // Primary keys
+            player = res.player,
+            player_game = res.player_game,
+            game = res.gme,
+            // Data
+            game_id = res.g_id,
+            game_type = res.game_type,
+            curr_rotation_nr = res.curr_rot_nr,
+            curr_turn_nr = res.curr_turn_nr,
+            in_check = res.in_check,
+            is_white =res.is_white,
+            seed_material = res.g_mat,
+            // Timestamps
+            last_player_rotation_at = res.prev_move_time,
+            game_created_at = res.game_created_at,
+            total_time_left_since_player_rotation_ms = res.my_time_left_ms
+        );
+    } else {
+        return null;
+    }
+}
+
+// -------------------------------------
 // Will find various data EVEN if the game is finished 
 // 1. [minimal_game_result], 
 // 2. [opponent_timeout_data].

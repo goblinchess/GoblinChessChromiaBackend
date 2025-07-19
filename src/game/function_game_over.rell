@@ -53,13 +53,13 @@ function game_over_move_claim(
             _inner_game_end_checkmate(minimal_game.game, new_turn.number, minimal_game.player_game);
             end_reason = game_end_type.CHECKMATE;
         } else if (is_stalemate) {
-            // Stalemate
             _inner_game_end_stalemate(minimal_game.game, new_turn.number);
             end_reason = game_end_type.STALEMATE;
-        } else {
-            // Insufficient mating material
+        } else if (is_insufficient_mating_material) {
             _inner_game_end_insufficient_mating_material(minimal_game.game, new_turn.number);
             end_reason = game_end_type.INSUFFICIENT_MATING_MATERIAL;
+        } else {
+            require(false, "Game ended with unknown reason, id:" + minimal_game.game_id);
         }
 
         // ------------------------------------------- 
@@ -79,42 +79,53 @@ function game_over_move_claim(
         // Some client doesn't calculate mate and won't know the the game is over. 
         // These client will send the seed at some later point.
         if (random_seed != null) { 
-            val seed_input = seed_validation_input(
-                pubk = caller_pubkey,
-                seed_material = minimal_game.seed_material,
-                org_seed = random_seed,
-                seed_signature = seed_signature!!
-            );
-            // We don't use "require()" on this, since we want to save 
-            // the seed even if it's wrong. This means that the client wont
-            // get any feedback if the wrong seed was sent.
-            val x = rnd_validation_of_player(
-                game_id = minimal_game.game_id,
-                g_type = minimal_game.game_type,
-                g = minimal_game.game,
-                pg = minimal_game.player_game,
-                seed_input = seed_input
-            );
-
-
-            // This doesn't happen often, so we can afford it
-            val maximal_game = maximal_game_get_via_pg(minimal_game.player_game);
-
-            // Note: it doesn't matter if the player claims draw or win,
-            // we'll set them as a winner since we AT LEAST know the 
-            // random seed was valid.
-            if (x == null) {
-                // Success
-                game_stats_claim_me_as_winner(maximal_game!!, end_reason);
-            } else {
-                // Error
-                game_stats_claim_opp_as_winner(maximal_game!!, end_reason);
-            }
+            _inner_game_over_set_winner_and_loser(minimal_game, caller_pubkey, random_seed, seed_signature, end_reason);
         }
+
 
         return true;
     } else {
         return false; // This move didn't end the game.
+    }
+}
+
+function _inner_game_over_set_winner_and_loser(
+    minimal_game: minimal_game_result, 
+    caller_pubkey: pubkey, 
+    random_seed: integer, 
+    seed_signature: byte_array?,
+    end_reason: game_end_type
+) {
+    val seed_input = seed_validation_input(
+        pubk = caller_pubkey,
+        seed_material = minimal_game.seed_material,
+        org_seed = random_seed,
+        seed_signature = seed_signature!!
+    );
+    // We don't use "require()" on this, since we want to save 
+    // the seed even if it's wrong. This means that the client wont
+    // get any feedback if the wrong seed was sent.
+    val x = rnd_validation_of_player(
+        game_id = minimal_game.game_id,
+        g_type = minimal_game.game_type,
+        g = minimal_game.game,
+        pg = minimal_game.player_game,
+        seed_input = seed_input
+    );
+
+
+    // This doesn't happen often, so we can afford it
+    val maximal_game = maximal_game_get_via_pg(minimal_game.player_game);
+
+    // Note: it doesn't matter if the player claims draw or win,
+    // we'll set them as a winner since we AT LEAST know the 
+    // random seed was valid.
+    if (x == null) {
+        // Success
+        game_stats_claim_me_as_winner(maximal_game!!, end_reason);
+    } else {
+        // Error
+        game_stats_claim_opp_as_winner(maximal_game!!, end_reason);
     }
 }
 
@@ -144,27 +155,82 @@ function _inner_game_end_insufficient_mating_material(gme: game, curr_turn_nr: i
 // -------------------------------------
 
 
+// Will regign the game, validate the seed etc.
+// What to do if the game is already over? (Could be that the opponent just resigned too or whatever.)
+// Best is to simply terminate the game (by validate the seed etc) and don't report an error, since 
+// we got the seed and it shouldn't go to waste.
+// Remember, the player WANTED to end the game, so if it's already over that's a good thing.
+function game_over_resign(caller_pubkey: pubkey, game_id: integer, random_seed: integer, seed_signature: byte_array) {
+    log("game_id: " + game_id.to_text() + " - started.");
+
+    val (minimal_game: minimal_game_result?, timeout_data: opponent_timeout_data?, g_end: game_end_data?) = 
+        minimal_game_and_timeout_data_get_even_if_finished(caller_pubkey, game_id);
+    require(minimal_game != null, "Game not found, id:" + game_id);
+    require(g_end != null, "Should not happen, id:" + game_id);
+
+    if (g_end.is_finished) {
+        // Best is to simply terminate the game (by validate the seed etc) and don't report an error, since 
+        // we got the seed and it shouldn't go to waste.
+        log("game_id: " + game_id.to_text() + " - game already ended, reason: " + g_end.finish_reason );
+
+        // This will also validate if the game is already terminated (which cannot be explained, and would be a real error)
+        game_terminate_with_seed(caller_pubkey, game_id, random_seed, seed_signature);
+    } else {
+        // We don't care if the game is out of sync, since we might be doing this during the opponent's rotation anyways.
+        val curr_turn = minimal_game.curr_turn_nr;
+        log("game_id: " + game_id.to_text() + " - game ongoing, turn: " + curr_turn.to_text() + ". Ending it now");
+
+        // ... so no need setting the [current_turn_nr] here. 
+        update minimal_game.game (.is_finished = true, .finish_reason = game_end_type.RESIGNATION);
+
+        // Don't create [event_game_end], that's only when the game ends BECAUSE of a move.
+
+        // As usual, we'll set ourself as winner, until the opponent provides their seed.
+        _inner_game_over_set_winner_and_loser(minimal_game, caller_pubkey, random_seed, seed_signature, game_end_type.RESIGNATION);
+    }
+}
+
+
 // What to do if the game is already over? (Could be that the opponent just resigned too or whatever.)
 // Best is to simply validate the seed and don't report an error, since 
 // we got the seed and it shouldn't go to waste.
 // Remember, the player WANTED to end the game, so if it's already over that's a good thing.
-function game_over_resign(caller_pubkey: pubkey, game_id: integer, random_seed: integer) {
-    log("game_over_resign() - started, game: " + game_id.to_text());
+function game_over_resign_with_error(caller_pubkey: pubkey, game_id: integer, random_seed: integer, seed_signature: byte_array, error_message: text) {
+    log("game_id: " + game_id.to_text() + " - started");
 
-    // ----------------
-    // A.1. Check player entity
-    // ----------------
-    //log("Move A.1");
-    val minimal_game: minimal_game_result? = minimal_game_data_get(caller_pubkey);
-    require(minimal_game != null, "Player is not in a game, id:" + game_id);
-    require(minimal_game.game_id == game_id, "The game id of the ongoing game " + minimal_game.game_id + " doesn't match the given id " + game_id + ".");
+    val (minimal_game: minimal_game_result?, timeout_data: opponent_timeout_data?, g_end: game_end_data?) = 
+        minimal_game_and_timeout_data_get_even_if_finished(caller_pubkey, game_id);
+    require(minimal_game != null, "Game not found, id:" + game_id);
+    require(g_end != null, "Should not happen, id:" + game_id);
 
-    // We don't care if the game is out of sync, since we might be doing this during the opponent's rotation anyways.
-    val curr_turn = minimal_game.curr_turn_nr;
+    if (g_end.is_finished) {
+        // Best is to simply terminate the game (by validate the seed etc) and don't report an error, since 
+        // we got the seed and it shouldn't go to waste.
+        log("game_id: " + game_id.to_text() + " - game already ended, reason: " + g_end.finish_reason);
 
-    update minimal_game.game (.is_finished = true, .finish_reason = game_end_type.RESIGNATION);
+        // This will also validate if the game is already terminated (which cannot be explained, and would be a real error)
+        game_terminate_with_seed(caller_pubkey, game_id, random_seed, seed_signature);
 
-    // TODO: We should create a game_end_event, but shouldn't that hang on the "rotation" (not on the "turn")
+        // If termination succeeded, we SHOULD be able to report the error too (even though it's not the reason the game ended)
+        create game_error (minimal_game.game, minimal_game.player_game, error_type.CLIENT_ERROR_AFTER_END, error_message);
+
+    } else {
+        // We don't care if the game is out of sync, since we might be doing this during the opponent's rotation anyways.
+        val curr_turn = minimal_game.curr_turn_nr;
+        log("game_id: " + game_id.to_text() + " - game ongoing, turn: " + curr_turn.to_text() + ". Ending it now");
+
+        // ... so no need setting the [current_turn_nr] here. 
+        update minimal_game.game (.is_finished = true, .finish_reason = game_end_type.ERROR);
+
+        // Don't create [event_game_end], that's only when the game ends BECAUSE of a move.
+        // and here the error could come from anywhere, like opponent's move for example.
+
+        // As usual, we'll set ourself as winner, until the opponent provides their seed.
+        _inner_game_over_set_winner_and_loser(minimal_game, caller_pubkey, random_seed, seed_signature, game_end_type.ERROR);
+
+        // Should be abole to save the error message
+        create game_error (minimal_game.game, minimal_game.player_game, error_type.CLIENT_ERROR, error_message);
+    }
 }
 
 

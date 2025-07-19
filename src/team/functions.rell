@@ -181,7 +181,7 @@ function team_move_character_from_to(team: character_team, old_pos: integer, new
 function team_remove_if_character(team: character_team, pos: integer) {
     val pld = team_get_member_from_pos(team, pos);
     if (pld == null) { 
-        log("team_remove_if_character() - dead vuln at " + pos + " is not a piece"); // Somewhat unusual, but ok.
+        log(" - dead vuln at " + pos + " is not a piece"); // Somewhat unusual, but ok.
     }
     else {
         team.members.remove(pld.p.rowid);

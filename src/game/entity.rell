@@ -183,5 +183,8 @@ enum error_type {
     SEED_SIGNATURE_ERROR, // The seed signature was invalid.
     SEED_CALCULATION_ERROR, // The signature is valid, but the seed wasn't calculated correctly from signature.
     RND_VALIDATION_CARD_ERROR, // In the end of the game, when random numbers are validated, a number was wrong. In this case the generated card, before the game started, was wrong.
-    RND_VALIDATION_TURN_ERROR // In the end of the game, when random numbers are validated, a number was wrong. In this case a random number provided during a turn was wrong.
+    RND_VALIDATION_TURN_ERROR, // In the end of the game, when random numbers are validated, a number was wrong. In this case a random number provided during a turn was wrong.
+    // Client error
+    CLIENT_ERROR, // The client experienced an error and had to abort.
+    CLIENT_ERROR_AFTER_END // The client experienced an error AFTER the game was finished, but we managed to report it here anways.
 }
