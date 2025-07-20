@@ -4,8 +4,9 @@
 // Still Thinking
 //
 // If the player hasn't taken any action for 60 seconds, 
-// the player should send this operation to show the node that the player is still alive.
-// If not the opponent can timeout the game.
+// the player should send this operation to show the node that 
+// the player is still alive. If not the opponent can timeout 
+// the game.
 // -------------------------------------
 operation still_thinking() {
 
