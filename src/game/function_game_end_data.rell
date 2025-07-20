@@ -1,0 +1,35 @@
+
+// -------------------------------------
+// Will find [game_end_data] EVEN if the game is finished 
+// -------------------------------------
+function game_end_data_get(
+    player_pubkey: pubkey, 
+    game_id: integer // We need this, since the player usually has multiple finished games.
+) :game_end_data? {
+    // Return data
+
+    val game_rowid = rowid(game_id);
+
+    val res = (p_my: player, pg_my: player_game, g: game )@? {
+        p_my.signer == player_pubkey,
+        pg_my.player == p_my,
+        pg_my.game == g,
+        g.rowid == game_rowid // <-- THE GAME WE ARE LOOKING FOR
+    } ( 
+        game_finished = g.is_finished,  game_finish_reason = g.finish_reason,
+        game_valid_seeds = g.valid_seeds_count, game_invalid_seeds = g.invalid_seeds_count
+        );
+
+    if (res != null) {
+    
+        return game_end_data(
+            is_finished = res.game_finished,
+            finish_reason = res.game_finish_reason.name,
+            valid_seeds_count = res.game_valid_seeds,
+            invalid_seeds_count = res.game_invalid_seeds
+        );
+
+    } else {
+        return null; // Meaning the game doesn't exisnt
+    }
+}

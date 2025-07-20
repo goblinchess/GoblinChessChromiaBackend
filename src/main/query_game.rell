@@ -48,6 +48,20 @@ query in_game (
 }
 
 // -------------------------------------
+// Get Game End query
+//
+// Returns a [game_end_data] object if the game-player combo exists.
+// -------------------------------------
+
+query get_game_end (
+   player_signer: pubkey, // The player's own pubkey
+   game_id: integer
+) :game_end_data? {
+
+    return game_end_data_get(player_signer, game_id);
+}
+
+// -------------------------------------
 // Old games
 //
 // The player wants to see his/her of old games:
