@@ -1,7 +1,10 @@
 
-In the middle of writing the Resing and Resign with error on the server.
 
-Bug: Bishop started going the worng way?
+Draw the game over flow.
+
+
+If we resign during opponent's turn, use heartbeat to discover this?
+
 
 
 
@@ -21,6 +24,7 @@ b) Test time_left param.
  
 
 Client Done: 
+
 
 
 

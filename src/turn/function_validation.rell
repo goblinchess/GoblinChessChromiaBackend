@@ -162,7 +162,7 @@ function validate_black_neutral(game: game, player_game: player_game, new_turn_t
 // -------------------------------------
 
 function validate_executed_move(player_game: player_game, old_turn_number: integer): text? {
-    val card_type = card_get_type_for_turn_number(old_turn_number);
+    val card_type = card_get_type_for_turn_number(player_game.game, old_turn_number);
     if (card_type == null) {
         return null; // Most common case, no card was played
     } else if (card_should_skip_move(card_type)) {
@@ -175,7 +175,7 @@ function validate_executed_move(player_game: player_game, old_turn_number: integ
 
 // We can ONLY skip move if we played a double move card this turn.
 function validate_skipped_move(player_game: player_game, old_turn_number: integer): text? {
-    val card_type = card_get_type_for_turn_number(old_turn_number);
+    val card_type = card_get_type_for_turn_number(player_game.game, old_turn_number);
     if (card_type == null) {
         return "Player can only issue ?_MOVE_SKIPPED if she played a card this turn.";
     } else if (card_should_skip_move(card_type)) {

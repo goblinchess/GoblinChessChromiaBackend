@@ -47,9 +47,10 @@ function card_is_allowed_in_classic_mode(c_type: card_type): boolean {
 
 
 // Given a turn number, return the card type that was played on that turn
-function card_get_type_for_turn_number(t_number: integer): card_type? {
+function card_get_type_for_turn_number(g: game, t_number: integer): card_type? {
     return (t: turn, c: card) @? {
         t.number == t_number,
+        t.game == g,
         c.turn == t
     } (c.card_type);
 }

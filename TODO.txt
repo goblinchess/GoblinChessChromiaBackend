@@ -4,8 +4,6 @@
 If we resign during opponent's turn, use heartbeat to discover this?
 
 
-
-
 TODO: Remove the damage from history in classical mode.
 TODO: Should we remove the option of attacking obstacles in classical mode (we don't allow anyone to survive).
 
@@ -22,6 +20,7 @@ b) Test time_left param.
  
 
 Client Done: 
+
 
 
 
