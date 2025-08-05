@@ -376,9 +376,9 @@ function test_full_game() {
     assert_equals(players_after.size(), 4);
 
 
-    rell.test.tx(enter_lobby("SPEED_5_CLASSIC")).sign(rell.test.keypairs.bob).run();
-    rell.test.tx(enter_lobby("SPEED_10_CLASSIC")).sign(rell.test.keypairs.charlie).run();
-    rell.test.tx(enter_lobby("SPEED_5_CLASSIC")).sign(rell.test.keypairs.dave).run();
+    rell.test.tx(enter_lobby("Bob",     "SPEED_5_CLASSIC")).sign(rell.test.keypairs.bob).run();
+    rell.test.tx(enter_lobby("Charlie", "SPEED_10_CLASSIC")).sign(rell.test.keypairs.charlie).run();
+    rell.test.tx(enter_lobby("Dave",    "SPEED_5_CLASSIC")).sign(rell.test.keypairs.dave).run();
 
     // Alice looks for 10 min match
     val match_10_mins = consume_lobby_entry(rell.test.keypairs.alice.pub, 0, "SPEED_10_CLASSIC");

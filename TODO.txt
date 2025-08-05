@@ -2,6 +2,7 @@
 
 
 If we resign during opponent's turn, use heartbeat to discover this?
+=> Connect the still_thinking call to the sender.
 
 
 TODO: Remove the damage from history in classical mode.

@@ -7,6 +7,7 @@
 // the player should send this operation to show the node that 
 // the player is still alive. If not the opponent can timeout 
 // the game.
+// (Don't forget to add a Nop() operation to the TX)
 // -------------------------------------
 operation still_thinking(game_id: integer) {
 
@@ -17,8 +18,12 @@ operation still_thinking(game_id: integer) {
     require (minimal_game != null, "Player is not in a game, id:" + game_id);
     require(minimal_game.game_id == game_id, "The game id of the ongoing game " + minimal_game.game_id + " doesn't match the given id " + game_id + ".");
 
+    var color = "Black";
+    if (minimal_game.is_white) {
+        color = "White";
+    }
+    log("game_id: " + game_id + " - " + color + " still thinking.");
     game_timeout_set_player_alive(minimal_game.player_game);
-
 }
 
 

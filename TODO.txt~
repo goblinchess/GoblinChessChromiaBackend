@@ -1,11 +1,7 @@
 
 
-Draw the game over flow.
-
 
 If we resign during opponent's turn, use heartbeat to discover this?
-
-
 
 
 TODO: Remove the damage from history in classical mode.

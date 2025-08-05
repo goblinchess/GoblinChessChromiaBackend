@@ -10,7 +10,7 @@
 
 function game_terminate_with_seed(caller_pubkey: pubkey, game_id: integer, random_seed: integer, seed_signature: byte_array) 
 {
-    log("game_terminate_with_seed() - started, game: " + game_id.to_text());
+    log("game_id: " + game_id.to_text() + " - start");
 
     // ----------------
     // A.1. Validate the state of the game

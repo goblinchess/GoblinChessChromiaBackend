@@ -96,8 +96,8 @@ function game_timeout_inactive_calc(curr_time_ms: timestamp, opp_last_heartbeat:
 
 // Sets the [last_heartbeat] timestamp to the current block time.
 // Prevents the opponent from calling TIMEOUT INACTIVE on this player.
-function game_timeout_set_player_alive(pg: player_game) {
-    pg.last_heartbeat = op_context.last_block_time; // Usually happens twice every second, so good enough.
+function game_timeout_set_player_alive(gpg: player_game) {
+    gpg.last_heartbeat = op_context.last_block_time; // Usually happens twice every second, so good enough.
 }
 
 

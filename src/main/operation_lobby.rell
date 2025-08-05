@@ -8,7 +8,9 @@
 
 // We are entering the lobby.
 // Requires that we're not already in a game.
-operation enter_lobby(game_type_str: text) {
+// (We're sending the player name to make it less likely that this 
+// op will be duplicated, but a Nop() operation must still be added to the TX)
+operation enter_lobby(name_raw: text, game_type_str: text) {
 
     val current_signers = op_context.get_signers();
     val current_signer = current_signers[0];
@@ -29,10 +31,10 @@ operation enter_lobby(game_type_str: text) {
         if (maximal_game != null) {
             // We have an ongoing game, so we must try to terminate it.
             val all_clear: boolean = game_timeout_any_player_if_possible(maximal_game, game_time!!, opp_timeout_data!!);
-            require(all_clear, "Cannot enter lobby, since you are in an existing game that has not been timed out yet.");
+            require(all_clear, "Cannot enter lobby for " + name_raw + " , since you are in an existing game that has not been timed out yet.");
         }
 
-        log("player_id = " + playa.rowid.to_integer() + " - enter_lobby");
+        log("player_id = " + playa.rowid.to_integer() + " - enter_lobby " + name_raw);
         create lobby(
         .player = playa,
         .game_type = g_type,
@@ -41,7 +43,7 @@ operation enter_lobby(game_type_str: text) {
     }
     else {
         // Didn't exactly expected this, but it is not a problem really.
-        log("player_id = " + playa.rowid.to_integer() + " - enter_lobby but there is already a lobby entry");
+        log("player_id = " + playa.rowid.to_integer() + " - enter_lobby for " + name_raw + " but there is already a lobby entry");
         update existing_lobby (.last_heartbeat = op_context.last_block_time);
     }
 }
@@ -49,7 +51,9 @@ operation enter_lobby(game_type_str: text) {
 // If we already have entered the lobby (via "enter_lobby()") we are required to 
 // regularly bump the time of our lobby ently so that other players know we are
 // still waiting.
-operation bump_lobby() {
+// (We're sending the player name to make it less likely that this 
+// op will be duplicated, but a Nop() operation must still be added to the TX)
+operation bump_lobby(name_raw: text) {
 
     val current_signers = op_context.get_signers();
     val current_signer = current_signers[0];
@@ -61,7 +65,7 @@ operation bump_lobby() {
 
     if (existing_lobby.size() == 0) {
 
-        log("player_id = " + playa.rowid.to_integer() + " - bump_lobby but there is no lobby entry to bump?");
+        log("player_id = " + playa.rowid.to_integer() + " - bump_lobby " + name_raw + " but there is no lobby entry to bump?");
         val minimal_game = minimal_game_data_get(current_signer);
 
         // Since we're updating an existing lobby entry, the most 
@@ -82,7 +86,9 @@ operation bump_lobby() {
 // 
 // This is when the player is kind enough to click the "stop waiting" button,
 // instead of just shutting down the game.
-operation exit_lobby() {
+// (We're sending the player name to make it less likely that this 
+// op will be duplicated, but a Nop() operation must still be added to the TX)
+operation exit_lobby(name_raw: text) {
 
     val current_signers = op_context.get_signers();
     val current_signer = current_signers[0];
@@ -90,7 +96,7 @@ operation exit_lobby() {
     val playa = player@ {.signer == current_signer};
     
     // Remove caller's lobby
-    log("player_id = " + playa.rowid.to_integer() + " - exit_lobby");
+    log("player_id = " + playa.rowid.to_integer() + " - exit_lobby " + name_raw);
     delete lobby@* {.player == playa};
 }
 
