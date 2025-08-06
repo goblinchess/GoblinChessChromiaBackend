@@ -475,7 +475,18 @@ function test_full_game() {
     // 4. KNIGHTED
     // 5. RESURRECT
 
+    // Since WHITE begins, it's BLACK who fetches data now
+    var recent_actions: player_rotation_actions? = get_opponents_recent_actions(black_player.pub, the_game.game_rowid, fetching_rotation_nr, last_seen_turn);
+    assert_null(recent_actions); // Nothing happened yet so we should get empty
 
+    // But if we ask for timeout data we always get that
+    recent_actions = get_opponents_recent_actions(black_player.pub, the_game.game_rowid, fetching_rotation_nr, last_seen_turn, true);
+    assert_not_null(recent_actions);
+    assert_equals(recent_actions.curr_turn_nr, 0); // No turn yet
+    assert_false(recent_actions.rotate_color);
+    assert_null(recent_actions.card_played_data);
+    assert_not_null(recent_actions.timeout_data);
+    assert_false(recent_actions.timeout_data.opp_timeout); // Not timed out yet
 
     // --------------------
     // Failed White Cards
@@ -539,7 +550,7 @@ function test_full_game() {
     rell.test.tx(play_card(the_game.game_rowid, last_seen_turn, crd_data, list<rnd_data>())).sign(white_player).run();
 
     // Try to fetch the card.
-    var recent_actions: player_rotation_actions? = get_opponents_recent_actions(white_player.pub, the_game.game_rowid, fetching_rotation_nr, last_seen_turn);
+    recent_actions = get_opponents_recent_actions(black_player.pub, the_game.game_rowid, fetching_rotation_nr, last_seen_turn);
     assert_not_null(recent_actions);
     assert_equals(recent_actions.curr_turn_nr, 1);
     assert_false(recent_actions.rotate_color);
@@ -665,7 +676,7 @@ function test_full_game() {
     // --------------------
     // Try to fetch the two moves.
     // --------------------
-    recent_actions = get_opponents_recent_actions(white_player.pub, the_game.game_rowid, fetching_rotation_nr, last_seen_turn);
+    recent_actions = get_opponents_recent_actions(black_player.pub, the_game.game_rowid, fetching_rotation_nr, last_seen_turn);
     assert_not_null(recent_actions);
     assert_equals(recent_actions.curr_turn_nr, 3);
     assert_true(recent_actions.rotate_color);
@@ -924,7 +935,7 @@ function test_full_game() {
     // --------------------
     // Try to fetch the two moves.
     // --------------------
-    recent_actions = get_opponents_recent_actions(black_player.pub, the_game.game_rowid, fetching_rotation_nr, last_seen_turn);
+    recent_actions = get_opponents_recent_actions(white_player.pub, the_game.game_rowid, fetching_rotation_nr, last_seen_turn);
     assert_not_null(recent_actions);
     assert_equals(recent_actions.curr_turn_nr, temp_last_seen_turn2 + 1);
     assert_true(recent_actions.rotate_color);

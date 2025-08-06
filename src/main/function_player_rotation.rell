@@ -112,6 +112,8 @@ function player_rotation_get_all_actions(
     } else if(g_end_data != null) { 
         log("game_id " + game_id + " - No turns found (last_seen_turn: " + last_seen_turn + "), but we have game_end_data: " + g_end_data.finish_reason + 
         ", seeds, valid: " + g_end_data.valid_seeds_count + ", invalid: " + g_end_data.invalid_seeds_count);
+    } else if(calc_timeout) { 
+        log("game_id " + game_id + " - Client asked for timeout data, so we'll get that at least");
     } else {
         // Let's exit early (since we wan't to do minimal SELECTs)
         log("game_id " + game_id + " - Nothing new to fetch. last_seen_turn: " + last_seen_turn + ", max_turn_nr_of_the_player_rotation: " + max_turn_nr_of_the_fetched_rotation);
@@ -254,6 +256,7 @@ function player_rotation_get_all_actions(
 
         // It's convenient that the node returns information about opponent's timeout status.
         val opp_timeout: boolean = game_timeout_calc_core(game_id, curr_time_ms, otd);
+        log("game_id " + game_id + " - client asked for timeout data, opp_timeout: " + opp_timeout + ", curr_time_ms: " + curr_time_ms );
 
         ti = game_timeout_build_timeout_data(opp_timeout, otd, minimal_game.total_time_left_since_player_rotation_ms, curr_time_ms, minimal_game.game_created_at);
     }
