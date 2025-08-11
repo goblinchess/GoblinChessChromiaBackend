@@ -119,7 +119,7 @@ function minimal_game_and_end_data_get_even_if_finished(
         game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, is_white = pg_my.is_white, in_check = pg_my.in_check, g_mat = g.seed_material, // General Data
         cr_at = g.last_player_rotation_at, game_created_at = g.created_at, // Minimal Timestamps
         my_time_left_ms = pg_my.total_time_left,  // Total time left
-        game_finished = g.is_finished,  game_finish_reason = g.finish_reason,
+        game_finished = g.is_finished,  game_finish_reason = g.finish_reason, i_claimed_end = pg_my.claimed_end,
         game_valid_seeds = g.valid_seeds_count, game_invalid_seeds = g.invalid_seeds_count
         );
 
@@ -147,6 +147,7 @@ function minimal_game_and_end_data_get_even_if_finished(
 
         val g_end_data = game_end_data(
             is_finished = res.game_finished,
+            is_my_claim = res.i_claimed_end,
             finish_reason = res.game_finish_reason.name,
             valid_seeds_count = res.game_valid_seeds,
             invalid_seeds_count = res.game_invalid_seeds
@@ -193,7 +194,7 @@ function minimal_game_and_timeout_data_get_even_if_finished(
         cr_at = g.last_player_rotation_at, game_created_at = g.created_at, // Minimal Timestamps
         my_time_left_ms = pg_my.total_time_left, opp_time_left_ms = pg_opp.total_time_left, // Total time left
         opp_last_heartbeat = pg_opp.last_heartbeat, // Inactive?
-        game_finished = g.is_finished,  game_finish_reason = g.finish_reason,
+        game_finished = g.is_finished,  game_finish_reason = g.finish_reason, i_claimed_end = pg_my.claimed_end,
         game_valid_seeds = g.valid_seeds_count, game_invalid_seeds = g.invalid_seeds_count,
         recent_turn_type = t.turn_type, // Turn data
         );
@@ -233,6 +234,7 @@ function minimal_game_and_timeout_data_get_even_if_finished(
 
         val g_end_data = game_end_data(
             is_finished = res.game_finished,
+            is_my_claim = res.i_claimed_end,
             finish_reason = res.game_finish_reason.name,
             valid_seeds_count = res.game_valid_seeds,
             invalid_seeds_count = res.game_invalid_seeds

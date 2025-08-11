@@ -84,15 +84,6 @@ enum game_end_type {
 }
 
 
-// When one user claims to have won, resigned or something.
-// (For draws it doesn't matter who claimed it)
-entity game_over_claim {
-    index game;
-    key player_game;
-    claim_type: game_end_type;
-    created_at: timestamp;
-}
-
 // One for each player in a game 
 entity player_game {
     index player: player;
@@ -105,6 +96,7 @@ entity player_game {
     mutable total_time_left: integer; // Game-Time left in milliseconds (10 min game => 10 * 60 * 1000 = 600_000)
                                      // Update this every time color rotates to the opponent's color.
     mutable last_heartbeat: timestamp; // Updated every time we have proof the player is still alive.
+    mutable claimed_end: boolean; // True if this player finished the game (by calling for example RESIGN, TIMEOUT etc). If false the game is either ongoing or was finished in some other way.
 }
 
 // -------------------------------------

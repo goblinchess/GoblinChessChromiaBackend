@@ -16,14 +16,18 @@ function game_end_data_get(
         pg_my.game == g,
         g.rowid == game_rowid // <-- THE GAME WE ARE LOOKING FOR
     } ( 
-        game_finished = g.is_finished,  game_finish_reason = g.finish_reason,
-        game_valid_seeds = g.valid_seeds_count, game_invalid_seeds = g.invalid_seeds_count
+        game_finished = g.is_finished,  
+        game_finish_reason = g.finish_reason,
+        game_valid_seeds = g.valid_seeds_count, 
+        game_invalid_seeds = g.invalid_seeds_count,
+        i_claimed_end = pg_my.claimed_end
         );
 
     if (res != null) {
-    
+
         return game_end_data(
             is_finished = res.game_finished,
+            is_my_claim = res.i_claimed_end,
             finish_reason = res.game_finish_reason.name,
             valid_seeds_count = res.game_valid_seeds,
             invalid_seeds_count = res.game_invalid_seeds

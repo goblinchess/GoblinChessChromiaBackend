@@ -89,7 +89,8 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .in_check = false,
         .cards_left = 5,
         .total_time_left = start_time_remaining,
-        .last_heartbeat = op_context.last_block_time
+        .last_heartbeat = op_context.last_block_time,
+        .claimed_end = false
     );
 
     // Create black player_game
@@ -101,7 +102,8 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .in_check = false,
         .cards_left = 5,
         .total_time_left = start_time_remaining,
-        .last_heartbeat = op_context.last_block_time
+        .last_heartbeat = op_context.last_block_time,
+        .claimed_end = false
     );
 
     // The turn before anything has happened

@@ -94,12 +94,6 @@ function game_over_move_claim(
 
 // We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
 function _inner_game_end_checkmate(gme: game, curr_turn_nr: integer, winner_pg: player_game) {
-    create game_over_claim (
-        .game = gme,
-        .player_game = winner_pg,
-        .claim_type = game_end_type.CHECKMATE,
-        .created_at = op_context.last_block_time
-    );
     update gme (.current_turn_nr = curr_turn_nr, .is_finished = true, .finish_reason = game_end_type.CHECKMATE);
 }
 
@@ -278,6 +272,8 @@ function _inner_game_over_set_winner_and_loser_final_step(
     end_reason: game_end_type
 ) 
 {
+    update max_game.my_pg (.claimed_end = true); // This is the player who shut down the game.
+
     if (validation_error == null) {
         // Success
         game_stats_claim_me_as_winner(max_game, end_reason);
