@@ -255,10 +255,20 @@ function player_rotation_get_all_actions(
         }
 
         // It's convenient that the node returns information about opponent's timeout status.
-        val opp_timeout: boolean = game_timeout_calc_core(game_id, curr_time_ms, otd);
-        log("game_id " + game_id + " - client asked for timeout data, opp_timeout: " + opp_timeout + ", curr_time_ms: " + curr_time_ms );
+        val (opp_abandon: boolean, opp_timeout: boolean) = timeout_calc_all(game_id, curr_time_ms, otd);
 
-        ti = game_timeout_build_timeout_data(opp_timeout, otd, minimal_game.total_time_left_since_player_rotation_ms, curr_time_ms, minimal_game.game_created_at);
+        /*
+        if (timeout_calc_abandon_inner(curr_time_ms, otd.opp_last_heartbeat)) { 
+            opp_abandon = true;
+            log("game_id " + game_id + " - client asked for timeout data, got TIMEOUT ABANDON: more than one minute since last heartbeat " + curr_time_ms +" - " + otd.opp_last_heartbeat + " (=" + (curr_time_ms - otd.opp_last_heartbeat) + " ms)");
+        } else if (game_timeout_opp_turn_total_calc(curr_time_ms, otd)) { 
+            opp_timeout = true;
+            log("game_id " + game_id + " - client asked for timeout data, got TOTAL TIMEOUT: curr_time_ms: " + curr_time_ms );
+        } else {
+            log("game_id " + game_id + " - client asked for timeout data (no timeout yet).");
+        } */
+
+        ti = game_timeout_build_timeout_data(opp_abandon, opp_timeout, otd, minimal_game.total_time_left_since_player_rotation_ms, curr_time_ms, minimal_game.game_created_at);
     }
 
     return player_rotation_actions(

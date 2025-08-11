@@ -1,9 +1,7 @@
 
+Fix Rell: First it says ABANDON then it says MY TURN? 
 
-
-If we resign during opponent's turn, use heartbeat to discover this?
-=> Connect the still_thinking call to the sender.
-
+Fix timeout ending for Local games/Bot.
 
 TODO: Remove the damage from history in classical mode.
 TODO: Should we remove the option of attacking obstacles in classical mode (we don't allow anyone to survive).
@@ -21,7 +19,6 @@ b) Test time_left param.
  
 
 Client Done: 
-
 
 
 

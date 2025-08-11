@@ -1,5 +1,58 @@
 
 // -------------------------------------
+// Inspector
+// -------------------------------------
+
+function turn_is_my_rotation(game_id: integer, most_recent_turn_type: turn_type, am_i_white: boolean): boolean {
+    if (am_i_white) {
+        return turn_is_whites_rotation(most_recent_turn_type);
+    } else {
+        return turn_is_blacks_rotation(most_recent_turn_type);
+    }
+}
+
+
+// Returns "true" if white can/should make the next action, i.e. white holds the rotation.
+function turn_is_whites_rotation(most_recent_turn_type: turn_type): boolean {
+    when (most_recent_turn_type) {
+        turn_type.FRESH_GAME, // Only happen once, but since white start the game...
+        turn_type.NEUTRAL_MOVE_2, // Ver 2.0?
+        turn_type.NEUTRAL_MOVE_2_SKIPPED,  // Typical case
+        turn_type.NEUTRAL_MOVE_2_HIJACKED,  // Unusual 
+        turn_type.WHITE_CARD,  // Typical case
+        turn_type.WHITE_CARD_SKIPPED,  // Typical case
+        turn_type.WHITE_MOVE,   // Typical case      
+        turn_type.WHITE_MOVE_SKIPPED ->  // Unusual              
+        {
+            return true;
+        } 
+        else -> {
+            return false;
+        }
+    }
+}
+
+// Returns "true" if black can/should make the next action, i.e. black holds the rotation.
+function turn_is_blacks_rotation(most_recent_turn_type: turn_type): boolean {
+    when (most_recent_turn_type) {
+        turn_type.NEUTRAL_MOVE_1,  // Ver 2.0?
+        turn_type.NEUTRAL_MOVE_1_SKIPPED,  // Typical case
+        turn_type.NEUTRAL_MOVE_1_HIJACKED,  // Unusual 
+        turn_type.BLACK_CARD,  // Typical case
+        turn_type.BLACK_CARD_SKIPPED,  // Typical case
+        turn_type.BLACK_MOVE,   // Typical case      
+        turn_type.BLACK_MOVE_SKIPPED ->  // Unusual              
+        {
+            return true;
+        } 
+        else -> {
+            return false;
+        }
+    }
+}
+
+
+// -------------------------------------
 // Validation 
 // -------------------------------------
 

@@ -1,0 +1,12 @@
+
+
+
+// Holds all time-related info we need to calculate timeouts.
+struct opponent_timeout_data {
+    //estimated_time_left_ms: integer; // The amount to time the client THINKS the opponent has left. If this is 0 the node must make a timeout check.
+    is_my_turn: boolean; // True if it's currently my turn. (It's important to know for timeout calculation)
+    most_recent_turn_type: turn_type; // The most recent turn type. (Only here for debug purposes)
+    opp_last_heartbeat: timestamp; // The last heartbeat of the opponent.
+    last_player_rotation_at: timestamp; // The last time the player rotation was completed.
+    opp_tot_time_left_since_player_rotation_ms: integer; // How much time the opponent had left when the "move" (= player rotation) began.
+}

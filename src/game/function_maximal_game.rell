@@ -160,7 +160,7 @@ function maximal_game_and_timeout_data_get(
         my_elo = p_my.elo_rating, opp_elo = p_opp.elo_rating, // curr ELO
         cr_at = g.last_player_rotation_at, game_created_at = g.created_at, opp_last_heartbeat = pg_opp.last_heartbeat, // Timeout
         my_time_left_ms = pg_my.total_time_left, opp_time_left_ms = pg_opp.total_time_left, // Total time left
-        rot_owner = rot.created_by, curr_turn_nr = g.current_turn_nr, turn_nr = t.number, // Turn data
+        rot_owner = rot.created_by, curr_turn_nr = g.current_turn_nr, turn_nr = t.number, recent_turn_type = t.turn_type, // Turn data
         g_id = g.rowid.to_integer(), game_type = g.game_type,  is_white = pg_my.is_white, in_check = pg_my.in_check, g_mat = g.seed_material // General
         );
 
@@ -205,6 +205,8 @@ function maximal_game_and_timeout_data_get(
 
         // Build the timeout data
         val opp_timeout_data = opponent_timeout_data(
+            is_my_turn = turn_is_my_rotation(res.g_id, res.recent_turn_type, res.is_white),
+            most_recent_turn_type = res.recent_turn_type,
             opp_last_heartbeat = res.opp_last_heartbeat, 
             last_player_rotation_at = res.cr_at,
             opp_tot_time_left_since_player_rotation_ms = res.opp_time_left_ms

@@ -1,0 +1,115 @@
+
+// -------------------------------------
+// Calculations
+// -------------------------------------
+
+// -------------------------------------
+// Returns "true" if the given player has spent too much time (can be timed out).
+// Will only work if for the player who is currently holding the turn.
+//
+// There are two cases:
+// 1. The player's last heartbeat is more than 60 seconds ago.
+// 2. The player's total game-time is out.
+// -------------------------------------
+function game_timeout_calc_primitive_curr_time( game_id: integer, otd: opponent_timeout_data): boolean {
+
+    // Get current time
+    // Note: it's hard to get the current time from a query, 
+    // since we cannot use [op_context.last_block_time] here.
+    var curr_time_ms: timestamp = 0; 
+    val maybe_curr_time_ms = block @? {} (ts = .timestamp, @omit @sort_desc .block_height ) limit 1;
+    if (maybe_curr_time_ms != null) { // When testing there are no blocks, so we must use 0.
+        curr_time_ms = maybe_curr_time_ms.ts;
+    }
+
+    val (is_abandon, is_total_timeout) = timeout_calc_opp_turn(game_id, curr_time_ms, otd);
+    if (is_abandon) {
+        return true;
+    } else if (is_total_timeout) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// -------------------------------------
+// Calculates two timeouts, and returns (is_abandon, is_total_timeout).
+//
+// Here we also look at the "is_my_turn" flag.
+// A: If it's MY turn, let's just use the saved numbers from the opponent
+// B: If it's the OPPs turn, we should use the [curr_time_ms] param to figure out 
+//    if the opponent has timed out.
+// -------------------------------------
+function timeout_calc_all(game_id: integer, curr_time_ms: timestamp, otd: opponent_timeout_data): (boolean, boolean) {
+    if (otd.is_my_turn) {
+        return timeout_calc_my_turn(game_id, otd);
+    } else {
+        return timeout_calc_opp_turn(game_id, curr_time_ms, otd);
+    }
+}
+
+// -------------------------------------
+// Returns "true" if the opponent timed out during "my" (=caller's) turn.
+// NOTE: Don't call this when it's opponent's turn.
+// 
+// We have no use of [curr_time_ms] since it's not the opponents turn.
+// -------------------------------------
+function timeout_calc_my_turn(game_id: integer, otd: opponent_timeout_data): (boolean, boolean){
+
+    // NOTE: Even though we COULD still calculate ABANDON for the opponent, by using the end of opponent's turn as curr time.
+    //       we chose not to do it, since the opponent has PROVED (s)he didn't bandoned the game by eventually finishing the turn.
+    // 
+    //val fake_ts = otd.last_player_rotation_at; 
+    //if (timeout_calc_abandon_inner(fake_ts, otd.opp_last_heartbeat)) {
+    //    // We can never have ABANDON during my turn, have to wait for the opponent's turn to check for that.
+    //    log("game_id " + game_id + " - ABANDON (My turn): more than one minute since last heartbeat "+ fake_ts +" - " + otd.opp_last_heartbeat + " (=" + (fake_ts - otd.opp_last_heartbeat) + " ms)");
+    //    return (true, false);
+    //}
+    if (otd.opp_tot_time_left_since_player_rotation_ms < 0) { // We CAN check for TOTAL TIME, but we'll use the old number.
+        log("game_id " + game_id + " - TOTAL TIMEOUT (My turn): " + otd.opp_tot_time_left_since_player_rotation_ms + ".");
+        return (false, true);
+    } else {
+        log("game_id " + game_id + " - No timeout (My turn)");
+        return (false, false);
+    }
+}
+
+// -------------------------------------
+// Returns "true" if the opponent timed out during his/her turn.
+// NOTE: Don't call this when it's "my" turn.
+// 
+// There are two cases:
+// 1. TIMEOUT INACTIVE:The player is inactive, i.e. last heartbeat is more than 60 seconds ago.
+// 2. TOTAL TIMEOUT: The player's total game-time is out.
+// -------------------------------------
+function timeout_calc_opp_turn(game_id: integer, curr_time_ms: timestamp, otd: opponent_timeout_data): (boolean, boolean) {
+
+    if (timeout_calc_abandon_inner(curr_time_ms, otd.opp_last_heartbeat)) { 
+        log("game_id " + game_id + " - TIMEOUT INACTIVE (Opp turn): : more than one minute since last heartbeat " + curr_time_ms +" - " + otd.opp_last_heartbeat + " (=" + (curr_time_ms - otd.opp_last_heartbeat) + " ms)");
+        return (true, false);
+    } else if (timeout_calc_opp_turn_total_inner(curr_time_ms, otd)) {
+        val opp_time_consumed_ms =  curr_time_ms -  otd.last_player_rotation_at;
+        log("game_id " + game_id + " - TOTAL TIMEOUT (Opp turn): opp time consumed > opp time left (" + opp_time_consumed_ms + " > " + otd.opp_tot_time_left_since_player_rotation_ms + ")");
+        return (false, true);
+    } else {
+        log("game_id " + game_id + " - No timeout (Opp turn)");
+        return (false, false);
+    }
+}
+
+// -------------------------------------
+// Returns "true" if curr time has passed too far from the last heartbeat, 
+// and the player thus has timed out due to inactivity.
+// (i.e. not sent a heartbeat in more than 60 seconds).
+// -------------------------------------
+function timeout_calc_abandon_inner(curr_time_ms: timestamp, opp_last_heartbeat: timestamp): boolean {
+    val time_since_last_heartbeat_ms = curr_time_ms - opp_last_heartbeat;
+    return time_since_last_heartbeat_ms > 60000;
+}
+
+// Returns "true" if the opponent has run out of total time.
+function timeout_calc_opp_turn_total_inner(curr_time_ms: timestamp, otd: opponent_timeout_data): boolean {
+    // How much time has the opponent consumed since my last turn (= since last player rotation)?
+    val opp_time_consumed_ms =  curr_time_ms -  otd.last_player_rotation_at;
+    return opp_time_consumed_ms >  otd.opp_tot_time_left_since_player_rotation_ms;
+}

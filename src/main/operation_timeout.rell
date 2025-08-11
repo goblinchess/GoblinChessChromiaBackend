@@ -69,9 +69,17 @@ operation claim_timeout(game_rowid: integer) {
 
         // Timeout check
         val curr_time_ms: timestamp = op_context.last_block_time;
-        val has_timed_out = game_timeout_calc_core(game_id, curr_time_ms, opp_timeout_data!!);
-        require(has_timed_out, "The opponent has not timed out yet. Please don't waste our resources like this!");
+        val (abandon: boolean, has_timed_out: boolean) = timeout_calc_all(game_id, curr_time_ms, opp_timeout_data!!);
+        require(abandon or has_timed_out, "The opponent has not timed out yet. Please don't waste our resources like this!");
+        if (abandon) {
+            log("game_id " + game_id + " - client claimed timeout, and opponent has indeed timed out due to inactivity.");
+            game_stats_claim_me_as_winner(maximal_game, game_end_type.ABANDONED);
+        } else if (has_timed_out) {
+            log("game_id " + game_id + " - client claimed timeout, and opponent has indeed timed out due to total time.");
+            game_stats_claim_me_as_winner(maximal_game, game_end_type.TIMEOUT);
+        } else {
+            log("game_id " + game_id + " - ERROR! What timout is this?."); // Cannot happen, we just checked for this.
+        }
 
-        game_stats_claim_me_as_winner(maximal_game, game_end_type.TIMEOUT);
     }
 }

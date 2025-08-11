@@ -1,8 +1,7 @@
 
+Fix Rell: First it says ABANDON then it says MY TURN? 
 
-
-If we resign during opponent's turn, use heartbeat to discover this?
-
+Fix timeout ending for Local games/Bot.
 
 TODO: Remove the damage from history in classical mode.
 TODO: Should we remove the option of attacking obstacles in classical mode (we don't allow anyone to survive).
@@ -23,7 +22,6 @@ Client Done:
 
 
 
-
  TODO Node: 
 -------------
  
@@ -33,6 +31,8 @@ Client Done:
 
 
 Node DONE:
+
+1. Break out timeout calc into own module.  2. Don't provide opponent_timeout_data if not needed (in the max and min game queries).  3. Add the is_my_turn flag, so we know what the heck is going on.
 
  
 

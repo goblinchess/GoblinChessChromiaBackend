@@ -98,6 +98,70 @@ function minimal_game_data_get_even_if_finished(
 // -------------------------------------
 // Will find various data EVEN if the game is finished 
 // 1. [minimal_game_result], 
+// 2. [game_end_data].
+// -------------------------------------
+function minimal_game_and_end_data_get_even_if_finished(
+    player_pubkey: pubkey, 
+    game_id: integer // We need this, since the player usually has multiple finished games.
+) :(minimal_game_result?, game_end_data?) {
+    // Return data
+
+    val game_rowid = rowid(game_id);
+
+   val res = (p_my: player, pg_my: player_game, g: game, pg_opp: player_game )@? {
+        p_my.signer == player_pubkey,
+        pg_my.player == p_my,
+        pg_my.game == g,
+        g.rowid == game_rowid, // <-- THE GAME WE ARE LOOKING FOR
+        pg_opp.game == g, // We need this to get the opponent's timeout data
+        pg_opp.is_white != pg_my.is_white // Only one is white
+    } ( gme = g, my_p = p_my, my_pg = pg_my, // Primary keys
+        game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, is_white = pg_my.is_white, in_check = pg_my.in_check, g_mat = g.seed_material, // General Data
+        cr_at = g.last_player_rotation_at, game_created_at = g.created_at, // Minimal Timestamps
+        my_time_left_ms = pg_my.total_time_left,  // Total time left
+        game_finished = g.is_finished,  game_finish_reason = g.finish_reason,
+        game_valid_seeds = g.valid_seeds_count, game_invalid_seeds = g.invalid_seeds_count
+        );
+
+    if (res != null) {
+
+        // Build the maximal game result
+        val mnimial_game = minimal_game_result(
+            // Primary keys
+            player = res.my_p,
+            player_game = res.my_pg,
+            game = res.gme,
+            // Data
+            game_id = game_id,
+            game_type = res.game_type,
+            curr_rotation_nr = res.curr_rot_nr,
+            curr_turn_nr = res.curr_turn_nr,
+            in_check = res.in_check,
+            is_white =res.is_white,
+            seed_material = res.g_mat,
+            // Timestamps
+            last_player_rotation_at = res.cr_at,
+            game_created_at = res.game_created_at,
+            total_time_left_since_player_rotation_ms = res.my_time_left_ms
+        );
+
+        val g_end_data = game_end_data(
+            is_finished = res.game_finished,
+            finish_reason = res.game_finish_reason.name,
+            valid_seeds_count = res.game_valid_seeds,
+            invalid_seeds_count = res.game_invalid_seeds
+        );
+
+        return (mnimial_game, g_end_data);
+    } else {
+        return (null, null); // This is an error.
+    }
+}
+
+
+// -------------------------------------
+// Will find various data EVEN if the game is finished 
+// 1. [minimal_game_result], 
 // 2. [opponent_timeout_data].
 // 3. [game_end_data].
 //
@@ -115,20 +179,23 @@ function minimal_game_and_timeout_data_get_even_if_finished(
 
     val game_rowid = rowid(game_id);
 
-   val res = (p_my: player, pg_my: player_game, g: game, pg_opp: player_game )@? {
+   val res = (p_my: player, pg_my: player_game, g: game, pg_opp: player_game, ct: current_turn, t: turn)@? {
         p_my.signer == player_pubkey,
         pg_my.player == p_my,
         pg_my.game == g,
         g.rowid == game_rowid, // <-- THE GAME WE ARE LOOKING FOR
         pg_opp.game == g, // We need this to get the opponent's timeout data
-        pg_opp.is_white != pg_my.is_white // Only one is white
+        pg_opp.is_white != pg_my.is_white, // Only one is white
+        ct.game == g,
+        ct.current_turn == t // yes, even if we are at turn = 0 there will be a [current_turn] row.
     } ( gme = g, my_p = p_my, my_pg = pg_my, // Primary keys
         game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, is_white = pg_my.is_white, in_check = pg_my.in_check, g_mat = g.seed_material, // General Data
         cr_at = g.last_player_rotation_at, game_created_at = g.created_at, // Minimal Timestamps
         my_time_left_ms = pg_my.total_time_left, opp_time_left_ms = pg_opp.total_time_left, // Total time left
         opp_last_heartbeat = pg_opp.last_heartbeat, // Inactive?
         game_finished = g.is_finished,  game_finish_reason = g.finish_reason,
-        game_valid_seeds = g.valid_seeds_count, game_invalid_seeds = g.invalid_seeds_count
+        game_valid_seeds = g.valid_seeds_count, game_invalid_seeds = g.invalid_seeds_count,
+        recent_turn_type = t.turn_type, // Turn data
         );
 
     if (res != null) {
@@ -157,6 +224,8 @@ function minimal_game_and_timeout_data_get_even_if_finished(
         // (But if the game is finished we won't need it)
         val opp_timeout_data = opponent_timeout_data(
             //estimated_time_left_ms = estimated_time_left_ms, 
+            is_my_turn = turn_is_my_rotation(game_id, res.recent_turn_type, res.is_white),
+            most_recent_turn_type = res.recent_turn_type,
             opp_last_heartbeat = res.opp_last_heartbeat, 
             last_player_rotation_at = res.cr_at,
             opp_tot_time_left_since_player_rotation_ms = res.opp_time_left_ms

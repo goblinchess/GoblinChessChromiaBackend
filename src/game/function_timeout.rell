@@ -25,70 +25,7 @@
 //      before entering the lobby.
 // -------------------------------------
 
-// -------------------------------------
-// Inspectors
-// -------------------------------------
 
-
-// -------------------------------------
-// Returns "true" if the given player has spent too much time (can be timed out).
-// Will only work if for the player who is currently holding the turn.
-//
-// There are two cases:
-// 1. The player's last heartbeat is more than 60 seconds ago.
-// 2. The player's total game-time is out.
-// -------------------------------------
-function game_timeout_calc_primitive_curr_time( game_id: integer, otd: opponent_timeout_data): boolean {
-
-    /*
-    if (otd.estimated_time_left_ms > 3000) {
-        return false; // This is to save system resources, if the client's own calculation says we have time left we don't even try.
-    }
-    */
-
-    // Get current time
-    // Note: it's hard to get the current time from a query, 
-    // since we cannot use [op_context.last_block_time] here.
-    var curr_time_ms: timestamp = 0; 
-    val maybe_curr_time_ms = block @? {} (ts = .timestamp, @omit @sort_desc .block_height ) limit 1;
-    if (maybe_curr_time_ms != null) { // When testing there are no blocks, so we must use 0.
-        curr_time_ms = maybe_curr_time_ms.ts;
-    }
-
-    return game_timeout_calc_core(game_id, curr_time_ms, otd);
-}
-
-
-// -------------------------------------
-// There are two cases:
-// 1. TIMEOUT INACTIVE:The player is inactive, i.e. last heartbeat is more than 60 seconds ago.
-// 2. TOTAL TIMEOUT: The player's total game-time is out.
-// -------------------------------------
-function game_timeout_calc_core(game_id: integer, curr_time_ms: timestamp, otd: opponent_timeout_data) {
-
-    if (game_timeout_inactive_calc(curr_time_ms, otd.opp_last_heartbeat)) { 
-        log("game_id " + game_id + " TIMEOUT INACTIVE: more than one minute since last heartbeat (" + (curr_time_ms - otd.opp_last_heartbeat) + " ms)");
-        return true;
-    } else { 
-        // How much time has the opponent consumed since my last turn (= since last player rotation)?
-        val opp_time_consumed_ms =  curr_time_ms -  otd.last_player_rotation_at;
-
-        if (opp_time_consumed_ms >  otd.opp_tot_time_left_since_player_rotation_ms) {
-            log("game_id " + game_id + " TOTAL TIMEOUT: opp time consumed > opp time left (" + opp_time_consumed_ms + " > " + otd.opp_tot_time_left_since_player_rotation_ms + ")");
-            return true;
-        } else {
-            log("game_id " + game_id + " opp time consumed < opp time left (" + opp_time_consumed_ms + " < " + otd.opp_tot_time_left_since_player_rotation_ms + ")");
-        }
-    }
-    return false;
-}
-
-// Returns "true" if the opponent has timed out due to inactivity.
-// (i.e. not sent a heartbeat in more than 60 seconds).
-function game_timeout_inactive_calc(curr_time_ms: timestamp, opp_last_heartbeat: timestamp): boolean {
-    val time_since_last_heartbeat_ms = curr_time_ms - opp_last_heartbeat;
-    return time_since_last_heartbeat_ms > 60000;
-}
 
 // -------------------------------------
 // Update
@@ -103,6 +40,7 @@ function game_timeout_set_player_alive(gpg: player_game) {
 
 // Builds a [timeout_data] struct.
 function game_timeout_build_timeout_data(
+    opp_abandon: boolean, // "true" if the opponent has abandoned the game
     opp_timeout: boolean, // "true" if the opponent has timed out
     otd: opponent_timeout_data, 
     my_time_left_ms: integer, 
@@ -111,7 +49,9 @@ function game_timeout_build_timeout_data(
 ): timeout_data {
 
     return timeout_data(
+        opp_abandon = opp_abandon,
         opp_timeout = opp_timeout,
+        is_my_turn = otd.is_my_turn,
         opp_last_heartbeat = otd.opp_last_heartbeat,
         my_time_left_ms = my_time_left_ms,
         opp_time_left_ms = otd.opp_tot_time_left_since_player_rotation_ms,
@@ -165,37 +105,37 @@ function game_timeout_any_player_if_possible(maximal_game: maximal_game_result, 
             game_time.rotation_owner);
 
     if (am_i_winner) {
-            if (game_timeout_inactive_calc(op_context.last_block_time, opp_timeout_data.opp_last_heartbeat)) {
-
-                // Note: we're not counting up the seed_count since no player can provide 
-                // a seed (probably abandoned by both).
-                update maximal_game.game (.is_finished = true, .finish_reason = game_end_type.TIMEOUT);
-
-                // Opponent is inactive, and we are the winner.
-                game_stats_claim_me_as_winner(maximal_game, game_end_type.TIMEOUT);
-                return true;
-            } else {
-                return false; // Opponent is active, must abort everything.
-            }
-        } else {
-            // We're the loser and we terminate this game without even checking for timeout.
-            //
-            // Discussion: 
-            // One could argue that this isn't in the player's best interest. 
-            // Doing self-harm is typically not the way of blockchain, 
-            // since blockchain users - according to game theory -
-            // would not trigger any action that's bad for them.
-            // But here we must assume that the player simply wants to play,
-            // EVEN if (s)he will lose rating on this old one (which we cannot return to).
-
+        if (timeout_calc_abandon_inner(op_context.last_block_time, opp_timeout_data.opp_last_heartbeat)) {
 
             // Note: we're not counting up the seed_count since no player can provide 
             // a seed (probably abandoned by both).
             update maximal_game.game (.is_finished = true, .finish_reason = game_end_type.TIMEOUT);
 
-            game_stats_claim_opp_as_winner(maximal_game, game_end_type.TIMEOUT);
+            // Opponent is inactive, and we are the winner.
+            game_stats_claim_me_as_winner(maximal_game, game_end_type.TIMEOUT);
             return true;
+        } else {
+            return false; // Opponent is active, must abort everything.
         }
+    } else {
+        // We're the loser and we terminate this game without even checking for timeout.
+        //
+        // Discussion: 
+        // One could argue that this isn't in the player's best interest. 
+        // Doing self-harm is typically not the way of blockchain, 
+        // since blockchain users - according to game theory -
+        // would not trigger any action that's bad for them.
+        // But here we must assume that the player simply wants to play,
+        // EVEN if (s)he will lose rating on this old one (which we cannot return to).
+
+
+        // Note: we're not counting up the seed_count since no player can provide 
+        // a seed (probably abandoned by both).
+        update maximal_game.game (.is_finished = true, .finish_reason = game_end_type.TIMEOUT);
+
+        game_stats_claim_opp_as_winner(maximal_game, game_end_type.TIMEOUT);
+        return true;
+    }
 
 }
 

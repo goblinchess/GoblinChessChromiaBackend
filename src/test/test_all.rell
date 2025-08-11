@@ -306,44 +306,117 @@ function test_ten_to_the_power_of() {
     assert_true(result2 > 99.999);
 }
 
-function test_game_timeout_calc() {
+function test_timeout_calc() {
 
     val game_id = 1;
 
     // First we need to get the current time
-    val curr_time_ms: timestamp = 0; // Only for test.
 
     val less_than_a_minute_ms = 59* 1000;
     val more_than_a_minute_ms = 61* 1000;
     val ten_minutes_ms = 10*60*1000;
+    val ten_seconds_ms = 10*1000;
+
+    // --------------------------------------
+    // A. Calc during Opp's turn
+    // --------------------------------------
+
+    var last_rotation_at: timestamp = 1000000; // 1000 seconds.  This is when OPP's turn began.
+    var curr_time_ms = last_rotation_at + more_than_a_minute_ms; // 1061 seconds.
 
     // Not timed out yet
+    var opp_last_heartbeat = last_rotation_at + (2 * 1000); // 1002 seconds
     var otd = opponent_timeout_data(
-        opp_last_heartbeat = curr_time_ms - less_than_a_minute_ms, // Not timed out yet, since 59 sec old heartbeat
-        last_player_rotation_at = curr_time_ms - more_than_a_minute_ms, // The last time the player rotation was completed 61 sec ago.
-        opp_tot_time_left_since_player_rotation_ms = ten_minutes_ms, // The opponent has 10 minutes left when the "move" (= player rotation) began.
+        is_my_turn = false,
+        opp_last_heartbeat = opp_last_heartbeat, // Not abandoned yet, since 59 sec old heartbeat
+        last_player_rotation_at = last_rotation_at, // The last time the player rotation was completed 61 sec ago.
+        opp_tot_time_left_since_player_rotation_ms = ten_minutes_ms, // The opponent has 10 minutes left when opp's turn (= player rotation) began.
     );
-    var result = game_timeout_calc_primitive_curr_time(game_id, otd);
-    assert_equals(result, false);
+    var (result_abandon, result_timeout) = timeout_calc_all(game_id, curr_time_ms, otd);
+    assert_equals(result_abandon, false);
+    assert_equals(result_timeout, false);
 
     // Timed out due to old heartbeat
+    opp_last_heartbeat = last_rotation_at; // 1000 seconds
     otd = opponent_timeout_data(
-        opp_last_heartbeat = curr_time_ms - more_than_a_minute_ms, // Timed out due to old heartbeat, since 61 sec ago.
-        last_player_rotation_at = curr_time_ms - more_than_a_minute_ms, // The last time the player rotation was completed 61 sec ago.
-        opp_tot_time_left_since_player_rotation_ms = ten_minutes_ms, // The opponent has 10 minutes left when the "move" (= player rotation) began.
+        is_my_turn = false,
+        opp_last_heartbeat = opp_last_heartbeat, // Abandoned due to old heartbeat, since 61 sec ago.
+        last_player_rotation_at = last_rotation_at, // The last time the player rotation was completed 61 sec ago.
+        opp_tot_time_left_since_player_rotation_ms = ten_minutes_ms, // The opponent has 10 minutes left when opp's turn (= player rotation) began.
     );
-    result = game_timeout_calc_primitive_curr_time(game_id, otd);
-    assert_equals(result, true);
+    var (result_abandon1, result_timeout1) = timeout_calc_all(game_id, curr_time_ms, otd);
+    assert_equals(result_abandon1, true);
+    assert_equals(result_timeout1, false);
 
     // Timed out due to total time gone
+    opp_last_heartbeat = last_rotation_at + (2 * 1000); // 1002 seconds
     otd = opponent_timeout_data(
-        opp_last_heartbeat = curr_time_ms - less_than_a_minute_ms, // Not timed out yet, since 59 sec old heartbeat.
-        last_player_rotation_at = curr_time_ms - more_than_a_minute_ms, // The last time the player rotation was completed 61 sec ago.
-        opp_tot_time_left_since_player_rotation_ms = less_than_a_minute_ms, // The opponent has 59 sec left when the "move" (= player rotation) began.
+        is_my_turn = false,
+        opp_last_heartbeat = opp_last_heartbeat, // Not abandoned yet, since 59 sec old heartbeat.
+        last_player_rotation_at = last_rotation_at, // The last time the player rotation was completed 61 sec ago.
+        opp_tot_time_left_since_player_rotation_ms = less_than_a_minute_ms, // The opponent has 59 sec left when opp's turn (= player rotation) began.
     );
-    result = game_timeout_calc_primitive_curr_time(game_id, otd);
-    assert_equals(result, true);
+    var (result_abandon2, result_timeout2) = timeout_calc_all(game_id, curr_time_ms, otd);
+    assert_equals(result_abandon2, false);
+    assert_equals(result_timeout2, true);
 
+    // --------------------------------------
+    // B. Calc during My turn
+    // --------------------------------------
+    // 
+    // <..... Opp last heartbeat around here (only create heartbeats during opponent's turn)
+    //        But it doesn't matter, since the opponent managed to finish the turn before we 
+    //        called ABANDON on him/her.
+    // --------------- 900, My turn starts
+    //
+    //  (Only my heartbeats in here, since it's my job to prove I'm active)
+    // 
+    // --------------- 1000, Opp turn starts according to the client (But this block has not been processed yet)
+    // 
+    // 
+
+    // The idea here is that the block containing my move has not been saved to the DB,
+    // meaning that the last rotation timestamp, is 100 seconds before, i.e. when MY TURN began.
+    var rotation_before_at = 900000; // 900 seconds. This is when MY turn began.
+
+    // Curr time doesn't matter if it's still my turn.
+    curr_time_ms = last_rotation_at + more_than_a_minute_ms; // 1061 seconds.
+
+    // Not timed out yet
+    opp_last_heartbeat = rotation_before_at - (50 * 1000); // 850 seconds. No heartbeat during MY turn.
+    otd = opponent_timeout_data(
+        is_my_turn = true,
+        opp_last_heartbeat = opp_last_heartbeat, // Not abandoned yet.
+        last_player_rotation_at = rotation_before_at, // The last time the player rotation was completed 161 sec ago.
+        opp_tot_time_left_since_player_rotation_ms = ten_seconds_ms, // The opponent has 10 seconds left when my turn (= player rotation) began.
+    );
+    var (result_abandon_m, result_timeout_m) = timeout_calc_all(game_id, curr_time_ms, otd);
+    assert_equals(result_abandon_m, false);
+    assert_equals(result_timeout_m, false);
+
+    // Abandon won't work during MY turn.
+    opp_last_heartbeat = last_rotation_at - (80 * 1000); // 820 seconds
+    otd = opponent_timeout_data(
+        is_my_turn = true,
+        opp_last_heartbeat = opp_last_heartbeat, // Even though old heartbeat was 80 sec before turn switch, it doesn't matter.
+        last_player_rotation_at = rotation_before_at, // The last time the player rotation was completed 161 sec ago.
+        opp_tot_time_left_since_player_rotation_ms = ten_seconds_ms, // The opponent has 10 seconds left when my turn (= player rotation) began.
+    );
+    var (result_abandon_m1, result_timeout_m1) = timeout_calc_all(game_id, curr_time_ms, otd);
+    assert_equals(result_abandon_m1, false);
+    assert_equals(result_timeout_m1, false);
+
+    // Timed out due to total time gone
+    opp_last_heartbeat = rotation_before_at - (50 * 1000); // 850 seconds. No heartbeat during MY turn.
+    otd = opponent_timeout_data(
+        is_my_turn = true,
+        opp_last_heartbeat = opp_last_heartbeat, // Not timed out yet, since 59 sec old heartbeat.
+        last_player_rotation_at = rotation_before_at, // The last time the player rotation was completed 161 sec ago.
+        opp_tot_time_left_since_player_rotation_ms = -1, // The opponent has no time left 
+    );
+    var (result_abandon_m2, result_timeout_m2) = timeout_calc_all(game_id, curr_time_ms, otd);
+    assert_equals(result_abandon_m2, false);
+    assert_equals(result_timeout_m2, true);
 }
 
 // ----------------------------------
@@ -486,6 +559,7 @@ function test_full_game() {
     assert_false(recent_actions.rotate_color);
     assert_null(recent_actions.card_played_data);
     assert_not_null(recent_actions.timeout_data);
+    assert_false(recent_actions.timeout_data.is_my_turn); // This is black asking, but white should bbegin
     assert_false(recent_actions.timeout_data.opp_timeout); // Not timed out yet
 
     // --------------------

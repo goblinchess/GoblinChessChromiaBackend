@@ -33,10 +33,13 @@ struct retaliation_data {
 // We are sending everything the node knows about time to the client.
 // This way the client can make an educated guess if the opponent timed out.
 struct timeout_data {
-    // True if the opponent has timed out. 
+    opp_abandon: boolean; // True if the opponent has abandoned the game
+    opp_timeout: boolean; // True if the opponent has run out of total time.
     // Remember that it's the caller who has to end the game based on this info, 
     // by calling the [claim_timeout] operation.
-    opp_timeout: boolean;
+
+    // This is important for the timeout calculation, since the "current_time_ms" becomes useless
+    is_my_turn: boolean; // True if it's currently my turn
 
     // Me and the opponent
     opp_last_heartbeat: timestamp; // When was the opponent last active?

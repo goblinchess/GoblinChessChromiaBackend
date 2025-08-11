@@ -163,8 +163,7 @@ function _inner_game_end_insufficient_mating_material(gme: game, curr_turn_nr: i
 function game_over_resign(caller_pubkey: pubkey, game_id: integer, random_seed: integer, seed_signature: byte_array) {
     log("game_id: " + game_id.to_text() + " - started.");
 
-    val (minimal_game: minimal_game_result?, timeout_data: opponent_timeout_data?, g_end: game_end_data?) = 
-        minimal_game_and_timeout_data_get_even_if_finished(caller_pubkey, game_id);
+    val (minimal_game: minimal_game_result?, g_end: game_end_data?) = minimal_game_and_end_data_get_even_if_finished(caller_pubkey, game_id);
     require(minimal_game != null, "Game not found, id:" + game_id);
     require(g_end != null, "Should not happen, id:" + game_id);
 
@@ -198,8 +197,7 @@ function game_over_resign(caller_pubkey: pubkey, game_id: integer, random_seed: 
 function game_over_resign_with_error(caller_pubkey: pubkey, game_id: integer, random_seed: integer, seed_signature: byte_array, error_message: text) {
     log("game_id: " + game_id.to_text() + " - started");
 
-    val (minimal_game: minimal_game_result?, timeout_data: opponent_timeout_data?, g_end: game_end_data?) = 
-        minimal_game_and_timeout_data_get_even_if_finished(caller_pubkey, game_id);
+    val (minimal_game: minimal_game_result?, g_end: game_end_data?) = minimal_game_and_end_data_get_even_if_finished(caller_pubkey, game_id);
     require(minimal_game != null, "Game not found, id:" + game_id);
     require(g_end != null, "Should not happen, id:" + game_id);
 
