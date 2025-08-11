@@ -36,7 +36,7 @@ operation still_thinking(game_id: integer) {
 // It will crash with error if the opponent has NOT timed out.
 // -------------------------------------
 
-operation claim_timeout(game_rowid: integer) {
+operation claim_timeout(game_rowid: integer, random_seed: integer, seed_signature: byte_array) {
     
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
@@ -71,15 +71,23 @@ operation claim_timeout(game_rowid: integer) {
         val curr_time_ms: timestamp = op_context.last_block_time;
         val (abandon: boolean, has_timed_out: boolean) = timeout_calc_all(game_id, curr_time_ms, opp_timeout_data!!);
         require(abandon or has_timed_out, "The opponent has not timed out yet. Please don't waste our resources like this!");
+        var end_reason: game_end_type = game_end_type.NOTHING;
         if (abandon) {
             log("game_id " + game_id + " - client claimed timeout, and opponent has indeed timed out due to inactivity.");
-            game_stats_claim_me_as_winner(maximal_game, game_end_type.ABANDONED);
+            end_reason = game_end_type.ABANDONED;
         } else if (has_timed_out) {
             log("game_id " + game_id + " - client claimed timeout, and opponent has indeed timed out due to total time.");
-            game_stats_claim_me_as_winner(maximal_game, game_end_type.TIMEOUT);
+            end_reason = game_end_type.TIMEOUT;
         } else {
-            log("game_id " + game_id + " - ERROR! What timout is this?."); // Cannot happen, we just checked for this.
+            log("game_id " + game_id + " - ERROR! What timout is this?"); // Cannot happen, we just checked for this.
         }
 
+        // ... so no need setting the [current_turn_nr] here. 
+        update maximal_game.game (.is_finished = true, .finish_reason = end_reason);
+
+        // Don't create [event_game_end], that's only when the game ends BECAUSE of a move.
+
+        // As usual, we'll set ourself as winner, until the opponent provides their seed.
+        game_over_set_winner_and_loser_from_max_game(maximal_game, caller_pubkey, random_seed, seed_signature, end_reason);
     }
 }

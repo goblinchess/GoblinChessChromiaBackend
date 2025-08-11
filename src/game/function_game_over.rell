@@ -79,7 +79,7 @@ function game_over_move_claim(
         // Some client doesn't calculate mate and won't know the the game is over. 
         // These client will send the seed at some later point.
         if (random_seed != null) { 
-            _inner_game_over_set_winner_and_loser(minimal_game, caller_pubkey, random_seed, seed_signature, end_reason);
+            _inner_game_over_set_winner_and_loser_from_min_game(minimal_game, caller_pubkey, random_seed, seed_signature, end_reason);
         }
 
 
@@ -89,45 +89,8 @@ function game_over_move_claim(
     }
 }
 
-function _inner_game_over_set_winner_and_loser(
-    minimal_game: minimal_game_result, 
-    caller_pubkey: pubkey, 
-    random_seed: integer, 
-    seed_signature: byte_array?,
-    end_reason: game_end_type
-) {
-    val seed_input = seed_validation_input(
-        pubk = caller_pubkey,
-        seed_material = minimal_game.seed_material,
-        org_seed = random_seed,
-        seed_signature = seed_signature!!
-    );
-    // We don't use "require()" on this, since we want to save 
-    // the seed even if it's wrong. This means that the client wont
-    // get any feedback if the wrong seed was sent.
-    val x = rnd_validation_of_player(
-        game_id = minimal_game.game_id,
-        g_type = minimal_game.game_type,
-        g = minimal_game.game,
-        pg = minimal_game.player_game,
-        seed_input = seed_input
-    );
 
 
-    // This doesn't happen often, so we can afford it
-    val maximal_game = maximal_game_get_via_pg(minimal_game.player_game);
-
-    // Note: it doesn't matter if the player claims draw or win,
-    // we'll set them as a winner since we AT LEAST know the 
-    // random seed was valid.
-    if (x == null) {
-        // Success
-        game_stats_claim_me_as_winner(maximal_game!!, end_reason);
-    } else {
-        // Error
-        game_stats_claim_opp_as_winner(maximal_game!!, end_reason);
-    }
-}
 
 // We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
 function _inner_game_end_checkmate(gme: game, curr_turn_nr: integer, winner_pg: player_game) {
@@ -185,7 +148,7 @@ function game_over_resign(caller_pubkey: pubkey, game_id: integer, random_seed: 
         // Don't create [event_game_end], that's only when the game ends BECAUSE of a move.
 
         // As usual, we'll set ourself as winner, until the opponent provides their seed.
-        _inner_game_over_set_winner_and_loser(minimal_game, caller_pubkey, random_seed, seed_signature, game_end_type.RESIGNATION);
+        _inner_game_over_set_winner_and_loser_from_min_game(minimal_game, caller_pubkey, random_seed, seed_signature, game_end_type.RESIGNATION);
     }
 }
 
@@ -224,11 +187,103 @@ function game_over_resign_with_error(caller_pubkey: pubkey, game_id: integer, ra
         // and here the error could come from anywhere, like opponent's move for example.
 
         // As usual, we'll set ourself as winner, until the opponent provides their seed.
-        _inner_game_over_set_winner_and_loser(minimal_game, caller_pubkey, random_seed, seed_signature, game_end_type.ERROR);
+        _inner_game_over_set_winner_and_loser_from_min_game(minimal_game, caller_pubkey, random_seed, seed_signature, game_end_type.ERROR);
 
         // Should be abole to save the error message
         create game_error (minimal_game.game, minimal_game.player_game, error_type.CLIENT_ERROR, error_message);
     }
 }
 
+
+// -------------------------------------
+// Final Step
+// 
+// Require that the game is ongoing and we'll 
+// create a claim.
+// -------------------------------------
+
+// -------------------------------------
+// Use this version if we already have the [maximal_game_result].
+// -------------------------------------
+function game_over_set_winner_and_loser_from_max_game(
+    max_game: maximal_game_result, 
+    caller_pubkey: pubkey, 
+    random_seed: integer, 
+    seed_signature: byte_array?,
+    end_reason: game_end_type
+) {
+    val seed_input = seed_validation_input(
+        pubk = caller_pubkey,
+        seed_material = max_game.seed_material,
+        org_seed = random_seed,
+        seed_signature = seed_signature!!
+    );
+    // We don't use "require()" on this, since we want to save 
+    // the seed even if it's wrong. This means that the client wont
+    // get any feedback if the wrong seed was sent.
+    val x = rnd_validation_of_player(
+        game_id = max_game.game_id,
+        g_type = max_game.game_type,
+        g = max_game.game,
+        pg = max_game.my_pg,
+        seed_input = seed_input
+    );
+
+    _inner_game_over_set_winner_and_loser_final_step(x, max_game, end_reason);
+}
+
+// -------------------------------------
+// Use this version if we have the [minimal_game_result],
+// which means we must fetch the [maximal_game_result].
+// -------------------------------------
+function _inner_game_over_set_winner_and_loser_from_min_game(
+    minimal_game: minimal_game_result, 
+    caller_pubkey: pubkey, 
+    random_seed: integer, 
+    seed_signature: byte_array?,
+    end_reason: game_end_type
+) {
+    val seed_input = seed_validation_input(
+        pubk = caller_pubkey,
+        seed_material = minimal_game.seed_material,
+        org_seed = random_seed,
+        seed_signature = seed_signature!!
+    );
+    // We don't use "require()" on this, since we want to save 
+    // the seed even if it's wrong. This means that the client wont
+    // get any feedback if the wrong seed was sent.
+    val x = rnd_validation_of_player(
+        game_id = minimal_game.game_id,
+        g_type = minimal_game.game_type,
+        g = minimal_game.game,
+        pg = minimal_game.player_game,
+        seed_input = seed_input
+    );
+
+
+    // This doesn't happen often, so we can afford it
+    val maximal_game = maximal_game_get_via_pg(minimal_game.player_game);
+
+    _inner_game_over_set_winner_and_loser_final_step(x, maximal_game!!, end_reason);
+}
+
+// -------------------------------------
+// Note: it doesn't matter if the player claims draw or win,
+// we'll set them as a winner since we AT LEAST know the 
+// random seed was valid.
+// -------------------------------------
+function _inner_game_over_set_winner_and_loser_final_step( 
+    validation_error: text?,
+    max_game: maximal_game_result,
+    end_reason: game_end_type
+) 
+{
+    if (validation_error == null) {
+        // Success
+        game_stats_claim_me_as_winner(max_game, end_reason);
+    } else {
+        // Error
+        game_stats_claim_opp_as_winner(max_game, end_reason);
+    }
+}
 

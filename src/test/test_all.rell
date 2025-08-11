@@ -328,6 +328,7 @@ function test_timeout_calc() {
     var opp_last_heartbeat = last_rotation_at + (2 * 1000); // 1002 seconds
     var otd = opponent_timeout_data(
         is_my_turn = false,
+        most_recent_turn_type = turn_type.NEUTRAL_MOVE_1_SKIPPED, // I'm white, and I have finished by turn.
         opp_last_heartbeat = opp_last_heartbeat, // Not abandoned yet, since 59 sec old heartbeat
         last_player_rotation_at = last_rotation_at, // The last time the player rotation was completed 61 sec ago.
         opp_tot_time_left_since_player_rotation_ms = ten_minutes_ms, // The opponent has 10 minutes left when opp's turn (= player rotation) began.
@@ -340,6 +341,7 @@ function test_timeout_calc() {
     opp_last_heartbeat = last_rotation_at; // 1000 seconds
     otd = opponent_timeout_data(
         is_my_turn = false,
+        most_recent_turn_type = turn_type.NEUTRAL_MOVE_1_SKIPPED, // I'm white, and I have finished by turn.
         opp_last_heartbeat = opp_last_heartbeat, // Abandoned due to old heartbeat, since 61 sec ago.
         last_player_rotation_at = last_rotation_at, // The last time the player rotation was completed 61 sec ago.
         opp_tot_time_left_since_player_rotation_ms = ten_minutes_ms, // The opponent has 10 minutes left when opp's turn (= player rotation) began.
@@ -352,6 +354,7 @@ function test_timeout_calc() {
     opp_last_heartbeat = last_rotation_at + (2 * 1000); // 1002 seconds
     otd = opponent_timeout_data(
         is_my_turn = false,
+        most_recent_turn_type = turn_type.NEUTRAL_MOVE_1_SKIPPED, // I'm white, and I have finished by turn.
         opp_last_heartbeat = opp_last_heartbeat, // Not abandoned yet, since 59 sec old heartbeat.
         last_player_rotation_at = last_rotation_at, // The last time the player rotation was completed 61 sec ago.
         opp_tot_time_left_since_player_rotation_ms = less_than_a_minute_ms, // The opponent has 59 sec left when opp's turn (= player rotation) began.
@@ -386,6 +389,7 @@ function test_timeout_calc() {
     opp_last_heartbeat = rotation_before_at - (50 * 1000); // 850 seconds. No heartbeat during MY turn.
     otd = opponent_timeout_data(
         is_my_turn = true,
+        most_recent_turn_type = turn_type.WHITE_CARD, // I'm white, and this is the last "turn" in the blockchain.
         opp_last_heartbeat = opp_last_heartbeat, // Not abandoned yet.
         last_player_rotation_at = rotation_before_at, // The last time the player rotation was completed 161 sec ago.
         opp_tot_time_left_since_player_rotation_ms = ten_seconds_ms, // The opponent has 10 seconds left when my turn (= player rotation) began.
@@ -398,6 +402,7 @@ function test_timeout_calc() {
     opp_last_heartbeat = last_rotation_at - (80 * 1000); // 820 seconds
     otd = opponent_timeout_data(
         is_my_turn = true,
+        most_recent_turn_type = turn_type.WHITE_CARD,
         opp_last_heartbeat = opp_last_heartbeat, // Even though old heartbeat was 80 sec before turn switch, it doesn't matter.
         last_player_rotation_at = rotation_before_at, // The last time the player rotation was completed 161 sec ago.
         opp_tot_time_left_since_player_rotation_ms = ten_seconds_ms, // The opponent has 10 seconds left when my turn (= player rotation) began.
@@ -410,6 +415,7 @@ function test_timeout_calc() {
     opp_last_heartbeat = rotation_before_at - (50 * 1000); // 850 seconds. No heartbeat during MY turn.
     otd = opponent_timeout_data(
         is_my_turn = true,
+        most_recent_turn_type = turn_type.WHITE_CARD,
         opp_last_heartbeat = opp_last_heartbeat, // Not timed out yet, since 59 sec old heartbeat.
         last_player_rotation_at = rotation_before_at, // The last time the player rotation was completed 161 sec ago.
         opp_tot_time_left_since_player_rotation_ms = -1, // The opponent has no time left 

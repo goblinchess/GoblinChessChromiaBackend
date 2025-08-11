@@ -1,6 +1,4 @@
 
-Fix Rell: First it says ABANDON then it says MY TURN? 
-
 Fix timeout ending for Local games/Bot.
 
 TODO: Remove the damage from history in classical mode.
@@ -22,6 +20,7 @@ Client Done:
 
 
 
+
  TODO Node: 
 -------------
  
@@ -31,6 +30,7 @@ Client Done:
 
 
 Node DONE:
+
 
  
 
