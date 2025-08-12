@@ -68,6 +68,7 @@ function move_peaceful_inner(
     val my_color = v_res.align; // This players color
     val opp_color = v_res.opp_align; // Opponent's color
 
+    val is_pawn_move = p_type == piece_type.PAWN;
 
     // ----------------
     // A.5 Get same state
@@ -174,7 +175,7 @@ function move_peaceful_inner(
     // Create the turn record
     // ----------------
     // B.1 Do this FIRST since lots of verification in here.
-    val (new_turn, new_turn_nr, last_rot_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
+    val (new_turn, new_turn_nr, last_rot_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white, is_pawn_move);
 
     // B.2 (Really simple for peaceful moves)
     move_common_change_piece_position(game_id, last_rot_nr, p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position, board_positions_all, our_team);
@@ -205,6 +206,25 @@ function move_peaceful_inner(
     // B.5 Verify if we just won via checkmate?
     val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args);
 
+    var is_50_rule = false; 
+    if (not is_checkmate and not is_stalemate) {
+        // ----------------
+        // Check 50-move rule
+        // This will almost never happen since 3x repetition will (usually) kick in before this can occur.
+        // Note: we don't have to be exact about this calculation since the client cannot send us this ending
+        // (i.e. we are not risking a difference between client and node's implementations).
+        // ----------------
+        if (not is_pawn_move) { // A pawn move would invalidate the draw
+            val max_turns = 10 * 3; // TODO: 50 * 3; // Using our lingo we're talking about 50 rotations, and a rotation is 3 turns.
+            val diff = new_turn_nr - minimal_game.last_turn_when_pawn_advanced;
+            is_50_rule = diff >= max_turns;
+            if (is_50_rule) {
+                log("game_id: " + game_id + " - 50-move rule triggered, new_turn_nr: " + new_turn_nr + ", last_turn_when_pawn_advanced: " 
+                   + minimal_game.last_turn_when_pawn_advanced + ", diff: " + diff + ".");
+            }
+        }
+    }
+
     // B.6 Create move event
     val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_enchanted_jump, is_check); 
 
@@ -212,7 +232,7 @@ function move_peaceful_inner(
     // B.7 Is it over?
     // ----------------
     val is_insufficient_mating_material = false; // A peaceful move won't the balance
-    val is_game_over = game_over_move_claim(minimal_game, caller_pubkey, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material, check_args?.random_seed, check_args?.seed_signature);
+    val is_game_over = game_over_move_claim(minimal_game, caller_pubkey, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material, is_50_rule, check_args?.random_seed, check_args?.seed_signature);
     if (not is_game_over) {
 
         // Usually we don't set "time_left" during regular moves, but there is one case where we must make an exception:

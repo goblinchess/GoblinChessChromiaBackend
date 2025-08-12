@@ -239,7 +239,7 @@ function card_play_inner_core(
     // -----------    
     // B.1. Create the turn record
     // Do this FIRST since lots of verification in here.
-    val (new_turn, new_turn_nr, last_rotation_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
+    val (new_turn, new_turn_nr, last_rotation_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white, false);
 
     // B.2. Create the events
     for (reverted in reverted_list) {

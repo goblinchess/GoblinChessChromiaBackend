@@ -214,7 +214,8 @@ function move_attack_inner(
     // ----------------
 
     // B.1 Do this FIRST since lots of verification in here.
-    val (new_turn, new_turn_nr, last_rot_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
+    val is_pawn_move_or_capture = true; // We don't have to actually succeed with the attack to reset the 50-move counted (attempted attacks are good enough).
+    val (new_turn, new_turn_nr, last_rot_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white, is_pawn_move_or_capture);
 
     // B.2 Update hp and is_alive for both attacker and defender
     // NOTE: Must be done BEFORE we move the attacker, since we require both combatants to stay on original positions.
@@ -358,8 +359,9 @@ function move_attack_inner(
         rnd_seed = check_args.random_seed;
         seed_signature = check_args.seed_signature;
     }
+    val is_50_rule = false; // Always false for attacks
     val is_game_over = game_over_move_claim(
-        minimal_game, caller_pubkey, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material, rnd_seed, seed_signature);
+        minimal_game, caller_pubkey, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material, is_50_rule, rnd_seed, seed_signature);
     if (not is_game_over) {
         // Usually we don't set "time_left" during regular moves, but there is one case where we must make an exception:
         if (turn_is_last_double_move(new_turn_type)) {

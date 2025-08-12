@@ -40,6 +40,8 @@ function game_end_type_is_claim_draw(claim_type: game_end_type) {
             return true;
         game_end_type.MOVES_50 ->
             return true;
+        game_end_type.CLEANUP -> // Don't think this can ever become a draw since none of the players have their seeds. (The win will go to the first who cleans this up)
+            return true;
         else -> return false;
     }
 }
@@ -50,6 +52,27 @@ function game_end_type_is_claim_lose(claim_type: game_end_type) {
         game_end_type.RESIGNATION ->
             return true;
         game_end_type.ERROR ->
+            return true;
+        else -> return false;
+    }
+}
+
+
+// ------------------------------------------------
+// Returns "true" if this ending can be created without a claim
+// Only these endings must have a claim RESIGNATION, TIMEOUT, ABANDONED, ERROR.
+// ------------------------------------------------
+function game_end_type_can_be_ended_without_claim(g_end: game_end_type) {
+    if (game_end_type_is_move_end(g_end)) { 
+        return true; // The "move ends" are not mandatory to send.
+    } 
+
+    when (g_end) {
+        game_end_type.MOVE_REPETITION -> // Always the case
+            return true;
+        game_end_type.MOVES_50 -> // Always the case
+            return true;
+        game_end_type.CLEANUP -> // When both players left an old game (both seeds likely gone) 
             return true;
         else -> return false;
     }

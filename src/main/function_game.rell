@@ -73,6 +73,7 @@ function game_create_inner(white_player: player, black_player: player, game_type
         .game_type = g_type,
         .current_rotation_nr = 0, // Starting at 0 means first (actual) rotation will be 1.
         .current_turn_nr = 0, // Starting at 0 means first (actual) turn will be 1.
+        .last_turn_when_pawn_advanced = 0, 
         .created_at = op_context.last_block_time,
         .last_player_rotation_at = op_context.last_block_time,
         .seed_material = last_block_rid

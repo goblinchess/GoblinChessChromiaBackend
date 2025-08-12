@@ -107,12 +107,10 @@ function game_timeout_any_player_if_possible(maximal_game: maximal_game_result, 
     if (am_i_winner) {
         if (timeout_calc_abandon_inner(op_context.last_block_time, opp_timeout_data.opp_last_heartbeat)) {
 
-            // Note: we're not counting up the seed_count since no player can provide 
-            // a seed (probably abandoned by both).
-            update maximal_game.game (.is_finished = true, .finish_reason = game_end_type.TIMEOUT);
+            _inner_game_timeout_finish_no_claim(maximal_game);
 
             // Opponent is inactive, and we are the winner.
-            game_stats_claim_me_as_winner(maximal_game, game_end_type.TIMEOUT);
+            game_stats_claim_me_as_winner(maximal_game, game_end_type.CLEANUP);
             return true;
         } else {
             return false; // Opponent is active, must abort everything.
@@ -127,16 +125,22 @@ function game_timeout_any_player_if_possible(maximal_game: maximal_game_result, 
         // would not trigger any action that's bad for them.
         // But here we must assume that the player simply wants to play,
         // EVEN if (s)he will lose rating on this old one (which we cannot return to).
+        _inner_game_timeout_finish_no_claim(maximal_game);
 
-
-        // Note: we're not counting up the seed_count since no player can provide 
-        // a seed (probably abandoned by both).
-        update maximal_game.game (.is_finished = true, .finish_reason = game_end_type.TIMEOUT);
-
-        game_stats_claim_opp_as_winner(maximal_game, game_end_type.TIMEOUT);
+        game_stats_claim_opp_as_winner(maximal_game, game_end_type.CLEANUP);
         return true;
     }
 
+}
+
+// Finish the game.
+function _inner_game_timeout_finish_no_claim(maximal_game: maximal_game_result) {
+    // Note: we're not counting up the seed_count since no player can provide 
+    // a seed (probably abandoned by both).
+    update maximal_game.game (
+        .is_finished = true, 
+        // We don't count this as a claim since we don't have a seed.
+        .finish_reason = game_end_type.CLEANUP); 
 }
 
 // Returns "true" if the player made the last move, and could be the winner.

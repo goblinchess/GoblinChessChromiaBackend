@@ -18,7 +18,8 @@ function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
         g.is_finished == false 
     }
         (gme = g, player = pg.player, player_game = pg,  
-        g_id = g.rowid.to_integer(), game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, is_white = pg.is_white, in_check = pg.in_check, g_mat = g.seed_material, // General Data
+        g_id = g.rowid.to_integer(), game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, last_50_moves = g.last_turn_when_pawn_advanced,
+        is_white = pg.is_white, in_check = pg.in_check, g_mat = g.seed_material, // General Data
         prev_move_time = g.last_player_rotation_at, game_created_at = g.created_at, my_time_left_ms = pg.total_time_left // Minimal Timestamps
         );
 
@@ -33,6 +34,7 @@ function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
             game_type = res.game_type,
             curr_rotation_nr = res.curr_rot_nr,
             curr_turn_nr = res.curr_turn_nr,
+            last_turn_when_pawn_advanced = res.last_50_moves,
             in_check = res.in_check,
             is_white =res.is_white,
             seed_material = res.g_mat,
@@ -67,7 +69,8 @@ function minimal_game_data_get_even_if_finished(
         g.is_finished == false 
     }
         (gme = g, player = pg.player, player_game = pg,  // Primary keys 
-        g_id = g.rowid.to_integer(), game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, is_white = pg.is_white, in_check = pg.in_check, g_mat = g.seed_material, // General Data
+        g_id = g.rowid.to_integer(), game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, last_50_moves = g.last_turn_when_pawn_advanced,
+        is_white = pg.is_white, in_check = pg.in_check, g_mat = g.seed_material, // General Data
         prev_move_time = g.last_player_rotation_at, game_created_at = g.created_at, my_time_left_ms = pg.total_time_left // Minimal Timestamps
         );
 
@@ -82,6 +85,7 @@ function minimal_game_data_get_even_if_finished(
             game_type = res.game_type,
             curr_rotation_nr = res.curr_rot_nr,
             curr_turn_nr = res.curr_turn_nr,
+            last_turn_when_pawn_advanced = res.last_50_moves,
             in_check = res.in_check,
             is_white =res.is_white,
             seed_material = res.g_mat,
@@ -116,10 +120,11 @@ function minimal_game_and_end_data_get_even_if_finished(
         pg_opp.game == g, // We need this to get the opponent's timeout data
         pg_opp.is_white != pg_my.is_white // Only one is white
     } ( gme = g, my_p = p_my, my_pg = pg_my, // Primary keys
-        game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, is_white = pg_my.is_white, in_check = pg_my.in_check, g_mat = g.seed_material, // General Data
+        game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, last_50_moves = g.last_turn_when_pawn_advanced,
+        is_white = pg_my.is_white, in_check = pg_my.in_check, g_mat = g.seed_material, // General Data
         cr_at = g.last_player_rotation_at, game_created_at = g.created_at, // Minimal Timestamps
         my_time_left_ms = pg_my.total_time_left,  // Total time left
-        game_finished = g.is_finished,  game_finish_reason = g.finish_reason, i_claimed_end = pg_my.claimed_end,
+        game_finished = g.is_finished,  game_finish_reason = g.finish_reason, by_claim = g.is_finished_by_claim, i_claimed_end = pg_my.claimed_end,
         game_valid_seeds = g.valid_seeds_count, game_invalid_seeds = g.invalid_seeds_count
         );
 
@@ -135,6 +140,7 @@ function minimal_game_and_end_data_get_even_if_finished(
             game_id = game_id,
             game_type = res.game_type,
             curr_rotation_nr = res.curr_rot_nr,
+            last_turn_when_pawn_advanced = res.last_50_moves,
             curr_turn_nr = res.curr_turn_nr,
             in_check = res.in_check,
             is_white =res.is_white,
@@ -147,6 +153,7 @@ function minimal_game_and_end_data_get_even_if_finished(
 
         val g_end_data = game_end_data(
             is_finished = res.game_finished,
+            is_finished_by_claim = res.by_claim,
             is_my_claim = res.i_claimed_end,
             finish_reason = res.game_finish_reason.name,
             valid_seeds_count = res.game_valid_seeds,
@@ -190,11 +197,12 @@ function minimal_game_and_timeout_data_get_even_if_finished(
         ct.game == g,
         ct.current_turn == t // yes, even if we are at turn = 0 there will be a [current_turn] row.
     } ( gme = g, my_p = p_my, my_pg = pg_my, // Primary keys
-        game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, is_white = pg_my.is_white, in_check = pg_my.in_check, g_mat = g.seed_material, // General Data
+        game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, last_50_moves = g.last_turn_when_pawn_advanced,
+        is_white = pg_my.is_white, in_check = pg_my.in_check, g_mat = g.seed_material, // General Data
         cr_at = g.last_player_rotation_at, game_created_at = g.created_at, // Minimal Timestamps
         my_time_left_ms = pg_my.total_time_left, opp_time_left_ms = pg_opp.total_time_left, // Total time left
         opp_last_heartbeat = pg_opp.last_heartbeat, // Inactive?
-        game_finished = g.is_finished,  game_finish_reason = g.finish_reason, i_claimed_end = pg_my.claimed_end,
+        game_finished = g.is_finished,  game_finish_reason = g.finish_reason, by_claim = g.is_finished_by_claim, i_claimed_end = pg_my.claimed_end,
         game_valid_seeds = g.valid_seeds_count, game_invalid_seeds = g.invalid_seeds_count,
         recent_turn_type = t.turn_type, // Turn data
         );
@@ -212,6 +220,7 @@ function minimal_game_and_timeout_data_get_even_if_finished(
             game_type = res.game_type,
             curr_rotation_nr = res.curr_rot_nr,
             curr_turn_nr = res.curr_turn_nr,
+            last_turn_when_pawn_advanced = res.last_50_moves,
             in_check = res.in_check,
             is_white =res.is_white,
             seed_material = res.g_mat,
@@ -234,6 +243,7 @@ function minimal_game_and_timeout_data_get_even_if_finished(
 
         val g_end_data = game_end_data(
             is_finished = res.game_finished,
+            is_finished_by_claim = res.by_claim,
             is_my_claim = res.i_claimed_end,
             finish_reason = res.game_finish_reason.name,
             valid_seeds_count = res.game_valid_seeds,

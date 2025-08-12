@@ -1,0 +1,97 @@
+
+
+// -------------------------------------
+// Final Step of Game Over Claim.
+// 
+// We will validate the seed and, depending on the outcome, 
+// end the game with a clear winner.
+// Here we require that this is the first seed sent to the node.
+// -------------------------------------
+
+// -------------------------------------
+// Use this version if we already have the [maximal_game_result].
+// -------------------------------------
+function game_over_first_inner_set_winner_and_loser_from_max_game(
+    max_game: maximal_game_result, 
+    caller_pubkey: pubkey, 
+    random_seed: integer, 
+    seed_signature: byte_array?,
+    end_reason: game_end_type
+) {
+    val seed_input = seed_validation_input(
+        pubk = caller_pubkey,
+        seed_material = max_game.seed_material,
+        org_seed = random_seed,
+        seed_signature = seed_signature!!
+    );
+    // We don't use "require()" on this, since we want to save 
+    // the seed even if it's wrong. This means that the client wont
+    // get any feedback if the wrong seed was sent.
+    val x = rnd_validation_of_player(
+        game_id = max_game.game_id,
+        g_type = max_game.game_type,
+        g = max_game.game,
+        pg = max_game.my_pg,
+        seed_input = seed_input
+    );
+
+    _inner_game_over_set_winner_and_loser_final_step(x, max_game, end_reason);
+}
+
+// -------------------------------------
+// Use this version if we have the [minimal_game_result],
+// which means we must fetch the [maximal_game_result].
+// -------------------------------------
+function game_over_first_inner_set_winner_and_loser_from_min_game(
+    minimal_game: minimal_game_result, 
+    caller_pubkey: pubkey, 
+    random_seed: integer, 
+    seed_signature: byte_array?,
+    end_reason: game_end_type
+) {
+    val seed_input = seed_validation_input(
+        pubk = caller_pubkey,
+        seed_material = minimal_game.seed_material,
+        org_seed = random_seed,
+        seed_signature = seed_signature!!
+    );
+    // We don't use "require()" on this, since we want to save 
+    // the seed even if it's wrong. This means that the client wont
+    // get any feedback if the wrong seed was sent.
+    val x = rnd_validation_of_player(
+        game_id = minimal_game.game_id,
+        g_type = minimal_game.game_type,
+        g = minimal_game.game,
+        pg = minimal_game.player_game,
+        seed_input = seed_input
+    );
+
+
+    // This doesn't happen often, so we can afford it
+    val maximal_game = maximal_game_get_via_pg(minimal_game.player_game);
+
+    _inner_game_over_set_winner_and_loser_final_step(x, maximal_game!!, end_reason);
+}
+
+// -------------------------------------
+// Note: it doesn't matter if the player claims draw or win,
+// we'll set them as a winner since we AT LEAST know the 
+// random seed was valid.
+// -------------------------------------
+function _inner_game_over_set_winner_and_loser_final_step( 
+    validation_error: text?,
+    max_game: maximal_game_result,
+    end_reason: game_end_type
+) 
+{
+    update max_game.my_pg (.claimed_end = true); // This is the player who shut down the game (we're setting this flag even for "unclaimed" games, but yeah)
+
+    if (validation_error == null) {
+        // Success
+        game_stats_claim_me_as_winner(max_game, end_reason);
+    } else {
+        // Error
+        game_stats_claim_opp_as_winner(max_game, end_reason);
+    }
+}
+

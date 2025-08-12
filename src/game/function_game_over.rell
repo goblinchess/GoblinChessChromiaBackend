@@ -1,9 +1,10 @@
 
 // -------------------------------------
 // There are two terms:
-// "ended" - the game is over, but we have not enough info to be certain who won.
-// "terminated" - the game is over, and we know who won.
-// "full terminated" - the game is over, and we know who won, and we have written the stats.
+// - "ended" - the game is over, but we have not enough info to be certain who won (one or below seed verifications)
+// - "terminated" - the game is over, and we know who won (two seed verifications)
+// 
+// Many games will never reach "terminated" state, since one of the players has shut down the client app or lost connection.
 // -------------------------------------
 
 // -------------------------------------
@@ -38,10 +39,11 @@ function game_over_move_claim(
     is_checkmate: boolean, 
     is_stalemate: boolean, 
     is_insufficient_mating_material: boolean,
+    is_50_rule: boolean, // If true, we've broken the 50-move rule, the game is drawn.
     random_seed: integer?,
     seed_signature: byte_array?
 ) :boolean {
-    if (is_checkmate or is_stalemate or is_insufficient_mating_material) {
+    if (is_checkmate or is_stalemate or is_insufficient_mating_material or is_50_rule) {
         // This move ended the game
 
         // ------------------------------------------- 
@@ -50,14 +52,13 @@ function game_over_move_claim(
         log("game_id: " + minimal_game.game_id + " - Game Over");
         var end_reason = game_end_type.NOTHING;
         if (is_checkmate) {
-            _inner_game_end_checkmate(minimal_game.game, new_turn.number, minimal_game.player_game);
             end_reason = game_end_type.CHECKMATE;
         } else if (is_stalemate) {
-            _inner_game_end_stalemate(minimal_game.game, new_turn.number);
             end_reason = game_end_type.STALEMATE;
         } else if (is_insufficient_mating_material) {
-            _inner_game_end_insufficient_mating_material(minimal_game.game, new_turn.number);
             end_reason = game_end_type.INSUFFICIENT_MATING_MATERIAL;
+        } else if (is_50_rule) {
+            end_reason = game_end_type.MOVES_50;
         } else {
             require(false, "Game ended with unknown reason, id:" + minimal_game.game_id);
         }
@@ -71,7 +72,10 @@ function game_over_move_claim(
         // ------------------------------------------- 
         // 3. Create the "game end" event (tied to this turn)
         // ------------------------------------------- 
-        event_game_end_create(minimal_game.game, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material);
+        if (game_end_type_is_move_end(end_reason)) {
+            // Only create this for the true move endings.
+            event_game_end_create(minimal_game.game, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material);
+        }
 
         // ------------------------------------------- 
         // 4. Verify seed. The status of the verification will be saved to the [game]
@@ -79,7 +83,12 @@ function game_over_move_claim(
         // Some client doesn't calculate mate and won't know the the game is over. 
         // These client will send the seed at some later point.
         if (random_seed != null) { 
-            _inner_game_over_set_winner_and_loser_from_min_game(minimal_game, caller_pubkey, random_seed, seed_signature, end_reason);
+            // If they are sending the seed then this must be a "claim"
+            _inner_game_end_update(minimal_game.game, new_turn.number, end_reason, true);
+            game_over_first_inner_set_winner_and_loser_from_min_game(minimal_game, caller_pubkey, random_seed, seed_signature, end_reason);
+        } else {
+            // No seed means no claim.
+            _inner_game_end_update(minimal_game.game, new_turn.number, end_reason, false);
         }
 
 
@@ -90,21 +99,13 @@ function game_over_move_claim(
 }
 
 
-
-
-// We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
-function _inner_game_end_checkmate(gme: game, curr_turn_nr: integer, winner_pg: player_game) {
-    update gme (.current_turn_nr = curr_turn_nr, .is_finished = true, .finish_reason = game_end_type.CHECKMATE);
-}
-
-// We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
-function _inner_game_end_stalemate(gme: game, curr_turn_nr: integer) {
-    update gme (.current_turn_nr = curr_turn_nr, .is_finished = true, .finish_reason = game_end_type.STALEMATE);
-}
-
-// We cannot create [player_game_stats] at this point, since we must verify the random numbers first.
-function _inner_game_end_insufficient_mating_material(gme: game, curr_turn_nr: integer) {
-    update gme (.current_turn_nr = curr_turn_nr, .is_finished = true, .finish_reason = game_end_type.INSUFFICIENT_MATING_MATERIAL);
+// Updates the [game] with finished status.
+function _inner_game_end_update(gme: game, curr_turn_nr: integer, g_end: game_end_type, is_claim: boolean) {
+    update gme (
+        .current_turn_nr = curr_turn_nr,  // Since this is caused by a move, we're updating the [current_turn_nr] to the latest.
+        .is_finished = true, 
+        .is_finished_by_claim = is_claim,
+        .finish_reason = g_end);
 }
 
 // -------------------------------------
@@ -130,19 +131,22 @@ function game_over_resign(caller_pubkey: pubkey, game_id: integer, random_seed: 
         log("game_id: " + game_id.to_text() + " - game already ended, reason: " + g_end.finish_reason );
 
         // This will also validate if the game is already terminated (which cannot be explained, and would be a real error)
-        game_terminate_with_seed(caller_pubkey, game_id, random_seed, seed_signature);
+        game_terminate_maybe_with_seed(caller_pubkey, game_id, random_seed, seed_signature);
     } else {
         // We don't care if the game is out of sync, since we might be doing this during the opponent's rotation anyways.
         val curr_turn = minimal_game.curr_turn_nr;
         log("game_id: " + game_id.to_text() + " - game ongoing, turn: " + curr_turn.to_text() + ". Ending it now");
 
         // ... so no need setting the [current_turn_nr] here. 
-        update minimal_game.game (.is_finished = true, .finish_reason = game_end_type.RESIGNATION);
+        update minimal_game.game (
+            .is_finished = true, 
+            .is_finished_by_claim = true, // Must be a claim
+            .finish_reason = game_end_type.RESIGNATION);
 
         // Don't create [event_game_end], that's only when the game ends BECAUSE of a move.
 
         // As usual, we'll set ourself as winner, until the opponent provides their seed.
-        _inner_game_over_set_winner_and_loser_from_min_game(minimal_game, caller_pubkey, random_seed, seed_signature, game_end_type.RESIGNATION);
+        game_over_first_inner_set_winner_and_loser_from_min_game(minimal_game, caller_pubkey, random_seed, seed_signature, game_end_type.RESIGNATION);
     }
 }
 
@@ -164,7 +168,7 @@ function game_over_resign_with_error(caller_pubkey: pubkey, game_id: integer, ra
         log("game_id: " + game_id.to_text() + " - game already ended, reason: " + g_end.finish_reason);
 
         // This will also validate if the game is already terminated (which cannot be explained, and would be a real error)
-        game_terminate_with_seed(caller_pubkey, game_id, random_seed, seed_signature);
+        game_terminate_maybe_with_seed(caller_pubkey, game_id, random_seed, seed_signature);
 
         // If termination succeeded, we SHOULD be able to report the error too (even though it's not the reason the game ended)
         create game_error (minimal_game.game, minimal_game.player_game, error_type.CLIENT_ERROR_AFTER_END, error_message);
@@ -175,13 +179,16 @@ function game_over_resign_with_error(caller_pubkey: pubkey, game_id: integer, ra
         log("game_id: " + game_id.to_text() + " - game ongoing, turn: " + curr_turn.to_text() + ". Ending it now");
 
         // ... so no need setting the [current_turn_nr] here. 
-        update minimal_game.game (.is_finished = true, .finish_reason = game_end_type.ERROR);
+        update minimal_game.game (
+            .is_finished = true, 
+            .is_finished_by_claim = true, // Must be a claim
+            .finish_reason = game_end_type.ERROR);
 
         // Don't create [event_game_end], that's only when the game ends BECAUSE of a move.
         // and here the error could come from anywhere, like opponent's move for example.
 
         // As usual, we'll set ourself as winner, until the opponent provides their seed.
-        _inner_game_over_set_winner_and_loser_from_min_game(minimal_game, caller_pubkey, random_seed, seed_signature, game_end_type.ERROR);
+        game_over_first_inner_set_winner_and_loser_from_min_game(minimal_game, caller_pubkey, random_seed, seed_signature, game_end_type.ERROR);
 
         // Should be abole to save the error message
         create game_error (minimal_game.game, minimal_game.player_game, error_type.CLIENT_ERROR, error_message);
@@ -189,97 +196,5 @@ function game_over_resign_with_error(caller_pubkey: pubkey, game_id: integer, ra
 }
 
 
-// -------------------------------------
-// Final Step
-// 
-// Require that the game is ongoing and we'll 
-// create a claim.
-// -------------------------------------
 
-// -------------------------------------
-// Use this version if we already have the [maximal_game_result].
-// -------------------------------------
-function game_over_set_winner_and_loser_from_max_game(
-    max_game: maximal_game_result, 
-    caller_pubkey: pubkey, 
-    random_seed: integer, 
-    seed_signature: byte_array?,
-    end_reason: game_end_type
-) {
-    val seed_input = seed_validation_input(
-        pubk = caller_pubkey,
-        seed_material = max_game.seed_material,
-        org_seed = random_seed,
-        seed_signature = seed_signature!!
-    );
-    // We don't use "require()" on this, since we want to save 
-    // the seed even if it's wrong. This means that the client wont
-    // get any feedback if the wrong seed was sent.
-    val x = rnd_validation_of_player(
-        game_id = max_game.game_id,
-        g_type = max_game.game_type,
-        g = max_game.game,
-        pg = max_game.my_pg,
-        seed_input = seed_input
-    );
-
-    _inner_game_over_set_winner_and_loser_final_step(x, max_game, end_reason);
-}
-
-// -------------------------------------
-// Use this version if we have the [minimal_game_result],
-// which means we must fetch the [maximal_game_result].
-// -------------------------------------
-function _inner_game_over_set_winner_and_loser_from_min_game(
-    minimal_game: minimal_game_result, 
-    caller_pubkey: pubkey, 
-    random_seed: integer, 
-    seed_signature: byte_array?,
-    end_reason: game_end_type
-) {
-    val seed_input = seed_validation_input(
-        pubk = caller_pubkey,
-        seed_material = minimal_game.seed_material,
-        org_seed = random_seed,
-        seed_signature = seed_signature!!
-    );
-    // We don't use "require()" on this, since we want to save 
-    // the seed even if it's wrong. This means that the client wont
-    // get any feedback if the wrong seed was sent.
-    val x = rnd_validation_of_player(
-        game_id = minimal_game.game_id,
-        g_type = minimal_game.game_type,
-        g = minimal_game.game,
-        pg = minimal_game.player_game,
-        seed_input = seed_input
-    );
-
-
-    // This doesn't happen often, so we can afford it
-    val maximal_game = maximal_game_get_via_pg(minimal_game.player_game);
-
-    _inner_game_over_set_winner_and_loser_final_step(x, maximal_game!!, end_reason);
-}
-
-// -------------------------------------
-// Note: it doesn't matter if the player claims draw or win,
-// we'll set them as a winner since we AT LEAST know the 
-// random seed was valid.
-// -------------------------------------
-function _inner_game_over_set_winner_and_loser_final_step( 
-    validation_error: text?,
-    max_game: maximal_game_result,
-    end_reason: game_end_type
-) 
-{
-    update max_game.my_pg (.claimed_end = true); // This is the player who shut down the game.
-
-    if (validation_error == null) {
-        // Success
-        game_stats_claim_me_as_winner(max_game, end_reason);
-    } else {
-        // Error
-        game_stats_claim_opp_as_winner(max_game, end_reason);
-    }
-}
 

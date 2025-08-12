@@ -33,6 +33,7 @@ struct old_game_stat {
 // Holding general game end info, specifically why the game ended.
 struct game_end_data {
     is_finished: boolean; // True if this game is "finished", first step in ending the game. 
+    is_finished_by_claim: boolean; // True if the game was finished by a claim.
     is_my_claim: boolean;  // True if it was this player who finished the game (if "false" it was either the opponent who initiated the game ending or the node itself.)
     finish_reason: text; // Reason for ending the game.
     valid_seeds_count: integer; // Number of players who have successfully verified their seeds.

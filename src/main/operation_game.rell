@@ -88,6 +88,12 @@ operation resign_game_error(game_rowid: integer, random_seed: integer, seed_sign
 //
 // After "termination" nothing more can be done, it will be too late to claim
 // timeout etc.
+//
+// But here we also accept that the game is over without a "claim"!
+// Explanation: a game can be finished without any of the player knows about this 
+// (via MOVE_REPETITION, MOVES_50, or even MATE depending on the client).
+// That means that when the players discover the game ended they BOTH will
+// try to terminate it, so we must allow the first "termination" to become a regular "claim".
 // -------------------------------------
 operation terminate_game_with_seed(game_rowid: integer, random_seed: integer, seed_signature: byte_array) {
     // -----------    
@@ -96,5 +102,5 @@ operation terminate_game_with_seed(game_rowid: integer, random_seed: integer, se
     val current_signers = op_context.get_signers();
     val caller_pubkey = current_signers[0];
 
-    game_terminate_with_seed(caller_pubkey, game_rowid, random_seed, seed_signature);
+    game_terminate_maybe_with_seed(caller_pubkey, game_rowid, random_seed, seed_signature);
 }

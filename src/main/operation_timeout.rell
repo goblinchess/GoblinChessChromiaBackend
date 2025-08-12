@@ -83,11 +83,14 @@ operation claim_timeout(game_rowid: integer, random_seed: integer, seed_signatur
         }
 
         // ... so no need setting the [current_turn_nr] here. 
-        update maximal_game.game (.is_finished = true, .finish_reason = end_reason);
+        update maximal_game.game (
+            .is_finished = true, 
+            .is_finished_by_claim = true, 
+            .finish_reason = end_reason);
 
         // Don't create [event_game_end], that's only when the game ends BECAUSE of a move.
 
         // As usual, we'll set ourself as winner, until the opponent provides their seed.
-        game_over_set_winner_and_loser_from_max_game(maximal_game, caller_pubkey, random_seed, seed_signature, end_reason);
+        game_over_first_inner_set_winner_and_loser_from_max_game(maximal_game, caller_pubkey, random_seed, seed_signature, end_reason);
     }
 }

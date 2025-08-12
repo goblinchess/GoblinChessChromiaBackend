@@ -1,0 +1,79 @@
+
+
+
+// -------------------------------------------------------------------------
+// "Terminate" is the word we use when the second player sends the seed.
+// The first player "claimed" game over, and put the game in state "finished".
+// The second player discovers that the game has finished and will call this
+// method. The game has to be "finished" at this point or we have some sort of bug.
+//
+// After "termination" nothing more can be done, it will be too late to claim
+// timeout etc.
+// -------------------------------------------------------------------------
+
+// -------------------------------------------------------------------------
+// Will "maybe" terminate the game (= end the game OR terminate the game).
+// 
+// Explanation: a game can be finished without any of the player knows about this 
+// (via MOVE_REPETITION, MOVES_50, or even MATE depending on the client).
+// That means that when the players discover the game ended they BOTH will
+// try to terminate it, so we must allow the first "termination" to become a regular "claim".
+// -------------------------------------------------------------------------
+
+function game_terminate_maybe_with_seed(caller_pubkey: pubkey, game_id: integer, random_seed: integer, seed_signature: byte_array) 
+{
+    log("game_id: " + game_id.to_text() + " - start");
+
+    // ----------------
+    // A.1. Validate the state of the game
+    // ----------------
+    //log("End A.1");
+    val (max_game, g_end_data, finish_reason) = maximal_game_and_end_data_get_even_if_finished(caller_pubkey, game_id);
+    require(max_game != null, "No such game, id:" + game_id);
+    require(g_end_data != null, "Game end data is null, id:" + game_id); // Useless, since checking the max_game is enough.
+    require(g_end_data.is_finished, "Game is not over, why are we terminating it?, id:" + game_id); 
+
+    val tot_seeds = g_end_data.valid_seeds_count + g_end_data.invalid_seeds_count;
+
+
+    if (g_end_data.is_finished_by_claim) {
+        // Meaning we should have exactly one seed
+        if (tot_seeds == 0) {
+            require(false , "Internal error! The Game was ended by a claim as " + finish_reason + " but we don't have a seed, which is not allowed, id:" + game_id);
+        } else if(tot_seeds == 1) {
+            // Typical termination.
+            log("game_id: " + game_id + " - Second player sending seed, game was ended by a claim as " + finish_reason);
+            game_terminate_inner_with_seed(caller_pubkey, game_id, random_seed, seed_signature, max_game, g_end_data, finish_reason);
+        } else if (tot_seeds == 2) { // Client error, don't send seed twice
+            require(false, "Game is already terminated and both players sent seeds, why are doing this again?, id:" + game_id); 
+        } else {
+            require(false, "Unexpected, how come we have a finished game with " + tot_seeds + " seeds?, id:" + game_id); 
+        }
+    } else {
+        // Happens when the NODE ended they game by itself. 
+        // Just extra check:
+        if(game_end_type_can_be_ended_without_claim(finish_reason))  {
+            log("Internal error! The Game was ended as " + finish_reason + " but without a claim, which is not allowed, id:" + game_id);
+        }
+
+        // We could be the first OR second player sending our seed.
+        if (tot_seeds == 0) {
+            // We are the first player sending our seed.
+            // Now we must change this from a termination to a "claim" (so that the second player can do the "termination" later)
+            log("game_id: " + game_id + " - First player sending seed, game was ended by the node as " + finish_reason);
+            game_over_first_inner_set_winner_and_loser_from_max_game(max_game, caller_pubkey, random_seed, seed_signature, finish_reason);
+        } else if(tot_seeds == 1) {
+            // Typical termination.
+            log("game_id: " + game_id + " - Second player sending seed, game was ended by the node as " + finish_reason);
+            game_terminate_inner_with_seed(caller_pubkey, game_id, random_seed, seed_signature, max_game, g_end_data, finish_reason);
+        } else if (tot_seeds == 2) { // Client error, don't send seed twice
+            require(false, "Game is already terminated and both players sent seeds, why are doing this again?, id:" + game_id); 
+        } else {
+            require(false, "Unexpected, how come we have a finished game with " + tot_seeds + " seeds?, id:" + game_id); 
+        }
+
+    }
+}
+
+
+

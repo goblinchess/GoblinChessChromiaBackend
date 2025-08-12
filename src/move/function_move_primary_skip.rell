@@ -68,7 +68,7 @@ function move_primary_skip_inner(
     // B.1. Create the turn record
     // ----------------
     // lots of verification in here.
-    val (new_turn, new_turn_nr, last_rot_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
+    val (new_turn, new_turn_nr, last_rot_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white, false);
 
     // ----------------
     // 2. Apply end_args
@@ -107,7 +107,8 @@ function move_primary_skip_inner(
     // B.4 Is it over?
     // ----------------
     val is_insufficient_mating_material = false; // A skipped move won't the balance
-    val is_game_over = game_over_move_claim(minimal_game, caller_pubkey, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material, check_args?.random_seed, check_args?.seed_signature);
+    val is_50_rule = false; // Don't bother for skipped moves, it will kick in next regular (peaceful) move.
+    val is_game_over = game_over_move_claim(minimal_game, caller_pubkey, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material, is_50_rule, check_args?.random_seed, check_args?.seed_signature);
     if (not is_game_over) {
         // B.5 Cleanup 
         // For "skip" this will:

@@ -19,10 +19,12 @@ entity game {
     seed_material: byte_array; // The base data used by the client to generate the seed (by signing this data and extract the seed from the signature.)
 
     // Denormalization for performance reasons
-    mutable current_rotation_nr: integer; //A GAME cannot have a reference to the (current) PLAYER_ROTATION entity since it references GAME, 
-                                          // and Rell doesn't allow two-way FKs.
-    mutable current_turn_nr: integer;     //A GAME cannot have a reference to the (current) TURN entity since TURN references GAME, 
-                                          // and Rell doesn't allow two-way FKs.
+    mutable current_rotation_nr: integer;          // A GAME cannot have a reference to the (current) PLAYER_ROTATION entity since it references GAME, 
+                                                   // and Rell doesn't allow two-way FKs.
+    mutable current_turn_nr: integer;              // A GAME cannot have a reference to the (current) TURN entity since TURN references GAME, 
+                                                   // and Rell doesn't allow two-way FKs.
+    mutable last_turn_when_pawn_advanced: integer; // The turn number when we last had a pawn advance OR a capture. 
+                                                   // We use this to implement the 50-move-draw rule (MOVES_50 game_end_type) 
 
     // -----------------------------------------------------------
     // End of game data. Typical flow:
@@ -39,6 +41,7 @@ entity game {
     // -----------------------------------------------------------
     // First step
     mutable is_finished: boolean = false;  // First step of ending a game, no more moves/turns can be made.
+    mutable is_finished_by_claim: boolean = false;  // A player asked for the game to end. 
     mutable finish_reason: game_end_type = game_end_type.NOTHING;     
     // Second step
     mutable valid_seeds_count: integer = 0; // Number of players who have provided a valid random seed.
@@ -68,6 +71,7 @@ enum game_end_type {
     // ------------------------------------------------
     MOVE_REPETITION, // = Draw, due to 3x repetition. (Only calculated at the node.)
     MOVES_50,        // = Draw, due to 50 moves without anyone taking anything or moving a pawn. (Only calculated at the node.)
+    CLEANUP,         // = Win, game had to be ended long after the game was abandoned (by both players)
     // ------------------------------------------------
     // Client can send these claims anytime, meaning
     // that the other player might get an error back on a 

@@ -34,7 +34,7 @@ function move_neutral_skip_inner(
     // B.1. Create the turn record
     // ----------------
     // lots of verification in here.
-    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white);
+    val new_turn = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white, false);
     log("game_id: "+game_id+" - /Skip Neutral End: new turn type: " + new_turn_type);
 
     // ----------------

@@ -11,6 +11,7 @@ struct minimal_game_result {
     game_type;
     curr_rotation_nr: integer; 
     curr_turn_nr: integer; // We always check this
+    last_turn_when_pawn_advanced: integer; // The turn number when we last had a pawn advance OR a capture. 
     in_check: boolean; // Our king is in check.
     is_white: boolean; // True if this player is white.
     seed_material: byte_array; // The basis of the seed

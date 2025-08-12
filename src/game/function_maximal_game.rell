@@ -79,7 +79,7 @@ function maximal_game_and_end_data_get_even_if_finished(
         my_elo_before = pg_my.elo_rating_before_game, opp_elo_before = pg_opp.elo_rating_before_game, // initial ELO 
         my_elo = p_my.elo_rating, opp_elo = p_opp.elo_rating, // curr ELO
         g_id = g.rowid.to_integer(), game_type = g.game_type,  is_white = pg_my.is_white, in_check = pg_my.in_check, g_mat = g.seed_material, // General
-        game_finished = g.is_finished,  game_finish_reason = g.finish_reason, i_claimed_end = pg_my.claimed_end, // End data
+        game_finished = g.is_finished,  game_finish_reason = g.finish_reason, by_claim = g.is_finished_by_claim, i_claimed_end = pg_my.claimed_end, // End data
         game_valid_seeds = g.valid_seeds_count, game_invalid_seeds = g.invalid_seeds_count // End data
         );
 
@@ -112,6 +112,7 @@ function maximal_game_and_end_data_get_even_if_finished(
 
         val g_end_data = game_end_data(
             is_finished = res.game_finished,
+            is_finished_by_claim = res.by_claim,
             is_my_claim = res.i_claimed_end,
             finish_reason = res.game_finish_reason.name,
             valid_seeds_count = res.game_valid_seeds,
