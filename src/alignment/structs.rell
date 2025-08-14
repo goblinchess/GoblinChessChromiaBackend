@@ -23,3 +23,16 @@ struct with_pos_and_alignment {
     alignment: alignment;
     // has_moved: boolean; // After the piece can no longer castle (let client handle this)
 }
+
+// Holds:
+// - Position
+// - Alignment
+// - Piece Type (or IMMOBILE if obstacle)
+struct with_pos_and_alignment_and_type {
+    pos: integer;
+    alignment: alignment;
+    p_type: piece_type;
+    is_knighted: boolean;
+    is_obstacle: boolean;
+    //has_moved: boolean; // After the piece can no longer castle (let client handle this)
+}

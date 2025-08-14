@@ -42,9 +42,13 @@ function move_primary_skip_inner(
         opp_color = alignment.BLACK; 
     }
 
-    val board: list<with_pos_and_alignment> = vuln_get_all_as_wpaa(minimal_game.game); 
+    val res = move_get_vuln_path(minimal_game.game, opp_color); 
+    val opp_vuln_ctxt: pre_vuln_context = res.v_ctxt;
+
+    val board_p: list<with_pos_and_alignment_and_type> = piece_get_all_as_wpat(minimal_game.game); 
+    val board_o: list<with_pos_and_alignment_and_type> = vuln_get_obstacles_as_wpat(minimal_game.game); 
     val portals: list<portal_simple> = portal_simple_get_all_by_owner(minimal_game.player_game, my_color);
-    val board_positions_all = board_positions_all_constructor(board, portals);
+    val board_positions_all = board_positions_all_constructor(board_p, board_o, portals, opp_vuln_ctxt);
 
     // Only need opp team
     val opp_team = team_build_from_db(minimal_game.game, opp_color);
@@ -52,9 +56,6 @@ function move_primary_skip_inner(
 
     // Has this piece an jump enchantment on it?
     val is_enchanted_jump = false; // Yes, somewhat dangerous, but JUMP card won't cause turn to be skipped, so we assume there is no active jump.
-
-    val res = move_get_vuln_path(minimal_game.game, opp_color); 
-    val opp_vuln_ctxt: pre_vuln_context = res.v_ctxt;
 
     // ----------------------------------------------    
     // B. Updates 
@@ -90,6 +91,9 @@ function move_primary_skip_inner(
     // (Must happen after the portal travel, if a pawn travels to an exit at the final rank)
     promote_all_pawns_at_final_rank(game_id, minimal_game.game, new_turn, board_positions_all, our_team, my_color, end_args);
 
+    // Every change has been made, we can compress the board
+    val board_compressed_str: text = board_compress(game_id, board_positions_all);
+
     // ----------------------------------------------    
     // 3. Check/stale/mate
     // There are many cases where we need to calculate check/mate even if the move was skipped:
@@ -101,14 +105,15 @@ function move_primary_skip_inner(
 
     // B.4 Verify if we just won via checkmate?
     val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args);
-    move_skipped_create(new_turn, is_check);
+    move_skipped_create(new_turn, is_check, board_compressed_str);
 
     // ----------------
     // B.4 Is it over?
     // ----------------
-    val is_insufficient_mating_material = false; // A skipped move won't the balance
+    val is_insufficient_mating_material = false; // A skipped move won't change the balance
+    val is_repetition = false; // Don't bother for skipped moves, it will kick in next regular (peaceful) move.
     val is_50_rule = false; // Don't bother for skipped moves, it will kick in next regular (peaceful) move.
-    val is_game_over = game_over_move_claim(minimal_game, caller_pubkey, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material, is_50_rule, check_args?.random_seed, check_args?.seed_signature);
+    val is_game_over = game_over_move_claim(minimal_game, caller_pubkey, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material, is_repetition, is_50_rule, check_args?.random_seed, check_args?.seed_signature);
     if (not is_game_over) {
         // B.5 Cleanup 
         // For "skip" this will:
@@ -133,9 +138,10 @@ function move_primary_skip_inner(
 // -------------------------------------
 // Create a skipped move
 // -------------------------------------
-function move_skipped_create(new_turn: turn, is_check: boolean) {
+function move_skipped_create(new_turn: turn, is_check: boolean, board_compressed_str: text) {
     create skipped_move (
         .turn = new_turn,
-        .is_check = is_check
+        .is_check = is_check,
+        .board_compressed_str = board_compressed_str
     );
 }

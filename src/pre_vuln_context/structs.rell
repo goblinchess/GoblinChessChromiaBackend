@@ -7,5 +7,5 @@ struct pre_vuln_context {
     // attacked by a specific piece this turn (i.e. by looking at the piece's move_tree),
     // to the piece that will be attacked. 
     // Important to understand that the piece is NO LONGER on the square we're attacking.
-    attackable_old_vuln_square_to_piece: map<integer, with_pos_and_alignment> = map<integer, with_pos_and_alignment>();
+    attackable_old_vuln_square_to_piece: map<integer, with_pos_and_alignment_and_type> = map<integer, with_pos_and_alignment_and_type>();
 }

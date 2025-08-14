@@ -110,7 +110,7 @@ function move_battle_resurrect_of_vulnerable(
     alive_move_from_dead(game_id, dead_vuln, new_owner, resurrect_pos, new_align);
 
     // 2. Fix board
-    board_appear_at(board_positions_all, resurrect_pos, new_align); // Add the resurrected to the board.
+    board_appear_at(board_positions_all, resurrect_pos, new_align, old_pld.active_type, old_pld.is_knighted, false); // Add the resurrected to the board.
 
     // 3. Fix team
     val new_pld = piece_get_living_data_from_pos(dead_vuln.g, resurrect_pos);

@@ -49,7 +49,6 @@ function move_common_change_piece_position(
     game_id: integer,
     last_rot_nr: integer,
     a: alive, 
-    wpaa: with_pos_and_alignment,
     from_position: integer, 
     to_position: integer,
     // Extra: Update these data structures
@@ -60,7 +59,7 @@ function move_common_change_piece_position(
     val attack_allowed = false; // Think we should protest if the position is occupied.
 
     // Extra: Update these data structures
-    board_place_character_at(board_positions_all, from_position, to_position, wpaa, attack_allowed);
+    board_place_character_at(board_positions_all, from_position, to_position, attack_allowed);
     if (our_team != null) {
         team_move_character_from_to(our_team, from_position, to_position);
     }
@@ -68,6 +67,7 @@ function move_common_change_piece_position(
     // Good place to print new board state to log (before something crashes)
     val dbg_board =board_debug_print(game_id, last_rot_nr, board_positions_all);
     log(dbg_board);
+
 }
 
 
@@ -116,6 +116,7 @@ function move_event_creation(
         is_castle: boolean, 
         is_enchanted_jump: boolean,
         is_check: boolean, 
+        board_compressed_str: text
 ): move
 {
     // Create move entity
@@ -125,7 +126,8 @@ function move_event_creation(
         from_position = m_args.from_position, 
         to_position = m_args.to_position,
         is_castle = is_castle,
-        is_check = is_check
+        is_check = is_check,
+        board_compressed_str = board_compressed_str
     );
 
     if (is_enchanted_jump) {
@@ -243,23 +245,22 @@ function move_common_use_portal_depending_on_piece_type(
     our_team: character_team?, // Only use this for position updates (likely overkill?)
     opp_team: character_team,
     my_align: alignment,
-    piece_wpaa: with_pos_and_alignment,
+    piece_wpat: with_pos_and_alignment_and_type,
     portal: portal_simple
 ): portal_event? {
     // Get the piece living data
-    val piece_data = piece_get_living_data_from_pos(game, piece_wpaa.pos);
-    require(piece_data != null, "Error: Could not find piece at position " + piece_wpaa.pos);
+    val piece_data = piece_get_living_data_from_pos(game, piece_wpat.pos);
+    require(piece_data != null, "Error: Could not find piece at position " + piece_wpat.pos);
     
     var use_portal = true;
 
     // Check if it's a king
     if (piece_data.original_type == piece_type.KING) {
-        val king_wpaa = piece_wpaa;
+        val king_wpaa = piece_wpat;
 
         // Can only move through the portal if there is no foe attacking the exit
         val check_calc_data = check_sb_build_hypothetical_king_move(
             game_id,
-            king_wpaa,
             king_wpaa.pos,
             portal.exit_pos,
             opp_team,
@@ -280,7 +281,7 @@ function move_common_use_portal_depending_on_piece_type(
 
     if (use_portal) {
         // Move the piece through the portal
-        move_common_change_piece_position(game_id, last_rot_nr, piece_data.vuln.a, piece_wpaa, portal.entry_pos, portal.exit_pos, board_positions_all, our_team);
+        move_common_change_piece_position(game_id, last_rot_nr, piece_data.vuln.a, portal.entry_pos, portal.exit_pos, board_positions_all, our_team);
         
         return move_event_portal_create(game, curr_turn, portal, piece_data.p);
     } else {

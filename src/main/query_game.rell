@@ -111,3 +111,11 @@ query get_old_games(
     return return_list;
 }
 
+/*
+query get_entire_old_game(
+    player_signer: pubkey,
+   game_id: integer
+): list<old_rotation_data> {
+
+}
+*/

@@ -26,7 +26,6 @@
 function will_hypothetical_move_cause_check(
     game_id: integer,
     selected_path: path_base,
-    chr_to_move: with_pos_and_alignment,
     align_of_mover: alignment,
     king_orig_pos: integer,
     mating_team: character_team,
@@ -41,7 +40,6 @@ function will_hypothetical_move_cause_check(
     // ------------------------
     val hypothetical_check_calc_data = whm_build_check_calc_inner(
         game_id,
-        chr_to_move, 
         align_of_mover, 
         pos_start, 
         pos_dest, 
@@ -63,7 +61,6 @@ function will_hypothetical_move_cause_check(
         return whm_check_if_potential_castle_gives_check_inner(
             game_id,
             selected_path, 
-            chr_to_move, 
             mating_team, 
             board_pos_all
         );
@@ -75,7 +72,6 @@ function will_hypothetical_move_cause_check(
 // Returns the calculator data
 function whm_build_check_calc_inner(
     game_id: integer,
-    piece_to_move: with_pos_and_alignment,
     align_of_mover: alignment,
     pos_start: integer,
     pos_dest: integer,
@@ -88,7 +84,7 @@ function whm_build_check_calc_inner(
         // 1.b) Ignore portals
         // Don't go through the portal here, since we don't know if the portal will be used.
         return check_sb_build_hypothetical_king_move(
-            game_id, piece_to_move, pos_start, pos_dest, mating_team, board_pos_all
+            game_id, pos_start, pos_dest, mating_team, board_pos_all
         );
     } else {
         // 1.a) Use portals
@@ -115,7 +111,6 @@ function whm_build_check_calc_inner(
         // Moving a subject
         return check_sb_build_hypothetical_subject_move(
             game_id,
-            piece_to_move, 
             pos_start, 
             actual_dest, 
             king_orig_pos, 
@@ -133,7 +128,6 @@ function whm_build_check_calc_inner(
 function whm_check_if_potential_castle_gives_check_inner(
     game_id: integer,
     selected_path: path_base,
-    chr_to_move: with_pos_and_alignment,
     mating_team: character_team,
     board_pos_all: board_positions_all
 ): (boolean, text) {
@@ -148,7 +142,6 @@ function whm_check_if_potential_castle_gives_check_inner(
             val (check1, check_desc1) = whm_is_check_on_the_way_to_castle(
                 game_id,
                 mid_positions, 
-                chr_to_move, 
                 selected_path.path[0],
                 mating_team, 
                 board_pos_all
@@ -173,7 +166,6 @@ function whm_check_if_potential_castle_gives_check_inner(
 function whm_is_check_on_the_way_to_castle(
     game_id: integer,
     mid_positions: list<integer>,
-    chr_to_move: with_pos_and_alignment,
     pos_start: integer,
     mating_team: character_team,
     board_positions: board_positions_all
@@ -191,7 +183,7 @@ function whm_is_check_on_the_way_to_castle(
         //       the attacked square had a portal on it that the king could use.
         // ----------------------------------------------------------------
         val hypo_check_calc_data = check_sb_build_hypothetical_king_move(
-            game_id, chr_to_move, pos_start, mid_pos, mating_team, board_positions
+            game_id, pos_start, mid_pos, mating_team, board_positions
         );
         
         val (is_check, check_desc) = check_sb_is_check_with_desc(hypo_check_calc_data);

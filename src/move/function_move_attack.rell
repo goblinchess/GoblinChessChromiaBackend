@@ -141,10 +141,10 @@ function move_attack_inner(
     // Complex verification (still easier than check mate).
     var m_tree: move_tree? = null;
 
-
-    val board: list<with_pos_and_alignment> = vuln_get_all_as_wpaa(minimal_game.game); 
+    val board_p: list<with_pos_and_alignment_and_type> = piece_get_all_as_wpat(minimal_game.game); 
+    val board_o: list<with_pos_and_alignment_and_type> = vuln_get_obstacles_as_wpat(minimal_game.game); 
     val portals: list<portal_simple> = portal_simple_get_all_by_owner(minimal_game.player_game, my_color);
-    val board_positions_all = board_positions_all_constructor(board, portals);
+    val board_positions_all = board_positions_all_constructor(board_p, board_o, portals, opp_vuln_ctxt);
 
     //log ("Move A.6.1 - calc move trees ");
     val (ground_m_tree: move_tree?, jump_m_tree: move_tree?) = rules_get_all_valid_moves(
@@ -185,11 +185,10 @@ function move_attack_inner(
     // A.7. Verify if this move will get us into check
     // ----------------
     //log ("Move A.7 - Verify if this move will get us into check ");
-    val p_wpaa = with_pos_and_alignment(m_args.from_position, my_color);
+    //val p_wpat = with_pos_and_alignment_and_type(m_args.from_position, my_color, p_type, is_knighted = m_args.given_is_knighted, is_obstacle = false);
     val (get_into_check, check_desc) = will_hypothetical_move_cause_check(
             game_id,
             selected_path,
-            p_wpaa,
             my_color,
             our_king.vuln.position,
             opp_team,
@@ -223,7 +222,7 @@ function move_attack_inner(
 
     if (attacker_still_alive) {
         // B.3 Same as for peaceful move
-        move_common_change_piece_position(game_id, last_rot_nr, p.vuln.a, p_wpaa, m_args.from_position, m_args.to_position, board_positions_all, our_team);
+        move_common_change_piece_position(game_id, last_rot_nr, p.vuln.a, m_args.from_position, m_args.to_position, board_positions_all, our_team);
     }
 
     // ----------------
@@ -278,6 +277,9 @@ function move_attack_inner(
     // (Must happen after the portal travel, if a pawn travels to an exit at the final rank)
     promote_all_pawns_at_final_rank(game_id, minimal_game.game, new_turn, board_positions_all, our_team, my_color, end_args);
 
+    // Every change has been made, we can compress the board
+    val board_compressed_str: text = board_compress(game_id, board_positions_all);
+
     // ----------------
     // 5. Check/stale/mate
     // ----------------
@@ -294,7 +296,7 @@ function move_attack_inner(
 
     // B.6 Turn and static move
     val is_castle = false; // Must be false for attacks
-    val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_enchanted_jump, is_check); 
+    val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_enchanted_jump, is_check, board_compressed_str); 
 
     // ----------------
     // B.7. Create events
@@ -359,9 +361,10 @@ function move_attack_inner(
         rnd_seed = check_args.random_seed;
         seed_signature = check_args.seed_signature;
     }
+    val is_repetition = false; // Always false for attacks
     val is_50_rule = false; // Always false for attacks
     val is_game_over = game_over_move_claim(
-        minimal_game, caller_pubkey, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material, is_50_rule, rnd_seed, seed_signature);
+        minimal_game, caller_pubkey, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material, is_repetition, is_50_rule, rnd_seed, seed_signature);
     if (not is_game_over) {
         // Usually we don't set "time_left" during regular moves, but there is one case where we must make an exception:
         if (turn_is_last_double_move(new_turn_type)) {

@@ -31,11 +31,10 @@ function board_portal_find_my_from_entry(
     pos: integer, 
     align: alignment
 ): portal_simple? {
-    for (portal: portal_simple in board_positions_all.portals) {
+    if (board_positions_all.board_portal_entry.contains(pos)) {
+        val portal: portal_simple = board_positions_all.board_portal_entry[pos];
         if (board_portal_is_owned_by(portal, align)) {
-            if (portal.entry_pos == pos) {
-                return portal;
-            }
+            return portal;
         }
     }
     return null;

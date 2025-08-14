@@ -168,6 +168,34 @@ function piece_get_living_data_from_align(g: game, given_align: alignment) :list
     return ret;
 }
 
+// Here we get all pieces on the board in one go, but no obstacles
+// We separate black from white via the alignment.
+function piece_get_all_as_wpat(game: game): list<with_pos_and_alignment_and_type> {
+    val piece_summary_list = (a: alive, v: vulnerable, p: piece)@* {
+        a.game == game, // Only alive pieces are on the board.
+        a.vulnerable == v,
+        p.vulnerable == v // Will only join in pieces, not obstacles
+    } (a.position, v.color, v.is_obstacle, p.active_type, p.is_knighted); // Color should really be neutral, since it's not a piece.
+
+    // Transform into structs
+    val res: list<with_pos_and_alignment_and_type> = [];
+    for (p_sum in piece_summary_list) { 
+        if (p_sum.is_obstacle) {
+            // Not sure if this can happen?
+            log("Error: Obstacle at position " + p_sum.position + " is also a piece? " + p_sum.active_type);
+        } else {
+            res.add(with_pos_and_alignment_and_type(
+                p_sum.position, 
+                p_sum.color, 
+                p_sum.active_type, 
+                is_knighted = p_sum.is_knighted,
+                is_obstacle = false // Pieces are not obstacles
+            ));
+        }
+    }
+    return res;
+}
+
 // ------------------------------------------------------------
 // Mutators
 // ------------------------------------------------------------

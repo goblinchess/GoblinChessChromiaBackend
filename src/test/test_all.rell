@@ -518,14 +518,14 @@ function test_full_game() {
     var fetching_rotation_nr = 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 1 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= r  kn b  q  k  b  kn r  
+    // 8= r  n  b  q  k  b  n  r  
     // 7= p  p  p  p  p  p  p  p  // <- Lower case for black
     // 6= .  .  .  .  .  .  .  .
     // 5= .  .  .  .  .  .  .  .
     // 4= .  .  .  .  .  .  .  .
     // 3= .  .  .  .  .  .  .  .
     // 2= P  P  P  P  P  P  P  P // <- Upper case for white
-    // 1= R  Kn B  Q  K  B  Kn R
+    // 1= R  N  B  Q  K  B  N  R
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -645,14 +645,14 @@ function test_full_game() {
     // --------------------
     // Failed White moves
     // --------------------
-    // 8= f  kn b  q  k  b  kn r // <--- next: Rook at a8 is now a frog
+    // 8= f  n  b  q  k  b  n  r // <--- next: Rook at a8 is now a frog
     // 7= p  p  p  p  p  p  p  p  
     // 6= .  .  .  .  .  .  .  .
     // 5= .  .  .  .  .  .  .  .
     // 4= .  .  .  .  .  .  .  .
     // 3= .  .  +  .  .  .  .  . // <--- next: Knight b2 -> c3
     // 2= P  P  P  P  P  P  P  P 
-    // 1= R  Kn B  Q  K  B  Kn R // <--- next: Knight b2 -> c3
+    // 1= R  N  B  Q  K  B  N  R // <--- next: Knight b2 -> c3
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -739,7 +739,7 @@ function test_full_game() {
     // /Failed White moves
     // --------------------
 
-    log("Turn 1(2): White makes a valid move Kn b1->c3");
+    log("Turn 1(2): White makes a valid move N b1->c3");
 
     m_args = move_arguments(
         from_position = knight_orig_pos, // <-- Ok
@@ -787,14 +787,14 @@ function test_full_game() {
   
 
     // +++++++++++++++++++++++++++++++++++++++++ BLack Move 2 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= f  kn b  q  k  b  kn r
+    // 8= f  n  b  q  k  b  n  r
     // 7= p  p  p  p  p  p  p  p // <--- next: pawn a7 -> a5
     // 6= .  .  .  .  .  .  .  . 
     // 5= +  .  .  .  .  .  .  . // <--- next: pawn a7 -> a5
     // 4= .  .  .  .  .  .  .  .
-    // 3= .  .  Kn .  .  .  .  . // <--- prev: Knight b2 -> c3
+    // 3= .  .  N  .  .  .  .  . // <--- prev: Knight b2 -> c3
     // 2= P  P  P  P  P  P  P  P
-    // 1= R  -  B  Q  K  B  Kn R // <--- prev: Knight b2 -> c3
+    // 1= R  -  B  Q  K  B  N  R // <--- prev: Knight b2 -> c3
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -821,14 +821,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 3 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= f  kn b  q  k  b  kn r
+    // 8= f  n  b  q  k  b  n  r
     // 7= -  p  p  p  p  p  p  p // <--- prev: pawn a7 -> a5
     // 6= .  .  .  .  .  .  .  .
     // 5= p  .  .  .  .  .  .  . // <--- prev: pawn a7 -> a5
     // 4= .  .  .  .  .  .  .  .
-    // 3= .  .  Kn .  .  .  +  . // <--- next: pawn g2 -> g3 
+    // 3= .  .  N  .  .  .  +  . // <--- next: pawn g2 -> g3 
     // 2= P  P  P  P  P  P  P  P 
-    // 1= R  .  B  Q  K  B  Kn R
+    // 1= R  .  B  Q  K  B  N  R
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -853,14 +853,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ BLack Move 4 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= f  kn b  q  k  b  kn r
+    // 8= f  n  b  q  k  b  n  r
     // 7= .  p  p  p  p  p  p  p
     // 6= .  .  .  .  .  .  .  .
     // 5= p  .  .  .  .  .  .  . // <--- next: pawn a5 -> a4
     // 4= +  .  .  .  .  .  .  . // <--- next: pawn a5 -> a4
-    // 3= .  .  Kn .  .  .  P  . // <--- prev: pawn g2 -> g3 
+    // 3= .  .  N  .  .  .  P  . // <--- prev: pawn g2 -> g3 
     // 2= P  P  P  P  P  P  -  P // <--- card: turn c2 into a knight
-    // 1= R  .  B  Q  K  B  Kn R
+    // 1= R  .  B  Q  K  B  N  R
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -936,14 +936,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 5 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= f  kn b  q  k  b  kn r
+    // 8= f  n  b  q  k  b  n  r
     // 7= .  p  p  p  p  p  p  p
     // 6= .  .  .  .  .  .  .  .
     // 5= -  .  .  .  .  .  .  . // <--- prev: pawn a5 -> a4
     // 4= P  +  .  .  .  .  .  . // <--- next: pawn b2 -> b4
-    // 3= .  .  Kn .  .  .  P  .
+    // 3= .  .  N  .  .  .  P  .
     // 2= P  P  Pk P  P  P  .  P // <--- next: pawn b2 -> b4
-    // 1= R  .  B  Q  K  B  Kn R
+    // 1= R  .  B  Q  K  B  N  R
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -971,14 +971,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ BLack Move 6 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= f  kn b  q  k  b  kn r
+    // 8= f  n  b  q  k  b  n  r
     // 7= .  p  p  p  p  p  p  p
     // 6= .  .  .  .  .  .  .  .
     // 5= .  .  .  .  .  .  .  .
     // 4= p  P  .  .  .  .  .  . // <--- next: pawn a4 x b3 En passant
-    // 3= .  +  Kn .  .  .  P  . // <--- next: pawn a4 x b3 En passant
+    // 3= .  +  N  .  .  .  P  . // <--- next: pawn a4 x b3 En passant
     // 2= P  -  Pk P  P  P  .  P // <--- prev: pawn b2 -> b4
-    // 1= R  .  B  Q  K  B  Kn R
+    // 1= R  .  B  Q  K  B  N  R
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1044,14 +1044,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 7 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= f  kn b  q  k  b  kn r
+    // 8= f  n  b  q  k  b  n  r
     // 7= .  p  p  p  p  p  p  p
     // 6= .  .  .  .  .  @  .  . // <--- next: Portal travel a2 -> f6
     // 5= .  .  .  .  .  .  .  .
     // 4= -  x  .  .  .  .  .  . // <--- prev: Pawn on a5 is captured
-    // 3= .  p  Kn .  .  .  P  . // <--- prev: pawn a4 x b3 En passant
+    // 3= .  p  N  .  .  .  P  . // <--- prev: pawn a4 x b3 En passant
     // 2= P  .  Pk P  P  P  .  P // <--- next: Portal travel a2->f6
-    // 1= R  .  B  Q  K  B  Kn R
+    // 1= R  .  B  Q  K  B  N  R
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1094,14 +1094,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 8 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= r  kn b  q  k  b  kn r // <--- next: Frog -> Rook (enchantment removed)
+    // 8= r  n  b  q  k  b  n  r // <--- next: Frog -> Rook (enchantment removed)
     // 7= .  p  p  p  p  p  p  p
     // 6= .  .  .  .  .  P  .  . // <--- prev: Pawn moved through new portal a2->f6
     // 5= .  .  .  .  .  .  .  .
     // 4= .  .  .  .  .  .  .  . 
-    // 3= .  p  Kn .  .  .  P  .
+    // 3= .  p  N  .  .  .  P  .
     // 2= -  .  Pk P  P  P  .  P // <--- prev: Pawn moved through new portal a2->f6
-    // 1= R  .  B  Q  K  B  Kn R // <--- next: Rook a8 x a1 (shouldn't cause resurrection)
+    // 1= R  .  B  Q  K  B  N  R // <--- next: Rook a8 x a1 (shouldn't cause resurrection)
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1158,14 +1158,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 9 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= -  kn b  q  k  b  kn r // <--- prev: Rook a8 x a1 (shouldn't cause resurrection)
+    // 8= -  n  b  q  k  b  n  r // <--- prev: Rook a8 x a1 (shouldn't cause resurrection)
     // 7= .  p  p  p  p  p  p  p
     // 6= .  .  .  .  .  P  .  .
     // 5= .  .  .  .  .  .  .  .
     // 4= .  .  .  .  .  .  .  . 
-    // 3= .  p  Kn .  .  .  P  . // <--- next: Pawn takes on c2 x b3 (shouldn't cause resurrection)
+    // 3= .  p  N  .  .  .  P  . // <--- next: Pawn takes on c2 x b3 (shouldn't cause resurrection)
     // 2= .  .  Pk P  P  P  .  P // <--- next: Pawn takes on c2 x b3 (shouldn't cause resurrection)
-    // 1= r  .  B  Q  K  B  Kn R // <--- prev: Rook a8 x a1 (shouldn't cause resurrection)
+    // 1= r  .  B  Q  K  B  N  R // <--- prev: Rook a8 x a1 (shouldn't cause resurrection)
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1205,14 +1205,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 10 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= .  kn b  q  k  b  kn r
+    // 8= .  n  b  q  k  b  n  r
     // 7= .  p  p  p  p  p  p  p // <--- next: Pawn g7 -> g6
     // 6= .  .  .  .  .  P  +  . // <--- next: Pawn g7 -> g6
     // 5= .  .  .  .  .  .  .  .
     // 4= .  .  .  .  .  .  .  . 
-    // 3= .  Pk Kn .  .  .  P  . // <--- prev: Pawn takes on c2 x b3 (shouldn't cause resurrection)
+    // 3= .  Pk N  .  .  .  P  . // <--- prev: Pawn takes on c2 x b3 (shouldn't cause resurrection)
     // 2= .  .  -  P  P  P  .  P // <--- prev: Pawn takes on c2 x b3 (shouldn't cause resurrection) 
-    // 1= r  .  B  Q  K  B  Kn R  
+    // 1= r  .  B  Q  K  B  N  R  
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1240,14 +1240,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 11 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= .  kn b  q  k  b  kn r
+    // 8= .  n  b  q  k  b  n  r
     // 7= .  p  p  p  p  p  -  p // <--- prev: Pawn g7 -> g6
     // 6= .  .  .  .  .  P  p  . // <--- prev: Pawn g7 -> g6
     // 5= .  .  .  .  .  .  .  .
     // 4= +  .  .  .  .  .  .  . // <--- next: Knight c3 -> a4
-    // 3= .  Pk Kn .  .  .  P  . // <--- next: Knight c3 -> a4
+    // 3= .  Pk N  .  .  .  P  . // <--- next: Knight c3 -> a4
     // 2= .  .  .  P  P  P  .  P 
-    // 1= r  .  B  Q  K  B  Kn R  
+    // 1= r  .  B  Q  K  B  N  R  
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1274,14 +1274,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 12 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= .  kn b  q  k  b  kn r
+    // 8= .  n  b  q  k  b  n  r
     // 7= .  p  p  p  p  p  .  p // <--- next: Pawn e7 -> e6
     // 6= .  .  .  .  +  P  p  . // <--- next: Pawn e7 -> e6
     // 5= .  .  .  .  .  .  .  . 
-    // 4= Kn .  .  .  .  .  .  . // <--- prev: Knight c3 -> a4
+    // 4= N  .  .  .  .  .  .  . // <--- prev: Knight c3 -> a4
     // 3= .  Pk -  .  .  .  P  . // <--- prev: Knight c3 -> a4
     // 2= .  .  .  P  P  P  .  P 
-    // 1= r  .  B  Q  K  B  Kn R  
+    // 1= r  .  B  Q  K  B  N  R  
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1309,14 +1309,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 13 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= .  kn b  q  k  b  kn r
+    // 8= .  n  b  q  k  b  n  r
     // 7= .  p  p  p  -  p  .  p // <--- prev: Pawn e7 -> e5
     // 6= .  .  .  .  p  P  p  .
     // 5= .  .  .  .  .  .  .  . // <--- prev: Pawn e7 -> e5
-    // 4= Kn .  .  .  .  .  .  . 
+    // 4= N  .  .  .  .  .  .  . 
     // 3= .  Pk .  .  .  .  P  . 
     // 2= .  .  +  P  P  P  .  P // <-- next: Queen d1 -> c2 
-    // 1= r  .  B  Q  K  B  Kn R // <-- next: Queen d1 -> c2 
+    // 1= r  .  B  Q  K  B  N  R // <-- next: Queen d1 -> c2 
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1343,14 +1343,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 14 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= @  kn b  q  k  b  kn r // <-- next: Queen d8 x f6 (will cause resurrection)
+    // 8= @  n  b  q  k  b  n  r // <-- next: Queen d8 x f6 (will cause resurrection)
     // 7= .  p  p  p  .  p  .  p
     // 6= .  .  .  .  p  P  p  . // <-- next: Queen d8 x f6 (will cause resurrection)
     // 5= .  .  .  .  .  .  .  .
-    // 4= Kn .  .  .  .  .  .  . 
+    // 4= N  .  .  .  .  .  .  . 
     // 3= .  Pk .  .  .  .  P  . 
     // 2= .  .  Q  P  P  P  .  P // <-- prev: Queen d1 -> c2
-    // 1= r  .  B  -  K  B  Kn R // <-- prev: Queen d1 -> c2   
+    // 1= r  .  B  -  K  B  N  R // <-- prev: Queen d1 -> c2   
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1398,14 +1398,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 15 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= p  kn b  -  k  b  kn r // <-- prev: pawn resurrected at a8.
+    // 8= p  n  b  -  k  b  n  r // <-- prev: pawn resurrected at a8.
     // 7= .  p  p  p  .  p  .  p
     // 6= .  .  .  .  p  q  p  . // <-- prev: Captured by Queen d8 x f6 (will cause resurrection)
     // 5= .  .  .  .  .  .  .  .
-    // 4= Kn .  .  .  .  .  .  . 
+    // 4= N  .  .  .  .  .  .  . 
     // 3= .  Pk .  .  .  .  P  . // <-- next: Instead KNIGHTED pawn goes b3 x a1, causing the rook to resurrect.
     // 2= .  .  Q  P  P  P  .  P // <-- next: We want to verify that White cannot move Bishop c1 -> d2 (causing check).
-    // 1= r  @  B  .  K  B  Kn R // <-- next: 1) KNIGHTED pawn takes b3 x a1. 2) Resurrect at b1.
+    // 1= r  @  B  .  K  B  N  R // <-- next: 1) KNIGHTED pawn takes b3 x a1. 2) Resurrect at b1.
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1479,14 +1479,14 @@ function test_full_game() {
 
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 16 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= p  kn b  .  k  b  kn r
+    // 8= p  n  b  .  k  b  n  r
     // 7= .  p  p  p  .  p  .  p
     // 6= .  .  .  .  p  q  p  . // <-- next: queen f6 -> c3
     // 5= .  .  .  .  .  .  .  .
-    // 4= Kn .  .  .  .  .  .  . 
+    // 4= N  .  .  .  .  .  .  . 
     // 3= .  -  +  .  .  .  P  . // <-- prev: KNIGHTED pawn takes rook via b3 x a1. // <-- next: queen f6 -> c3
     // 2= .  .  Q  P  P  P  .  P 
-    // 1= Pk R  B  .  K  B  Kn R // <-- prev: KNIGHTED pawn goes b3 x a1, causing the rook to resurrect at b1.
+    // 1= Pk R  B  .  K  B  N  R // <-- prev: KNIGHTED pawn goes b3 x a1, causing the rook to resurrect at b1.
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1512,14 +1512,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 17 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= p  kn b  .  k  b  kn r
+    // 8= p  n  b  .  k  b  n  r
     // 7= .  p  p  p  .  p  .  p // <-- next: JUMP on queen c2 -> c7
     // 6= .  .  .  .  p  -  p  . // <-- prev: queen f6 -> c3
     // 5= .  .  .  .  .  .  .  .
-    // 4= Kn .  .  .  .  .  .  . 
+    // 4= N  .  .  .  .  .  .  . 
     // 3= .  .  q  .  .  .  P  . // <-- prev: queen f6 -> c3
     // 2= .  .  Q  P  P  P  .  P // <-- next: fails to put a PORTAL on d2 (causes check), instead JUMP on queen c2 -> c7
-    // 1= Pk R  B  .  K  B  Kn R 
+    // 1= Pk R  B  .  K  B  N  R 
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1634,14 +1634,14 @@ function test_full_game() {
     assert_equals(fetching_rotation_nr, 17);
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 18 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= p  kn b  .  k  b  kn r
+    // 8= p  n  b  .  k  b  n  r
     // 7= .  p  Q  p  .  p  .  p // <-- prev: JUMP on queen c2 -> c7
     // 6= .  .  .  .  p  .  p  . 
     // 5= .  .  .  .  .  .  .  .
-    // 4= Kn .  .  .  .  .  .  . 
+    // 4= N  .  .  .  .  .  .  . 
     // 3= .  .  q  .  .  .  P  . 
     // 2= .  .  -  P  P  P  .  P // <-- prev: JUMP on queen c2 -> c7
-    // 1= Pk R  B  .  K  B  Kn R 
+    // 1= Pk R  B  .  K  B  N  R 
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1670,14 +1670,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 19 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= p  kn b  .  k  b  kn r // <-- next: Queen c7 -> c8 (check)
+    // 8= p  n  b  .  k  b  n  r // <-- next: Queen c7 -> c8 (check)
     // 7= .  p  Q  p  .  p  .  p // <-- next: Queen c7 -> c8 (check)
     // 6= .  .  .  .  p  .  p  .
     // 5= .  .  .  .  .  .  .  .
-    // 4= Kn .  .  .  .  .  .  . 
+    // 4= N  .  .  .  .  .  .  . 
     // 3= .  .  q  .  .  .  P  . 
     // 2= .  .  .  P  P  P  .  P 
-    // 1= Pk R  B  .  K  B  Kn R 
+    // 1= Pk R  B  .  K  B  N  R 
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1725,27 +1725,27 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 20 (TWO MOVES!!) ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= p  kn Q  .  k  b  kn r // <-- prev: Queen c7 -> c8 (check) // <-- next: Queen c3 -> c8 (removing check)
+    // 8= p  n  Q  .  k  b  n  r // <-- prev: Queen c7 -> c8 (check) // <-- next: Queen c3 -> c8 (removing check)
     // 7= .  p  -  p  .  p  .  p // <-- prev: Queen c7 -> c8 (check) 
     // 6= .  .  .  .  p  .  p  .
     // 5= .  .  .  .  .  .  .  .
-    // 4= Kn .  .  .  .  .  .  . 
+    // 4= N  .  .  .  .  .  .  . 
     // 3= .  .  q  .  .  .  P  . // <-- next: Queen c3 -> c8 (removing check)
     // 2= .  .  .  P  P  P  .  P 
-    // 1= Pk R  B  .  K  B  Kn R 
+    // 1= Pk R  B  .  K  B  N  R 
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
 
     // --------------------------
-    // 8= p  kn q  .  k  b  kn r // <-- prev: Queen c3 -> c8 (removing check) // <-- next: Queen c8 -> c2 
+    // 8= p  n  q  .  k  b  n  r // <-- prev: Queen c3 -> c8 (removing check) // <-- next: Queen c8 -> c2 
     // 7= .  p  .  p  .  p  .  p  
     // 6= .  .  .  .  p  .  p  .
     // 5= .  .  .  .  .  .  .  .
-    // 4= Kn .  .  .  .  .  .  . 
+    // 4= N  .  .  .  .  .  .  . 
     // 3= .  .  -  .  .  .  P  . // <-- prev: Queen c3 -> c8 (removing check)
     // 2= .  .  +  P  P  P  .  P // <-- next: Queen c8 -> c2 
-    // 1= Pk R  B  .  K  B  Kn R 
+    // 1= Pk R  B  .  K  B  N  R 
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1791,14 +1791,14 @@ function test_full_game() {
 
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 21 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= p  kn -  .  k  b  kn r // <-- prev: Queen c3 -> c8 (removing check)
+    // 8= p  n  -  .  k  b  n  r // <-- prev: Queen c3 -> c8 (removing check)
     // 7= .  p  .  p  .  p  .  p 
     // 6= .  .  .  .  p  .  p  . // <-- next: Knight a4 -> b6 (blunder)
     // 5= .  .  .  .  .  .  .  .
-    // 4= Kn .  .  .  .  .  .  . // <-- next: Knight a4 -> b6 (blunder)
+    // 4= N  .  .  .  .  .  .  . // <-- next: Knight a4 -> b6 (blunder)
     // 3= .  .  .  .  .  .  P  . // <-- prev: Queen c3 -> c8 (removing check)
     // 2= .  .  q  P  P  P  .  P 
-    // 1= Pk R  B  .  K  B  Kn R 
+    // 1= Pk R  B  .  K  B  N  R 
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1825,14 +1825,14 @@ function test_full_game() {
 
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 22 = CHECK ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= p  kn -  .  k  b  kn r // <-- next: Pawn a8 -> a7 (just a random move to kick mate)
+    // 8= p  n  -  .  k  b  n  r // <-- next: Pawn a8 -> a7 (just a random move to kick mate)
     // 7= +  p  .  p  .  p  .  p // <-- next: Pawn a8 -> a7 (just a random move to kick mate)
-    // 6= .  Kn .  .  p  .  p  . // <-- prev: Knight a4 -> b6 (blunder)
+    // 6= .  N  .  .  p  .  p  . // <-- prev: Knight a4 -> b6 (blunder)
     // 5= .  .  .  .  .  .  .  .
     // 4= -  .  .  .  .  .  .  . // <-- prev: Knight a4 -> b6 (blunder)
     // 3= .  .  .  .  .  .  P  . 
     // 2= .  .  q  P  P  P  .  P // <-- next: Queen at c2 becomes KNIGHTED! Check, but not mate since KNIGHTED pawn at a1 can take.
-    // 1= Pk R  B  .  K  B  Kn R 
+    // 1= Pk R  B  .  K  B  N  R 
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1884,14 +1884,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 23 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= -  kn .  .  k  b  kn r // <-- prev: Pawn a8 -> a7 (just a random move to kick mate)
+    // 8= -  n  .  .  k  b  n  r // <-- prev: Pawn a8 -> a7 (just a random move to kick mate)
     // 7= p  p  .  p  .  p  .  p // <-- prev: Pawn a8 -> a7 (just a random move to kick mate)
-    // 6= .  Kn .  .  p  .  p  . 
+    // 6= .  N  .  .  p  .  p  . 
     // 5= .  .  .  .  .  .  .  .
     // 4= .  .  .  .  .  .  .  . 
     // 3= .  .  .  .  .  .  P  . 
     // 2= .  .  qk P  P  P  .  P // <-- prev: Queen at c2 becomes KNIGHTED! // <-- next: KNIGHTED pawn takes a1 x c2.
-    // 1= Pk R  B  .  K  B  Kn R // <-- next: KNIGHTED pawn takes a1 x c2.
+    // 1= Pk R  B  .  K  B  N  R // <-- next: KNIGHTED pawn takes a1 x c2.
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1926,14 +1926,14 @@ function test_full_game() {
 
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 24 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= .  kn .  .  k  b  kn r // <-- next: knight goes g8 -> e7.
+    // 8= .  n  .  .  k  b  n  r // <-- next: knight goes g8 -> e7.
     // 7= p  p  .  p  +  p  .  p // <-- next: knight goes g8 -> e7.
-    // 6= .  Kn .  .  p  .  p  . 
+    // 6= .  N  .  .  p  .  p  . 
     // 5= .  .  .  .  .  .  .  .
     // 4= .  .  .  .  .  .  .  . 
     // 3= .  .  .  .  .  .  P  . 
     // 2= .  .  Pk P  P  P  .  P // <-- prev: KNIGHTED pawn takes a1 x c2.
-    // 1= -  R  B  .  K  B  Kn R // <-- prev: KNIGHTED pawn takes a1 x c2.
+    // 1= -  R  B  .  K  B  N  R // <-- prev: KNIGHTED pawn takes a1 x c2.
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1960,14 +1960,14 @@ function test_full_game() {
 
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 25 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= .  kn .  .  k  b  -  r // <-- prev: knight goes g8 -> e7.
-    // 7= p  p  .  p  kn p  .  p // <-- prev: knight goes g8 -> e7.
-    // 6= .  Kn .  .  p  .  p  . // <-- next: knight goes b6 -> c4.
+    // 8= .  n  .  .  k  b  -  r // <-- prev: knight goes g8 -> e7.
+    // 7= p  p  .  p  n  p  .  p // <-- prev: knight goes g8 -> e7.
+    // 6= .  N  .  .  p  .  p  . // <-- next: knight goes b6 -> c4.
     // 5= .  .  .  .  .  .  .  .
     // 4= .  .  +  .  .  .  .  . // <-- next: knight goes b6 -> c4.
     // 3= .  .  .  .  .  .  P  . 
     // 2= .  .  Pk P  P  P  .  P 
-    // 1= .  R  B  .  K  B  Kn R 
+    // 1= .  R  B  .  K  B  N  R 
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -1993,14 +1993,14 @@ function test_full_game() {
     last_seen_turn += 1;
 
     // +++++++++++++++++++++++++++++++++++++++++ Black Move 26 ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= .  kn .  .  k  b  .  r // <-- next: knight goes b8 -> c6
-    // 7= p  p  .  p  kn p  .  p 
+    // 8= .  n  .  .  k  b  .  r // <-- next: knight goes b8 -> c6
+    // 7= p  p  .  p  n  p  .  p 
     // 6= .  -  +  .  p  .  p  . // <-- prev: knight goes b6 -> c4. // <-- next: knight goes b8 -> c6
     // 5= .  .  .  .  .  .  .  .
-    // 4= .  .  Kn .  .  .  .  . // <-- prev: knight goes b6 -> c4.
+    // 4= .  .  N  .  .  .  .  . // <-- prev: knight goes b6 -> c4.
     // 3= .  .  .  .  .  .  P  . 
     // 2= .  .  Pk P  P  P  .  P 
-    // 1= .  R  B  .  K  B  Kn R 
+    // 1= .  R  B  .  K  B  N  R 
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------
@@ -2028,14 +2028,14 @@ function test_full_game() {
 
 
     // +++++++++++++++++++++++++++++++++++++++++ White Move 27: CHECKMATE ++++++++++++++++++++++++++++++++++++++++++++++++++
-    // 8= .  W  W  W  k  b  .  r // <-- prev: knight goes b8 -> c6 // <-- Card: Wall b8-d8
-    // 7= p  p  .  p  kn p  .  p 
-    // 6= .  -  kn +  p  .  p  . // <-- prev: knight goes b8 -> c6 // <-- next: knight goes c4 -> d6: CHECKMATE
+    // 8= .  O  O  O  k  b  .  r // <-- prev: knight goes b8 -> c6 // <-- Card: Wall b8-d8
+    // 7= p  p  .  p  n  p  .  p 
+    // 6= .  -  n  +  p  .  p  . // <-- prev: knight goes b8 -> c6 // <-- next: knight goes c4 -> d6: CHECKMATE
     // 5= .  .  .  .  .  .  .  .
-    // 4= .  .  Kn .  .  .  .  . // <-- next: knight goes c4 -> d6: CHECKMATE
+    // 4= .  .  N  .  .  .  .  . // <-- next: knight goes c4 -> d6: CHECKMATE
     // 3= .  .  .  .  .  .  P  . 
     // 2= .  .  Pk P  P  P  .  P 
-    // 1= .  R  B  .  K  B  Kn R 
+    // 1= .  R  B  .  K  B  N  R 
     // --------------------------
     //    a  b  c  d  e  f  g  h
     // --------------------------

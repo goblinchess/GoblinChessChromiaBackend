@@ -427,7 +427,7 @@ function pawn_is_attackable(
                 log("game_id: "+game_id+ " - Found a vulnerable mid square " + new_pos_int + ", with piece still at destination " + dest);
 
                 // Add the mid square and found piece to the context
-                val maybe_under_attack: with_pos_and_alignment? = board_get_at(board_positions, dest_int);
+                val maybe_under_attack: with_pos_and_alignment_and_type? = board_get_at(board_positions, dest_int);
                 pre_vuln_ctxt.attackable_old_vuln_square_to_piece[new_pos_int] = maybe_under_attack!!;
                 return true;
             } else {

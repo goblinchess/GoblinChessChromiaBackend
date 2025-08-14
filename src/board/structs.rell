@@ -4,13 +4,20 @@
 struct board_positions_all {
 
     // List of all squares on the board that have characters on them.
-    board_characters: map<integer, with_pos_and_alignment> = map<integer, with_pos_and_alignment>();
+    board_characters: map<integer, with_pos_and_alignment_and_type> = map<integer, with_pos_and_alignment_and_type>();
 
     // List of all squares on the board that have obstacles on them.
-    board_obstacles: map<integer, with_pos_and_alignment> = map<integer, with_pos_and_alignment>();
+    board_obstacles: map<integer, with_pos_and_alignment_and_type> = map<integer, with_pos_and_alignment_and_type>();
 
     // List of all portals on the board owned by the current player.
     // TODO: use all portals if we implement check/mate calculations.
     portals: list<portal_simple> = []; // Keeps track of portals. Portals never go away.
+
+    board_portal_entry: map<integer, portal_simple> = map<integer, portal_simple>();
+    board_portal_exit: map<integer, portal_simple> = map<integer, portal_simple>();
+
+    // Opponent's vulnerable context
+    vuln_ctxt: pre_vuln_context? = null; // Usually null
+    board_vuln_square: map<integer, boolean> = map<integer, boolean>(); // Usually empty
 }
 

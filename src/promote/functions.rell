@@ -112,6 +112,17 @@ function promote_pawn_to_queen(
     );
     
     our_team.members[pawn.p.rowid] = updated_pld;
+
+    // Change the [board_all] object
+    val wpat = board_all.board_characters[pawn.vuln.position]; 
+    val wpat_new = with_pos_and_alignment_and_type(
+        pos = wpat.pos,
+        alignment = wpat.alignment,
+        p_type = piece_type.QUEEN, // Only change this.
+        is_knighted = wpat.is_knighted,
+        is_obstacle = wpat.is_obstacle
+    );
+    board_all.board_characters[pawn.vuln.position] = wpat_new;
     
     log("game_id: "+game_id+" - Promoted pawn to queen at " + pawn.vuln.position);
 }

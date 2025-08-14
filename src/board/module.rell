@@ -2,4 +2,5 @@
 import ^.alignment.*;
 import ^.pos.*;
 import ^.rnd.*;
+import ^.pre_vuln_context.*;
 import ^.portal_simple.*;

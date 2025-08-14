@@ -93,9 +93,10 @@ function card_play_inner_core(
     require(expected_nr_of_picks == card_picks.size(), "Expected " + expected_nr_of_picks + " picks for card " + card_type_str + " but got " + card_picks.size());
 
     // We need the full board
-    val board: list<with_pos_and_alignment> = vuln_get_all_as_wpaa(minimal_game.game); 
+    val board_p: list<with_pos_and_alignment_and_type> = piece_get_all_as_wpat(minimal_game.game); 
+    val board_o: list<with_pos_and_alignment_and_type> = vuln_get_obstacles_as_wpat(minimal_game.game); 
     val portals: list<portal_simple> = portal_simple_get_all_by_owner(minimal_game.player_game, my_color);
-    val board_positions_all = board_positions_all_constructor(board, portals);
+    val board_positions_all = board_positions_all_constructor(board_p, board_o, portals, null);
 
     // A.6. Check individual picks 
     val pick_piece_map = map<integer, piece_living_data>(); // Save the pieces we found on the board for the pick.
@@ -183,10 +184,8 @@ function card_play_inner_core(
 
                 val king_from_pos = king_pld.vuln.position;
                 val king_to_pos = other_pld!!.vuln.position;
-                val king_wpaa = with_pos_and_alignment(king_from_pos, king_pld.vuln.align);
                 val calc: check_stat_board_calculator_data = check_sb_build_hypothetical_king_move(
                     game_id,
-                    king_wpaa,
                     king_from_pos,
                     king_to_pos,
                     opp_team,

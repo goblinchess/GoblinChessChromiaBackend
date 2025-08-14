@@ -1,0 +1,96 @@
+
+
+function align_wpat_create_obstacle(pos: integer): with_pos_and_alignment_and_type {
+    return with_pos_and_alignment_and_type(
+        pos = pos, 
+        alignment = alignment.NEUTRAL, 
+        p_type = piece_type.IMMOBILE, 
+        is_knighted = false, 
+        is_obstacle = true);
+}
+
+// -------------------------------------------------
+// Returns the encoded "board object" (=vulnerable), so that 
+// all types of pieces become unique.
+// This can be used to print the board for example, or to 
+// encode the entire board setup as a condensed string.
+// -------------------------------------------------
+function align_wpat_to_code(wpat: with_pos_and_alignment_and_type): text {
+    when(wpat.alignment) {
+        alignment.WHITE -> return align_white_to_code_plus(wpat.p_type, wpat.is_knighted);
+        alignment.BLACK -> return align_black_to_code_plus(wpat.p_type, wpat.is_knighted);
+        alignment.NEUTRAL -> return align_neutral_to_code_plus(wpat.p_type, wpat.is_knighted, wpat.is_obstacle);
+        else -> {
+            log("Error: align_wpat_to_code() what is this?: " + wpat.alignment + ".");
+            return "? ";
+        }
+    }
+}
+
+function align_white_to_code_plus(p_type: piece_type, is_knighted: boolean): text {
+    val x = align_white_to_code(p_type);
+    return align_inner_add_knighted(x, is_knighted);
+}
+
+function align_black_to_code_plus(p_type: piece_type, is_knighted: boolean): text {
+    val x = align_black_to_code(p_type);
+    return align_inner_add_knighted(x, is_knighted);
+}
+
+function align_neutral_to_code_plus(
+    p_type: piece_type, 
+    is_knighted: boolean, 
+    is_obstacle: boolean
+): text {
+    if (is_obstacle) {
+        // Expected
+        return align_inner_add_knighted("O", is_knighted); // Not sure if they can be knighted?
+    } else {
+        // Cannot happen in v1.0, but v2.0 should have neutral pieces.
+        val x = align_black_to_code(p_type);
+        return align_inner_add_knighted_neutral(x, is_knighted);
+    }
+}
+
+function align_inner_add_knighted(x: text, is_knighted: boolean): text {
+    if (is_knighted) {
+        return x + "k"; // This is a "knighted piece"
+    } else {
+        return x + " "; // To make all pieces two character long.
+    }
+}
+
+// Not used in ver 1.0, but let's add it anyways 
+function align_inner_add_knighted_neutral(x: text, is_knighted: boolean): text {
+    if (is_knighted) {
+        return "+" + x; // This is a "knighted neutral piece"
+    } else {
+        return "=" + x; // "=" means neutral. Not sure what symbol would be best?
+    }
+}
+
+function align_white_to_code(p_type: piece_type): text {
+    when(p_type) {
+        piece_type.PAWN -> return "P";
+        piece_type.KNIGHT -> return "N"; // "Kn" is the traditional notation, but we want to save space
+        piece_type.BISHOP -> return "B";
+        piece_type.ROOK -> return "R";
+        piece_type.QUEEN -> return "Q";
+        piece_type.KING -> return "K";
+        piece_type.FROG -> return "F"; // Enchanted
+        piece_type.IMMOBILE -> return "I"; // Enchanted (to stone), not sure if this should count as obstacle?
+    }
+}
+
+function align_black_to_code(p_type: piece_type): text {
+    when(p_type) {
+        piece_type.PAWN -> return "p";
+        piece_type.KNIGHT -> return "n"; // "Kn" is the traditional notation, but we want to save space
+        piece_type.BISHOP -> return "b";
+        piece_type.ROOK -> return "r";
+        piece_type.QUEEN -> return "q";
+        piece_type.KING -> return "k";
+        piece_type.FROG -> return "f"; // Enchanted
+        piece_type.IMMOBILE -> return "i"; // Enchanted (to stone), not sure if this should count as obstacle?
+    }
+}

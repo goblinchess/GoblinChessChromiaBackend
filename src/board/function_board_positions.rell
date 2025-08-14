@@ -7,27 +7,81 @@
 
 // Returns a BOARD_POSITIONS_ALL struct.
 function board_positions_all_constructor(
-    board: list<with_pos_and_alignment>, 
-    portal_list: list<portal_simple>
+    board_p: list<with_pos_and_alignment_and_type>, 
+    board_o: list<with_pos_and_alignment_and_type>, 
+    portal_list: list<portal_simple>,
+    vuln_ctxt: pre_vuln_context? // Usually null
 ): board_positions_all {
 
-    // 1. Split the board into pieces and obstacles.
-    val pieces = map<integer, with_pos_and_alignment>();
-    val obstacles = map<integer, with_pos_and_alignment>();
+    // 1. Pieces
+    val pieces = map<integer, with_pos_and_alignment_and_type>();
+    for (p in board_p) {
+        pieces[p.pos] = p;
+    }
 
-    for (v in board) {
-        if (v.alignment == alignment.NEUTRAL) {
-            obstacles[v.pos] = v;
-        } else {
-            pieces[v.pos] = v;
+    // 2. Obstacles
+    val obstacles = map<integer, with_pos_and_alignment_and_type>();
+    for (o in board_o) {
+        obstacles[o.pos] = o;
+    }
+
+    // 3. Portals
+    val portal_entry = map<integer, portal_simple>();
+    val portal_exit = map<integer, portal_simple>();
+    for (portal: portal_simple in portal_list) {
+        portal_entry[portal.entry_pos] = portal; // Don't worry about two portals having the same entry, cannot happen
+        portal_exit[portal.exit_pos] = portal; // Don't worry about two portals having the same exit, cannot happen
+    }
+  
+    // 4. Vulnerable squares
+    var board_vuln_map = map<integer, boolean>();
+    if (vuln_ctxt != null and vuln_ctxt.prev_turn_vuln_path != null) {
+        // Get the mid positions from the vulnerable path
+        val mid_positions = path_get_mid_positions(vuln_ctxt.prev_turn_vuln_path);
+
+        // Check if our position matches any of the mid positions
+        // (For the pawn there will only even be one mid_pos, but we're over-engineering a bit here,
+        // since in v2.0 there are plans for extended use.)
+        for (mid_pos in mid_positions) {
+            board_vuln_map[mid_pos] = true;
         }
     }
 
-    // 2. Return the struct
+    // 5. Return the struct
     return board_positions_all(
         board_characters = pieces, 
         board_obstacles = obstacles,
-        portals = portal_list
+        portals = portal_list,
+        board_portal_entry = portal_entry,
+        board_portal_exit = portal_exit,
+        vuln_ctxt = vuln_ctxt,
+        board_vuln_square = board_vuln_map
+    );
+}
+
+// Use the new board pieces, keep the rest
+function board_positions_all_clone_new_pieces(old_board: board_positions_all, new_board_piece_map: map<integer, with_pos_and_alignment_and_type>): board_positions_all {
+    return board_positions_all(
+        board_characters = new_board_piece_map, // The mock
+        board_obstacles = old_board.board_obstacles,  // Sending the real thing, since we are not moving an obstacle
+        portals = old_board.portals,
+        board_portal_entry = old_board.board_portal_entry,
+        board_portal_exit = old_board.board_portal_exit,
+        vuln_ctxt = old_board.vuln_ctxt,
+        board_vuln_square = old_board.board_vuln_square
+    );
+}
+
+// Use the new board pieces, keep the rest
+function board_positions_all_clone_new_obstacles(old_board: board_positions_all, new_board_obst_map: map<integer, with_pos_and_alignment_and_type>): board_positions_all {
+    return board_positions_all(
+        board_characters = old_board.board_characters, // Sending the real thing, since we are not moving a piece
+        board_obstacles = new_board_obst_map,  // The mock
+        portals = old_board.portals,
+        board_portal_entry = old_board.board_portal_entry,
+        board_portal_exit = old_board.board_portal_exit,
+        vuln_ctxt = old_board.vuln_ctxt,
+        board_vuln_square = old_board.board_vuln_square
     );
 }
 
@@ -77,7 +131,7 @@ function board_is_attackable_white_or_neutral_at(board_positions_all, pos: squar
 // ----------------
 // Getters
 // ----------------
-function board_get_at(board_positions_all, pos: integer): with_pos_and_alignment? {
+function board_get_at(board_positions_all, pos: integer): with_pos_and_alignment_and_type? {
     require(pos_is_on_board_int(pos), "Out of board " + pos);
 
     if (board_positions_all.board_characters.contains(pos)) {
@@ -122,7 +176,6 @@ function board_place_character_at(
     board: board_positions_all,
     from_pos: integer,
     dest_pos: integer,
-    old_piece: with_pos_and_alignment,
     attack_allowed: boolean
 ) {
     // Convert square positions to integers
@@ -134,7 +187,13 @@ function board_place_character_at(
         require(board_is_empty(board, dest_pos), "Destination position is not empty: " + dest_pos);
     }
 
-    val new_piece = with_pos_and_alignment(dest_pos, old_piece.alignment);
+    val old_piece: with_pos_and_alignment_and_type = board.board_characters[from_pos];
+    val new_piece = with_pos_and_alignment_and_type(
+        dest_pos, 
+        old_piece.alignment, 
+        old_piece.p_type, 
+        is_knighted = old_piece.is_knighted, 
+        is_obstacle = old_piece.is_obstacle);
 
     board.board_characters.remove(from_pos);
     board.board_characters[dest_pos] = new_piece;
@@ -145,11 +204,14 @@ function board_place_character_at(
 function board_appear_at(
     board: board_positions_all,
     piece_pos: integer,
-    piece_align: alignment
+    piece_align: alignment,
+    p_type: piece_type,
+    is_knighted: boolean,
+    is_obstacle: boolean
 ) {
     require(not board.board_characters.contains(piece_pos), "board_appear_at() - ERROR: Position is already occupied: " + piece_pos);
 
-    val new_piece = with_pos_and_alignment(piece_pos, piece_align);
+    val new_piece = with_pos_and_alignment_and_type(piece_pos, piece_align, p_type, is_knighted, is_obstacle);
 
     board.board_characters[piece_pos] = new_piece;
 }

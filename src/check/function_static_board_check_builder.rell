@@ -26,7 +26,6 @@ function check_sb_build_calculator(
 // -----------------------------------------------
 function check_sb_build_hypothetical_king_move(
         game_id: integer,
-        king: with_pos_and_alignment,
         king_pos_start: integer,
         king_pos_dest: integer,
         checking_team: character_team,
@@ -37,15 +36,14 @@ function check_sb_build_hypothetical_king_move(
     // ------------------------
 
     // map doesn't have a clone() method, so we need to do it manually.
-    val board_chr_clone =  map<integer, with_pos_and_alignment>();  
+    val board_chr_clone =  map<integer, with_pos_and_alignment_and_type>();  
     for (sq in board_all.board_characters.keys()) {
         board_chr_clone[sq] = board_all.board_characters[sq];
     }
-
-    val board_all_clone = board_positions_all(
-        board_characters = board_chr_clone, // Sending the mock, which will be used by mating team to find position king's pieces
-        board_obstacles = board_all.board_obstacles,  // Sending the real thing, since we are not moving an obstacle
-        portals = board_all.portals
+    
+    val board_all_clone = board_positions_all_clone_new_pieces(
+        board_all, 
+        board_chr_clone // Sending the mock, which will be used by mating team to find position king's pieces
     );
 
     // ------------------------
@@ -55,7 +53,6 @@ function check_sb_build_hypothetical_king_move(
         board_all_clone,
         king_pos_start,
         king_pos_dest,
-        king, // Will be replaced since this object is immutable.
         true // This might be an attack
     );
     
@@ -84,7 +81,6 @@ function check_sb_build_hypothetical_king_move(
 // -----------------------------------------------
 function check_sb_build_hypothetical_subject_move(
     game_id: integer,
-    chr_to_move: with_pos_and_alignment,
     pos_start: integer,
     pos_dest: integer,
     king_orig_pos: integer,
@@ -97,15 +93,14 @@ function check_sb_build_hypothetical_subject_move(
     // 1. Clone the board -> hypothetical board
     // ------------------------
     // map doesn't have a clone() method, so we need to do it manually.
-    val board_chr_clone =  map<integer, with_pos_and_alignment>();  
+    val board_chr_clone =  map<integer, with_pos_and_alignment_and_type>();  
     for (sq in board_all.board_characters.keys()) {
         board_chr_clone[sq] = board_all.board_characters[sq];
     }
 
-    val board_all_clone = board_positions_all(
-        board_characters = board_chr_clone, // Sending the mock, which will be used by mating team to find position king's pieces
-        board_obstacles = board_all.board_obstacles,  // Sending the real thing, since we are not moving an obstacle
-        portals = board_all.portals
+    val board_all_clone = board_positions_all_clone_new_pieces(
+        board_all, 
+        board_chr_clone // Sending the mock, which will be used by mating team to find position king's pieces
     );
 
     // ------------------------
@@ -115,7 +110,6 @@ function check_sb_build_hypothetical_subject_move(
         board_all_clone,
         pos_start,
         pos_dest,
-        chr_to_move, // Will be replaced since this object is immutable.
         true // This might be an attack
     );
 
@@ -154,17 +148,16 @@ function check_sb_build_hypothetical_subject_gone(
     // 1. Clone the board -> hypothetical board
     // ------------------------
     // map doesn't have a clone() method, so we need to do it manually.
-    val board_chr_clone =  map<integer, with_pos_and_alignment>();  
+    val board_chr_clone =  map<integer, with_pos_and_alignment_and_type>();  
     for (sq in board_all.board_characters.keys()) {
         if (sq != subject_pos_to_remove) { //2. Remove piece on the hypothetical board (clone) 
             board_chr_clone[sq] = board_all.board_characters[sq];
         }
     }
 
-    val board_all_clone = board_positions_all(
-        board_characters = board_chr_clone, // Sending the mock, which will be used by mating team to find position king's pieces
-        board_obstacles = board_all.board_obstacles,  // Sending the real thing, since we are not removing an obstacle
-        portals = board_all.portals
+    val board_all_clone = board_positions_all_clone_new_pieces(
+        board_all, 
+        board_chr_clone // Sending the mock, which will be used by mating team to find position king's pieces
     );
 
     // ------------------------
@@ -196,7 +189,7 @@ function check_sb_build_hypothetical_wall(
     // 1. Clone the board -> hypothetical board
     // ------------------------
     // map doesn't have a clone() method, so we need to do it manually.
-    val board_obstacles_clone = map<integer, with_pos_and_alignment>();  
+    val board_obstacles_clone = map<integer, with_pos_and_alignment_and_type>();  
     for (sq in board_all.board_obstacles.keys()) {
         board_obstacles_clone[sq] = board_all.board_obstacles[sq];
     }
@@ -209,14 +202,13 @@ function check_sb_build_hypothetical_wall(
     val pos_wall3 = wall_positions[2];
 
     // Add the obstacles at the wall positions with neutral alignment
-    board_obstacles_clone[pos_wall1] = with_pos_and_alignment(pos_wall1, alignment.NEUTRAL);
-    board_obstacles_clone[pos_wall2] = with_pos_and_alignment(pos_wall2, alignment.NEUTRAL);
-    board_obstacles_clone[pos_wall3] = with_pos_and_alignment(pos_wall3, alignment.NEUTRAL);
+    board_obstacles_clone[pos_wall1] = align_wpat_create_obstacle(pos_wall1);
+    board_obstacles_clone[pos_wall2] = align_wpat_create_obstacle(pos_wall2);
+    board_obstacles_clone[pos_wall3] = align_wpat_create_obstacle(pos_wall3);
 
-    val board_all_clone = board_positions_all(
-        board_characters = board_all.board_characters, // Keep the original characters
-        board_obstacles = board_obstacles_clone, // Use our modified obstacles
-        portals = board_all.portals
+    val board_all_clone = board_positions_all_clone_new_obstacles(
+        board_all, 
+        board_obstacles_clone // Use our modified obstacles
     );
 
     // ------------------------

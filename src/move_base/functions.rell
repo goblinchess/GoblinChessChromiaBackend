@@ -1,6 +1,21 @@
 
 
 // ------------------------------------------------------------------------------
+// Find dupcliacted boards
+// ------------------------------------------------------------------------------
+
+function move_base_find_duplicated_boards(game_id: integer, gme: game, compressed_board_str: text): integer {
+
+    val res = (m: move, t: turn) @* {
+            m.board_compressed_str == compressed_board_str,
+            m.turn == t,
+            t.game == gme // Everything from the same game should be searched
+        } ( m );
+    log("game_id: " + game_id + " - Found " + res.size() + " duplicated boards");
+    return res.size();
+}
+
+// ------------------------------------------------------------------------------
 // Attack?
 // Get the attack arguments if this was an attack
 // ------------------------------------------------------------------------------

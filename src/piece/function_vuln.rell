@@ -72,6 +72,34 @@ function vuln_get_all_as_wpaa(game: game): list<with_pos_and_alignment> {
     return res;
 }
 
+// Here we get all obstacles in one go, ignoring pieces.
+// We separate black from white via the alignment.
+function vuln_get_obstacles_as_wpat(game: game): list<with_pos_and_alignment_and_type> {
+    val vulns = (a: alive, v: vulnerable)@* {
+        a.game == game, // Only alive pieces are on the board.
+        a.vulnerable == v, 
+        v.is_obstacle == true
+    } (a.position, v.color); // Color should really be neutral, since it's not a piece.
+
+    // Transform into structs
+    val res: list<with_pos_and_alignment_and_type> = [];
+    for (v in vulns) { 
+        // We ALLOW for obstacles to be of any color (it's simplest for STONE enchantments).
+        // But we just ignore it and use NEUTRAL.
+        // 
+        //if (v.color != alignment.NEUTRAL) {
+        //    log("Error: Obstacle has color " + v.color);
+        //}
+        res.add(with_pos_and_alignment_and_type(
+            v.position, 
+            alignment.NEUTRAL, 
+            piece_type.IMMOBILE, 
+            is_knighted = false, 
+            is_obstacle = true));
+    }
+    return res;
+}
+
 
 // ------------------------------------------------------------
 // Constructors

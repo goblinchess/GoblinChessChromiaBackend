@@ -12,16 +12,22 @@
 // -------------------------------------
 
 // -------------------------------------
-// This move will "end" the game, but there are many ways this can turn out.
-// We don't know who won until we verify the random numbers. Here we will verify the 
-// the seed of the "claiming player". 
+// Finds if this move will "end" the game, and deals with it if this is the case.
+//
+// For some endings there is never any "claim" sent from the client, and we don't require any
+// of the "move endings" to be calculated by the client, so we must be ready to fisish
+// the game without a "claim" (meaning there is no random seed to validate), and both
+// players will have to send their seeds later (when they discover that the game is over).
+// 
+// If we gave a seed, there are many ways this can turn out, but we don't know who 
+// won until we verify the random numbers. Here we will verify the seed of the "claiming player". 
 //   A) Seed Verification Success
 //      What we do here is to create a "claim" on the result we're suggesting.
 //      But many things can happen still:
 //      A.1) If Checkmate, we give full points to the claiming player. The claiming player will 
 //           keep the points UNLESS this is a timeout. If opponent claims timeout the claiming player 
 //           will instead lose.
-//      A.2) If Draw, the we give the claiming FULL(!) points!
+//      A.2) If Draw, we give the claiming FULL(!) points!
 //           Only when the opponent send their seed the points will be divided between the players.
 //           The timeout will agin cause the claiming player to lose.
 //   B) Seed Verification Failure
@@ -36,41 +42,45 @@ function game_over_move_claim(
     minimal_game: minimal_game_result, 
     caller_pubkey: pubkey,
     new_turn: turn, 
+    // Types of endings
     is_checkmate: boolean, 
     is_stalemate: boolean, 
     is_insufficient_mating_material: boolean,
+    is_repetition: boolean,
     is_50_rule: boolean, // If true, we've broken the 50-move rule, the game is drawn.
+
+    // Seed and signature if we have a claim.
     random_seed: integer?,
     seed_signature: byte_array?
 ) :boolean {
-    if (is_checkmate or is_stalemate or is_insufficient_mating_material or is_50_rule) {
+
+    // Turn the flags into an [end_reason].
+    var end_reason = game_end_type.NOTHING;
+    if (is_checkmate) {
+        end_reason = game_end_type.CHECKMATE;
+    } else if (is_stalemate) {
+        end_reason = game_end_type.STALEMATE;
+    } else if (is_insufficient_mating_material) {
+        end_reason = game_end_type.INSUFFICIENT_MATING_MATERIAL;
+    } else if (is_repetition) {
+        end_reason = game_end_type.MOVE_REPETITION;
+    } else if (is_50_rule) {
+        end_reason = game_end_type.MOVES_50;
+    }
+
+    if (end_reason != game_end_type.NOTHING) {
+
+        log("game_id: " + minimal_game.game_id + " - Game Over, reason: " + end_reason);
         // This move ended the game
 
         // ------------------------------------------- 
-        // 1. Update [game] to "finished"
-        // ------------------------------------------- 
-        log("game_id: " + minimal_game.game_id + " - Game Over");
-        var end_reason = game_end_type.NOTHING;
-        if (is_checkmate) {
-            end_reason = game_end_type.CHECKMATE;
-        } else if (is_stalemate) {
-            end_reason = game_end_type.STALEMATE;
-        } else if (is_insufficient_mating_material) {
-            end_reason = game_end_type.INSUFFICIENT_MATING_MATERIAL;
-        } else if (is_50_rule) {
-            end_reason = game_end_type.MOVES_50;
-        } else {
-            require(false, "Game ended with unknown reason, id:" + minimal_game.game_id);
-        }
-
-        // ------------------------------------------- 
-        // 2. Update the time left
+        // 1. Update the time left
         // ------------------------------------------- 
         // Why bother? B/c the winning player might be out of time already.
         game_update_time_left(minimal_game);
 
         // ------------------------------------------- 
-        // 3. Create the "game end" event (tied to this turn)
+        // 2. Create the "game end" event (tied to this turn)
         // ------------------------------------------- 
         if (game_end_type_is_move_end(end_reason)) {
             // Only create this for the true move endings.
@@ -78,17 +88,20 @@ function game_over_move_claim(
         }
 
         // ------------------------------------------- 
-        // 4. Verify seed. The status of the verification will be saved to the [game]
+        // 3. Set game status = fisished.
         // ------------------------------------------- 
-        // Some client doesn't calculate mate and won't know the the game is over. 
-        // These client will send the seed at some later point.
         if (random_seed != null) { 
             // If they are sending the seed then this must be a "claim"
             _inner_game_end_update(minimal_game.game, new_turn.number, end_reason, true);
+            // ------------------------------------------- 
+            // 4. Verify seed. The status of the verification will be saved to the [game]
+            // ------------------------------------------- 
             game_over_first_inner_set_winner_and_loser_from_min_game(minimal_game, caller_pubkey, random_seed, seed_signature, end_reason);
         } else {
             // No seed means no claim.
             _inner_game_end_update(minimal_game.game, new_turn.number, end_reason, false);
+            // Some client doesn't calculate mate and won't know the the game is over. 
+            // These client will send the seed at some later point.
         }
 
 

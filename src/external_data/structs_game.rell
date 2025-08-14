@@ -1,6 +1,8 @@
 
+// These are "external" structs, 
+// meaning they are sent back to the client.
 
-// Sent back to the client
+// Info that tells a player if (s)he is in a game or not.
 struct in_game_result {
     game_rowid: integer;
     game_type: game_type;
@@ -38,4 +40,14 @@ struct game_end_data {
     finish_reason: text; // Reason for ending the game.
     valid_seeds_count: integer; // Number of players who have successfully verified their seeds.
     invalid_seeds_count: integer; // Number of players who have bad seeds.
+}
+
+
+// Holds info about what happened during a rotation 
+// of an old game, ideal for stepping through and analyzing old games.
+struct old_rotation_data {
+
+    rotation_nr: integer; // The rotation number.
+
+    compressed_board_str: text; // The compressed board at the end of this rotation.
 }

@@ -94,7 +94,7 @@ function king_escape_find_first_without_help(game_id: integer,  data: king_escap
     log("game_id: "+game_id+ " - King is in check at: " + king.pos);
 
     for (empty_square in data.empty_squares) {
-        if (king_escape_can_go_to_square(game_id, data, empty_square, king)) {
+        if (king_escape_can_go_to_square(game_id, data, empty_square, king.pos)) {
             val desc = "King can escape to empty square: " + empty_square;
             log("game_id: "+game_id+ " - " + desc);
             return (empty_square, false, desc);
@@ -102,7 +102,7 @@ function king_escape_find_first_without_help(game_id: integer,  data: king_escap
     }
     
     for (opponent_square in data.opponent_squares) {
-        if (king_escape_can_go_to_square(game_id, data, opponent_square, king)) {
+        if (king_escape_can_go_to_square(game_id, data, opponent_square, king.pos)) {
             val desc = "King can escape via attack at: " + opponent_square;
             log("game_id: "+game_id+ " -  " + desc) ;
             return (opponent_square, true, desc);
@@ -113,12 +113,11 @@ function king_escape_find_first_without_help(game_id: integer,  data: king_escap
 }
 
 // Returns true if "pos" is a square that the king can go to.
-function king_escape_can_go_to_square(game_id: integer, data: king_escape_data, target_pos: integer, king: with_pos_and_alignment): boolean {
+function king_escape_can_go_to_square(game_id: integer, data: king_escape_data, target_pos: integer, king_start_pos: integer): boolean {
     
     val hypothetical_stat_board_check_data = check_sb_build_hypothetical_king_move(
         game_id = game_id,
-        king = king,
-        king_pos_start = king.pos,
+        king_pos_start = king_start_pos,
         king_pos_dest = target_pos,
         checking_team = data.mating_team,
         board_all = data.board_all

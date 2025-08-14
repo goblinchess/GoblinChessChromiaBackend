@@ -31,9 +31,6 @@ Client Done:
 
 Node DONE:
 
-1. Added is_finished_by_claim to be able to separate nodes own endings from
-the player endings. 2. Add ending TIMEOUT_CLEANUP. 3. Implemented MOVES_50 ending. 
-
 
  Videos
 -------------
