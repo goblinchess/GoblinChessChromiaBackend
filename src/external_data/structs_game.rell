@@ -43,11 +43,3 @@ struct game_end_data {
 }
 
 
-// Holds info about what happened during a rotation 
-// of an old game, ideal for stepping through and analyzing old games.
-struct old_rotation_data {
-
-    rotation_nr: integer; // The rotation number.
-
-    compressed_board_str: text; // The compressed board at the end of this rotation.
-}

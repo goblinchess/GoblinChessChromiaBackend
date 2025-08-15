@@ -111,11 +111,95 @@ query get_old_games(
     return return_list;
 }
 
-/*
-query get_entire_old_game(
-    player_signer: pubkey,
-   game_id: integer
-): list<old_rotation_data> {
 
+// -------------------------------------
+// Get ALL rotations for an old (=finished) game.
+//
+// We used compressed data to save some CPU. 
+// -------------------------------------
+query get_entire_old_game(
+    game_id: integer
+): entire_game_data  {
+
+    log("game_id: " + game_id + " - Begin ");
+   
+    // ----------------------
+    // 1. Find game end data
+    // ----------------------
+    val game_rowid = rowid(game_id);
+
+    val res = (
+        p_white: player, 
+        pg_white: player_game, 
+        g: game, 
+        pg_black: player_game, 
+        p_black: player 
+    )@? {
+        pg_white.player == p_white,
+        pg_white.is_white == true, 
+        pg_white.game == g,
+        g.rowid == game_rowid, // <-- THE GAME WE ARE LOOKING FOR
+        pg_black.game == g, // We need this to get the opponent's timeout data
+        pg_black.is_white == false,
+        pg_black.player == p_black
+    } (gme = g, 
+        white_p = p_white, black_p = p_black,  // Player
+        white_pg = pg_white, black_pg = pg_black,  // P.G.
+        white_name = p_white.name, black_name = p_black.name, // Names
+        white_elo_before = pg_white.elo_rating_before_game, black_elo_before = pg_black.elo_rating_before_game, // initial ELO 
+        // white_elo = p_white.elo_rating, black_elo = p_black.elo_rating, // curr ELO
+        game_type = g.game_type, game_max_turns = g.current_turn_nr, game_max_rotations = g.current_rotation_nr,
+        game_finished = g.is_finished,  game_finish_reason = g.finish_reason, by_claim = g.is_finished_by_claim, i_claimed_end = pg_white.claimed_end, // End data
+        game_valid_seeds = g.valid_seeds_count, game_invalid_seeds = g.invalid_seeds_count // End data
+        );
+
+    require(res != null, "Game not found, game_id: " + game_id);
+
+
+    // Primary keys
+    val white_p = res.white_p;
+    val white_pg = res.white_pg;
+    val black_p = res.black_p;
+    val black_pg = res.black_pg;
+    val gme = res.gme;
+
+    val g_type = res.game_type.name;
+    val g_max_turns = res.game_max_turns; // The turn when the game ended (given it's over)
+    val g_max_rotations = res.game_max_rotations; // The rotation when the game ended (given it's over)
+
+
+    val g_end_data = game_end_data(
+        is_finished = res.game_finished,
+        is_finished_by_claim = res.by_claim,
+        is_my_claim = res.i_claimed_end, // "I" will have to mean "white" here, not a perfect match.
+        finish_reason = res.game_finish_reason.name,
+        valid_seeds_count = res.game_valid_seeds,
+        invalid_seeds_count = res.game_invalid_seeds
+    );
+
+    // ----------------------
+    // 2. Find the rotations
+    // ----------------------
+    val rot_list = player_rotation_compressed_get_all(game_id, gme, g_max_rotations);
+
+    // ----------------------
+    // 3. Return 
+    // ----------------------
+    
+    val ret = entire_game_data(
+        // 1.
+        game_type_str = g_type,
+        white_name = res.white_name,
+        black_name = res.black_name,
+        white_elo_before_game = res.white_elo_before,
+        black_elo_before_game = res.black_elo_before,
+        // 2.
+        rotations = rot_list,
+        // 3.
+        game_end_data = g_end_data
+    );
+
+    log("game_id: " + game_id + " - End: " + ret.white_name + " vs " + ret.black_name);
+    return ret;
 }
-*/
+

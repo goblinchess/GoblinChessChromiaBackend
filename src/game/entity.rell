@@ -111,12 +111,16 @@ entity player_game {
 // sends their seed. When/if the opponent sends their seed,
 // and it turns out to be valid, we'll update the status of
 // this table to reflect this new truth.
+// 
+// The fields beginning with "claim_" shouln't be used,
+// they are only here for debug purposes, so that the dev
+// can understand why a game was initially ended.
 //
 // Main purpose is for showing history.
-// Ok to duplicate data here, since it will be 
-// fetched often, and the data never changes.
-// For example, we want to know what the opponent's ELO
-// was during this game, not what it is now.
+// Ok to duplicate data here, since, after the "termination" 
+// of the game, the data in here never changes
+// (For example, we only store what the opponent's ELO
+// was during this game, not what it is now).
 // -------------------------------------
 entity player_game_stats {
     key player_game;

@@ -48,6 +48,7 @@ function minimal_game_data_get(player_pubkey: pubkey) :minimal_game_result? {
     }
 }
 
+/*
 // -------------------------------------
 // Will find the [minimal_game_result] (which holds the player, 
 // the game and the color) from the player's pubkey and game_id.
@@ -64,9 +65,8 @@ function minimal_game_data_get_even_if_finished(
     val res = (p: player, pg: player_game, g: game)@?  {
         p.signer == player_pubkey, 
         pg.player == p, 
+        g == pg.game
         g.rowid == game_rowid, // <-- THE GAME WE ARE LOOKING FOR
-        g == pg.game,
-        g.is_finished == false 
     }
         (gme = g, player = pg.player, player_game = pg,  // Primary keys 
         g_id = g.rowid.to_integer(), game_type = g.game_type, curr_rot_nr = g.current_rotation_nr, curr_turn_nr = g.current_turn_nr, last_50_moves = g.last_turn_when_pawn_advanced,
@@ -97,7 +97,7 @@ function minimal_game_data_get_even_if_finished(
     } else {
         return null;
     }
-}
+} */
 
 // -------------------------------------
 // Will find various data EVEN if the game is finished 

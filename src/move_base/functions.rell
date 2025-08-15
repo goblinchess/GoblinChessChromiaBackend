@@ -15,6 +15,8 @@ function move_base_find_duplicated_boards(game_id: integer, gme: game, compresse
     return res.size();
 }
 
+
+
 // ------------------------------------------------------------------------------
 // Attack?
 // Get the attack arguments if this was an attack

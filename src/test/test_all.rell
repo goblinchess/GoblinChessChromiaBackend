@@ -2179,6 +2179,19 @@ function test_full_game() {
     // ------------------------------------------------
     */
 
+
+   // Fetch the entire old game
+   val compressed_game = get_entire_old_game(the_game.game_rowid);
+
+    assert_equals(compressed_game.white_name, "Charlie");
+    assert_equals(compressed_game.black_name, "Alice");
+    assert_equals(compressed_game.white_elo_before_game, 1200);
+    assert_equals(compressed_game.black_elo_before_game, 1200);
+    assert_equals(compressed_game.game_type_str, "SPEED_10_CLASSIC");
+    assert_equals(compressed_game.rotations.size(), 27);
+
+
+
 }
 
 /*
