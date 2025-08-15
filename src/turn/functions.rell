@@ -81,12 +81,12 @@ function turn_create_first(g: game, creatoor: player_game): turn {
 // These values must be validated, to detect if the client playing 
 // out of turn.
 // -------------------------------------
-function turn_create(game: game, created_by: player_game, new_turn_type: turn_type, is_white: boolean, is_pawn_move_or_capture: boolean): (turn, integer, integer) {
+function turn_create(gme: game, created_by: player_game, new_turn_type: turn_type, is_white: boolean, is_pawn_move_or_capture: boolean): (turn, integer, integer) {
 
     // Validation 
-    val (t_type: turn_type, t_number: integer, r_number: integer, p_rotation: player_rotation) = get_current_turn(game);
+    val (t_type: turn_type, t_number: integer, r_number: integer, p_rotation: player_rotation) = get_current_turn(gme);
 
-    val err: text? = verify_old_turn_type_new_turn_type(game, created_by, t_type, new_turn_type, t_number, is_white);
+    val err: text? = verify_old_turn_type_new_turn_type(gme, created_by, t_type, new_turn_type, t_number, is_white);
     if (err != null) {
         require(false, err);
     }
@@ -100,7 +100,7 @@ function turn_create(game: game, created_by: player_game, new_turn_type: turn_ty
         last_rotation_nr++;
         // Yes, create it
         last_rotation = create player_rotation(
-            .game = game,
+            .game = gme,
             .rotation_nr = last_rotation_nr,
             .created_by = created_by,
             .created_at = op_context.last_block_time
@@ -110,23 +110,31 @@ function turn_create(game: game, created_by: player_game, new_turn_type: turn_ty
     // Creation
     val new_turn_nr = t_number + 1;
     val new_turn = create turn(
-        .game = game,
+        .game = gme,
         .number = new_turn_nr,
         .turn_type = new_turn_type,
         .player_rotation = last_rotation,
         .created_at = op_context.last_block_time
     );
 
-    update current_turn@ {game} (.current_turn = new_turn);
+    update current_turn@ {gme} (.current_turn = new_turn);
 
     //GAME cannot have a reference to the (current) TURN since we don't allow two-way FKs.
-    update game (.current_rotation_nr = last_rotation_nr, .current_turn_nr = new_turn_nr);  
+    update gme (.current_rotation_nr = last_rotation_nr, .current_turn_nr = new_turn_nr);  
     if (is_pawn_move_or_capture) {
-        update game (.last_turn_when_pawn_advanced = new_turn_nr); // For the 50-move rule  
+        update gme (.last_turn_when_pawn_advanced = new_turn_nr); // For the 50-move rule  
     }
 
-    // Update the player's last heartbeat (must be done every time a player does something)
-    game_timeout_set_player_alive(created_by);
+    // ---------------------------------------------------------------------------------------
+    // Update both players' last heartbeat (must be done every time a player does something).
+    // 
+    // Explanation:
+    // It's obvious why we would why we would update the "active" player (= the player now taking action), 
+    // but why do we update for the PASSIVE player too? The reason is simple: it's obviously not the 
+    // passive player's turn, so the heartbeat (abandon) counter should begin the clock from when we 
+    // switched to the (now passive) player's turn.
+    // ---------------------------------------------------------------------------------------
+    game_timeout_set_both_player_alive(gme);
 
     return (new_turn, new_turn_nr, last_rotation_nr);
 }

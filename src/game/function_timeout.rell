@@ -28,17 +28,26 @@
 
 
 // -------------------------------------
-// Update
+// Update Heartbeat
 // -------------------------------------
 
 // Sets the [last_heartbeat] timestamp to the current block time.
 // Prevents the opponent from calling TIMEOUT INACTIVE on this player.
-function game_timeout_set_player_alive(gpg: player_game) {
-    gpg.last_heartbeat = op_context.last_block_time; // Usually happens twice every second, so good enough.
+function game_timeout_set_player_alive(pg: player_game) {
+    pg.last_heartbeat = op_context.last_block_time; // New block usually happens twice every second, so good enough.
 }
 
+// Sometimes we want to refresh BOTH pray
+function game_timeout_set_both_player_alive(gme: game) {
+    update (pg: player_game) @* {pg.game == gme} (
+        .last_heartbeat = op_context.last_block_time // New block usually happens twice every second, so good enough.
+    ); 
+}
 
+// -------------------------------------
 // Builds a [timeout_data] struct.
+// -------------------------------------
+
 function game_timeout_build_timeout_data(
     opp_abandon: boolean, // "true" if the opponent has abandoned the game
     opp_timeout: boolean, // "true" if the opponent has timed out
@@ -60,9 +69,6 @@ function game_timeout_build_timeout_data(
         game_started_at = game_started_at
     );
 }
-
-
-
 
 // -------------------------------------
 // game_timeout_any_player_if_possible
