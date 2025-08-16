@@ -1,6 +1,14 @@
 
+What?Error
+UnityEngine.Debug:LogError (object)
+Dc.Drama.DramaMeleeGround:PlanHit (System.Collections.Generic.List`1<Dc.Act.ActPlan>,Dc.Battle.BattleResult) (at Assets/_scripts/Drama/DramaMeleeGround.cs:135)
+Dc.Drama.DramaMeleeGround:PlanActs (Dc.Battle.BattleResult) (at Assets/_scripts/Drama/DramaMeleeGround.cs:48)
+Dc.Writer.ScreenwriterBattle:WriteActsBattle () (at Assets/_scripts/Writer/ScreenwriterBattle.cs:28)
+Dc.Turn.TurnProducer:_planBattle (Dc.Mode.JourneyPath) (at Assets/_scripts/Turn/TurnProducer.cs:280)
+Dc.Turn.TurnProducer:Plan (Dc.Mode.JourneyPath) (at Assets/_scripts/Turn/TurnProducer.cs:143)
 
-Use Dennis' 0.7.5 client.
+Bug: When we in classic mode attack a wall, causing an error, the other player won't get the error ending.
+
 
 Fix timeout ending for Local games/Bot.
 
@@ -20,6 +28,7 @@ b) Test time_left param.
  
 
 Client Done: 
+
 
 
 

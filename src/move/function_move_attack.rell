@@ -104,6 +104,11 @@ function move_attack_inner(
     // ----------------
     val is_classic_mode: boolean = game_is_classic(minimal_game.game_type); 
     val is_chaos_mode: boolean = not is_classic_mode; // Else it's chaos mode.
+    if (is_classic_mode) {
+        // We are not allowed to attack obstacles in classic mode, since it won't be a kill (since obstacles have too much health),
+        // and every attack in classic mode must be a kill.
+        require(not opp_vuln.is_obstacle, "Cannot attack obstacles in classic mode, piece " + p_dbg + ", id:" + game_id);
+    }
 
     var resurrect_pos: integer? = null;
     if (end_args != null) {
