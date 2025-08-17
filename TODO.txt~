@@ -1,30 +1,12 @@
 
-What?Error
-UnityEngine.Debug:LogError (object)
-Dc.Drama.DramaMeleeGround:PlanHit (System.Collections.Generic.List`1<Dc.Act.ActPlan>,Dc.Battle.BattleResult) (at Assets/_scripts/Drama/DramaMeleeGround.cs:135)
-Dc.Drama.DramaMeleeGround:PlanActs (Dc.Battle.BattleResult) (at Assets/_scripts/Drama/DramaMeleeGround.cs:48)
-Dc.Writer.ScreenwriterBattle:WriteActsBattle () (at Assets/_scripts/Writer/ScreenwriterBattle.cs:28)
-Dc.Turn.TurnProducer:_planBattle (Dc.Mode.JourneyPath) (at Assets/_scripts/Turn/TurnProducer.cs:280)
-Dc.Turn.TurnProducer:Plan (Dc.Mode.JourneyPath) (at Assets/_scripts/Turn/TurnProducer.cs:143)
-
-Bug: When we in classic mode attack a wall, causing an error, the other player won't get the error ending.
-
 
 Fix timeout ending for Local games/Bot.
 
 TODO: Remove the damage from history in classical mode.
-TODO: Should we remove the option of attacking obstacles in classical mode (we don't allow anyone to survive).
 
-TODO: Draw the game on 1) repetition 2) lack of mating material.
-
-a) Test time-out of old ongoing games.
-b) Test time_left param.
 
  TODO Client: 
 -------------
-- Impl RESIGN button
-
-- Use Timeout and put clock on the chess scene.
  
 
 Client Done: 
@@ -42,7 +24,6 @@ Client Done:
 
 
 Node DONE:
-In classic mode we cannot attack obstacles, since stones usually survive, and we don't allow half-measures. 
 
 
  Videos

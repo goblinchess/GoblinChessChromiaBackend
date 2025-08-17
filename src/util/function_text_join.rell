@@ -1,0 +1,39 @@
+
+
+
+val separator = "#^#";
+
+// Joins a list of text into one big text.
+function util_text_join_list(player_rotation_summaries: list<text>) :text {
+    var player_rotation_summaries_str = "";
+    var is_first = true;
+    var i = 0;
+    for (player_rotation_summary in player_rotation_summaries) {
+        i++;
+        // This probably never happens, but let us explode if it does
+        require(player_rotation_summary.index_of(separator) == -1, "Player rotation summary at pos " + i + " holds the forbidden separator: " + separator); 
+        if (is_first) {
+            player_rotation_summaries_str = player_rotation_summary;
+        } else {
+            player_rotation_summaries_str += separator + player_rotation_summary;
+        }
+    }
+
+    return player_rotation_summaries_str;
+}
+
+
+// Returns a map, where the first string 
+function util_text_split_to_map(mega_text: text) :map<integer, text> {
+    var result: map<integer, text> = map<integer, text>();
+
+    val mega_list = mega_text.split(separator);
+    var rot_counter = 1;
+    
+    for (part in mega_list) {
+        result[rot_counter] = part;
+        rot_counter++;
+    }
+    
+    return result;
+}

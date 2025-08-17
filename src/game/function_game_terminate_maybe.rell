@@ -20,7 +20,7 @@
 // try to terminate it, so we must allow the first "termination" to become a regular "claim".
 // -------------------------------------------------------------------------
 
-function game_terminate_maybe_with_seed(caller_pubkey: pubkey, game_id: integer, random_seed: integer, seed_signature: byte_array) 
+function game_terminate_maybe_with_seed(caller_pubkey: pubkey, game_id: integer, random_seed: integer, seed_signature: byte_array, player_rotation_descriptions: list<text>) 
 {
     log("game_id: " + game_id.to_text() + " - start");
 
@@ -41,7 +41,8 @@ function game_terminate_maybe_with_seed(caller_pubkey: pubkey, game_id: integer,
         if (tot_seeds == 0) {
             require(false , "Internal error! The Game was ended by a claim as " + finish_reason + " but we don't have a seed, which is not allowed, id:" + game_id);
         } else if(tot_seeds == 1) {
-            // Typical termination.
+            // Typical termination. 
+            // We don't need to set the [player_rotation_descriptions], since the claiming player did it.
             log("game_id: " + game_id + " - Second player sending seed, game was ended by a claim as " + finish_reason);
             game_terminate_inner_with_seed(caller_pubkey, game_id, random_seed, seed_signature, max_game, g_end_data, finish_reason);
         } else if (tot_seeds == 2) { // Client error, don't send seed twice
@@ -62,8 +63,13 @@ function game_terminate_maybe_with_seed(caller_pubkey: pubkey, game_id: integer,
             // Now we must change this from a termination to a "claim" (so that the second player can do the "termination" later)
             log("game_id: " + game_id + " - First player sending seed, game was ended by the node as " + finish_reason);
             game_over_first_inner_set_winner_and_loser_from_max_game(max_game, caller_pubkey, random_seed, seed_signature, finish_reason);
+            // We also must set the [player_rotation_descriptions], since we are first.
+            // (This should ideally have been done when the game was set to finished)
+            val rot_desc_mega_str = util_text_join_list(player_rotation_descriptions);
+            update max_game.game (.player_rotation_descriptions = rot_desc_mega_str);
         } else if(tot_seeds == 1) {
-            // Typical termination.
+            // Typical termination. 
+            // We don't need to set the [player_rotation_descriptions], since the other player did it for us.
             log("game_id: " + game_id + " - Second player sending seed, game was ended by the node as " + finish_reason);
             game_terminate_inner_with_seed(caller_pubkey, game_id, random_seed, seed_signature, max_game, g_end_data, finish_reason);
         } else if (tot_seeds == 2) { // Client error, don't send seed twice

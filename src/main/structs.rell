@@ -114,6 +114,8 @@ struct player_rotation_compressed {
     // 2. Color
     is_white: boolean; // True if this is a white move
 
+    rotation_description: text; // A description of what happened this rotation, almost chess notation.
+
     // ----------------------
     // 3. Card data
     // ----------------------

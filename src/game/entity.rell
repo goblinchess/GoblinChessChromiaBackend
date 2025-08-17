@@ -43,6 +43,13 @@ entity game {
     mutable is_finished: boolean = false;  // First step of ending a game, no more moves/turns can be made.
     mutable is_finished_by_claim: boolean = false;  // A player asked for the game to end. 
     mutable finish_reason: game_end_type = game_end_type.NOTHING;     
+
+    // This might be set on the first step, but if the game is NOT finished by a player claim,
+    // we'll have to set this value on the second step.
+    // If both players abandon the game at the same time, this value will never be set, 
+    // so saving the [player_rotation_summaries] in the end is somewhat of a hack, should be changed I guess.
+    mutable player_rotation_descriptions: text = ""; // Descriptions of all the player rotations for this game, joined together into one mega-string with #^# as an arbitrary separator.
+
     // Second step
     mutable valid_seeds_count: integer = 0; // Number of players who have provided a valid random seed.
     mutable invalid_seeds_count: integer = 0; // Number of players who have provided a random seed that failed verification.

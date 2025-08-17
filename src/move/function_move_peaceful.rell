@@ -253,7 +253,9 @@ function move_peaceful_inner(
     // B.7 Is it over?
     // ----------------
     val is_insufficient_mating_material = false; // A peaceful move won't the balance
-    val is_game_over = game_over_move_claim(minimal_game, caller_pubkey, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material, is_repetition, is_50_rule, check_args?.random_seed, check_args?.seed_signature);
+    val is_game_over = game_over_move_claim(
+        minimal_game, caller_pubkey, new_turn, is_checkmate, is_stalemate, is_insufficient_mating_material, is_repetition, is_50_rule, 
+        check_args?.random_seed, check_args?.seed_signature, check_args?.player_rotation_descriptions);
     if (not is_game_over) {
 
         // Usually we don't set "time_left" during regular moves, but there is one case where we must make an exception:

@@ -51,7 +51,8 @@ function game_over_move_claim(
 
     // Seed and signature if we have a claim.
     random_seed: integer?,
-    seed_signature: byte_array?
+    seed_signature: byte_array?,
+    player_rotation_descriptions: list<text>?
 ) :boolean {
 
     // Turn the flags into an [end_reason].
@@ -91,19 +92,32 @@ function game_over_move_claim(
         // 3. Set game status = fisished.
         // ------------------------------------------- 
         if (random_seed != null) { 
-            // If they are sending the seed then this must be a "claim"
-            _inner_game_end_update(minimal_game.game, new_turn.number, end_reason, true);
+            require(seed_signature != null, "If you send the random_seed, you must also send seed_signature, id:" + minimal_game.game_id);
+            require(player_rotation_descriptions != null, "If you send the random_seed, you must also send player_rotation_descriptions, id:" + minimal_game.game_id);
+
+            val rot_desc_mega_str = util_text_join_list(player_rotation_descriptions);
+
+            update minimal_game.game (
+                .current_turn_nr = new_turn.number,  // Since this is caused by a move, we're updating the [current_turn_nr] to the latest.
+                .is_finished = true, 
+                .is_finished_by_claim = true,  // If they are sending the seed then this must be a "claim"
+                .finish_reason = end_reason,
+                .player_rotation_descriptions = rot_desc_mega_str);
+
             // ------------------------------------------- 
             // 4. Verify seed. The status of the verification will be saved to the [game]
             // ------------------------------------------- 
             game_over_first_inner_set_winner_and_loser_from_min_game(minimal_game, caller_pubkey, random_seed, seed_signature, end_reason);
         } else {
             // No seed means no claim.
-            _inner_game_end_update(minimal_game.game, new_turn.number, end_reason, false);
+            update minimal_game.game (
+                .current_turn_nr = new_turn.number,  // Since this is caused by a move, we're updating the [current_turn_nr] to the latest.
+                .is_finished = true, 
+                .is_finished_by_claim = false, // Game is finished on the node's initiative (= not claimed)
+                .finish_reason = end_reason);
             // Some client doesn't calculate mate and won't know the the game is over. 
             // These client will send the seed at some later point.
         }
-
 
         return true;
     } else {
@@ -111,27 +125,19 @@ function game_over_move_claim(
     }
 }
 
-
-// Updates the [game] with finished status.
-function _inner_game_end_update(gme: game, curr_turn_nr: integer, g_end: game_end_type, is_claim: boolean) {
-    update gme (
-        .current_turn_nr = curr_turn_nr,  // Since this is caused by a move, we're updating the [current_turn_nr] to the latest.
-        .is_finished = true, 
-        .is_finished_by_claim = is_claim,
-        .finish_reason = g_end);
-}
-
 // -------------------------------------
 // Resign
 // -------------------------------------
 
-
+// -------------------------------------
 // Will regign the game, validate the seed etc.
+//
 // What to do if the game is already over? (Could be that the opponent just resigned too or whatever.)
 // Best is to simply terminate the game (by validate the seed etc) and don't report an error, since 
 // we got the seed and it shouldn't go to waste.
 // Remember, the player WANTED to end the game, so if it's already over that's a good thing.
-function game_over_resign(caller_pubkey: pubkey, game_id: integer, random_seed: integer, seed_signature: byte_array) {
+// -------------------------------------
+function game_over_resign(caller_pubkey: pubkey, game_id: integer, random_seed: integer, seed_signature: byte_array, player_rotation_descriptions: list<text>) {
     log("game_id: " + game_id.to_text() + " - started.");
 
     val (minimal_game: minimal_game_result?, g_end: game_end_data?) = minimal_game_and_end_data_get_even_if_finished(caller_pubkey, game_id);
@@ -144,17 +150,20 @@ function game_over_resign(caller_pubkey: pubkey, game_id: integer, random_seed: 
         log("game_id: " + game_id.to_text() + " - game already ended, reason: " + g_end.finish_reason );
 
         // This will also validate if the game is already terminated (which cannot be explained, and would be a real error)
-        game_terminate_maybe_with_seed(caller_pubkey, game_id, random_seed, seed_signature);
+        game_terminate_maybe_with_seed(caller_pubkey, game_id, random_seed, seed_signature, player_rotation_descriptions);
     } else {
         // We don't care if the game is out of sync, since we might be doing this during the opponent's rotation anyways.
         val curr_turn = minimal_game.curr_turn_nr;
         log("game_id: " + game_id.to_text() + " - game ongoing, turn: " + curr_turn.to_text() + ". Ending it now");
 
+        val rot_desc_mega_str = util_text_join_list(player_rotation_descriptions);
+
         // ... so no need setting the [current_turn_nr] here. 
         update minimal_game.game (
             .is_finished = true, 
             .is_finished_by_claim = true, // Must be a claim
-            .finish_reason = game_end_type.RESIGNATION);
+            .finish_reason = game_end_type.RESIGNATION,
+            .player_rotation_descriptions = rot_desc_mega_str);
 
         // Don't create [event_game_end], that's only when the game ends BECAUSE of a move.
 
@@ -163,12 +172,15 @@ function game_over_resign(caller_pubkey: pubkey, game_id: integer, random_seed: 
     }
 }
 
-
+// -------------------------------------
+// Will resign the game with an error message, showing that this was not a volontary resignition.
+//
 // What to do if the game is already over? (Could be that the opponent just resigned too or whatever.)
 // Best is to simply validate the seed and don't report an error, since 
 // we got the seed and it shouldn't go to waste.
 // Remember, the player WANTED to end the game, so if it's already over that's a good thing.
-function game_over_resign_with_error(caller_pubkey: pubkey, game_id: integer, random_seed: integer, seed_signature: byte_array, error_message: text) {
+// -------------------------------------
+function game_over_resign_with_error(caller_pubkey: pubkey, game_id: integer, random_seed: integer, seed_signature: byte_array, player_rotation_descriptions: list<text>, error_message: text) {
     log("game_id: " + game_id.to_text() + " - started");
 
     val (minimal_game: minimal_game_result?, g_end: game_end_data?) = minimal_game_and_end_data_get_even_if_finished(caller_pubkey, game_id);
@@ -181,7 +193,7 @@ function game_over_resign_with_error(caller_pubkey: pubkey, game_id: integer, ra
         log("game_id: " + game_id.to_text() + " - game already ended, reason: " + g_end.finish_reason);
 
         // This will also validate if the game is already terminated (which cannot be explained, and would be a real error)
-        game_terminate_maybe_with_seed(caller_pubkey, game_id, random_seed, seed_signature);
+        game_terminate_maybe_with_seed(caller_pubkey, game_id, random_seed, seed_signature, player_rotation_descriptions);
 
         // If termination succeeded, we SHOULD be able to report the error too (even though it's not the reason the game ended)
         create game_error (minimal_game.game, minimal_game.player_game, error_type.CLIENT_ERROR_AFTER_END, error_message);
@@ -191,11 +203,14 @@ function game_over_resign_with_error(caller_pubkey: pubkey, game_id: integer, ra
         val curr_turn = minimal_game.curr_turn_nr;
         log("game_id: " + game_id.to_text() + " - game ongoing, turn: " + curr_turn.to_text() + ". Ending it now");
 
+        val rot_desc_mega_str = util_text_join_list(player_rotation_descriptions);
+
         // ... so no need setting the [current_turn_nr] here. 
         update minimal_game.game (
             .is_finished = true, 
             .is_finished_by_claim = true, // Must be a claim
-            .finish_reason = game_end_type.ERROR);
+            .finish_reason = game_end_type.ERROR,
+            .player_rotation_descriptions = rot_desc_mega_str);
 
         // Don't create [event_game_end], that's only when the game ends BECAUSE of a move.
         // and here the error could come from anywhere, like opponent's move for example.

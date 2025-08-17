@@ -85,6 +85,7 @@ struct move_check_arguments {
     // The seed data used for the game. Only sent if game is over.
     random_seed: integer?;  // Random seed cannot be too big, must be less than 2^32
     seed_signature: byte_array?; // The signature of the [seed_material] (used to create the [random_seed].)
+    player_rotation_descriptions: list<text>; // The player rotation descriptions (only send if game is over, this is big)
 }
 
 // ------------------------------------------------------------------------------
