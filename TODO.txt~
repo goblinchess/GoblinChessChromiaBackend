@@ -1,4 +1,68 @@
 
+1. Call the query to fetch entire game.
+
+// ------------------------------------------------------------
+// Holds info about what happened during a rotation. 
+// 
+// Compressed data means we don't have full info, this is ideal for stepping through 
+// and analyzing entire (old) games.
+// ------------------------------------------------------------
+struct player_rotation_compressed {
+
+    // 1. Player rotation
+    rotation_nr: integer; // The rotation number.
+
+    // 2. Color
+    is_white: boolean; // True if this is a white move
+
+    rotation_description: text; // A description of what happened this rotation, almost chess notation.
+
+    // ----------------------
+    // 3. Card data
+    // ----------------------
+    // If the [curr_turn_nr] indicates that opponent has played a card, 
+    // but this is null, then it means that the card was skipped.
+    card_played_data: card_played_data? = null;
+
+    // ----------------------
+    // 4. Move data
+    // ----------------------
+    // Either a move or a skipped move (but not both)
+    move: move_compressed? = null;
+    skipped_move: skipped_move_compressed? = null;
+
+    // ----------------------
+    // 5. Neutral move
+    // ----------------------
+    // If the [curr_turn_nr] indicates that the neutral move has been completed,
+    // but this is null, then it means that the move was skipped.
+    // Note, for double moves, this will be the second move.
+    extra_move: move_compressed? = null;
+
+
+}
+
+// Describes the move that happened during a turn
+struct move_compressed {
+    turn_nr: integer; // The turn that this move belongs to
+    from_position: integer; // 0-63
+    to_position: integer; // 0-63
+    is_castle: boolean; // If the move is a castling move
+    is_check: boolean; // If the move causes check 
+    board_compressed_str: text; // A compressed string of the board state after the move.
+}
+
+// Describes a skipped move (Even a skipped move has some interesting data: portal travels and potential check mate)
+struct skipped_move_compressed {
+    turn_nr: integer; // The turn that this move belongs to
+    is_check: boolean; // Note: even if a switch happens during play card, it's during the skipped move we do the check/stale/mate calculation.
+    board_compressed_str: text; // A compressed string of the board state after the move.
+}
+
+
+
+
+2. Implement the board, where we can step through the game.
 
 Fix timeout ending for Local games/Bot.
 
@@ -11,8 +75,7 @@ TODO: Remove the damage from history in classical mode.
 
 Client Done: 
 
-
-
+1. 
 
 
  TODO Node: 
@@ -24,6 +87,7 @@ Client Done:
 
 
 Node DONE:
+
 
 
  Videos
