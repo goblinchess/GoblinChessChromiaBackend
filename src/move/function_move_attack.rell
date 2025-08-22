@@ -148,7 +148,7 @@ function move_attack_inner(
 
     val board_p: list<with_pos_and_alignment_and_type> = piece_get_all_as_wpat(minimal_game.game); 
     val board_o: list<with_pos_and_alignment_and_type> = vuln_get_obstacles_as_wpat(minimal_game.game); 
-    val portals: list<portal_simple> = portal_simple_get_all_by_owner(minimal_game.player_game, my_color);
+    val portals: list<portal_simple> = portal_simple_get_all(minimal_game.game);
     val board_positions_all = board_positions_all_constructor(board_p, board_o, portals, opp_vuln_ctxt);
 
     //log ("Move A.6.1 - calc move trees ");

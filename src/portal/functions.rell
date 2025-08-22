@@ -54,6 +54,29 @@ function portal_simple_get_all_by_owner(player_game: player_game, player_align: 
     return res;
 }
 
+// We put this factory here, since we don't want heavy dependencies in the portal_simple module.
+function portal_simple_get_all(gme: game): list<portal_simple> {
+
+    val ps = (p: portal, pg: player_game)@* {
+        p.owned_by == pg,
+        pg.game == gme
+    } (prtl = p.rowid, p.entry_position, p.exit_position, pg.is_white);
+
+    val res = list<portal_simple>();
+    for (p in ps) {
+
+        val calc_align = if (p.is_white) alignment.WHITE else alignment.BLACK;
+
+        val tmp = portal_simple(
+            rowid = p.prtl,
+            entry_pos = p.entry_position,
+            exit_pos = p.exit_position, 
+            owner_alignment = calc_align);
+        res.add(tmp);
+    }
+    return res;
+}
+
 // When a portal card is played, we need to set up the portal on the board.
 function portal_setup(owned_by: player_game, card: card, entry_pos: integer, exit_pos: integer) {
 

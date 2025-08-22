@@ -85,7 +85,7 @@ function move_peaceful_inner(
 
     val board_p: list<with_pos_and_alignment_and_type> = piece_get_all_as_wpat(minimal_game.game); 
     val board_o: list<with_pos_and_alignment_and_type> = vuln_get_obstacles_as_wpat(minimal_game.game); 
-    val portals: list<portal_simple> = portal_simple_get_all_by_owner(minimal_game.player_game, my_color);
+    val portals: list<portal_simple> = portal_simple_get_all(minimal_game.game);
     val board_positions_all = board_positions_all_constructor(board_p, board_o, portals, opp_vuln_ctxt);
 
 
@@ -175,14 +175,20 @@ function move_peaceful_inner(
     // B.1 Do this FIRST since lots of verification in here.
     val (new_turn, new_turn_nr, last_rot_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white, is_pawn_move);
 
-    // B.2 (Really simple for peaceful moves)
-    move_common_change_piece_position(game_id, last_rot_nr, p.vuln.a, m_args.from_position, m_args.to_position, board_positions_all, our_team);
-
-    // B.3 Castle needs to move the rook too
+    // B.2.a) Typically when castling we move king first, but I want the rook to be debugged at the correct place
     if (is_castle) {
+        log("game_id: " + game_id + " - Castling, moving rook from " + castle_rook_from + " to " + castle_rook_to);
         val a_rook = rook!!;
         update a_rook(.position = castle_rook_to!!);
+
+        // Extra: Update these data structures
+        val attack_allowed = false; // Think we should protest if the position is occupied.
+        board_place_character_at(board_positions_all, castle_rook_from!!, castle_rook_to, attack_allowed);
+        team_move_character_from_to(our_team, castle_rook_from, castle_rook_to);
     }
+
+    // B.2.b) (Really simple for peaceful moves)
+    move_common_change_piece_position(game_id, last_rot_nr, p.vuln.a, m_args.from_position, m_args.to_position, board_positions_all, our_team);
 
     // ----------------
     // Apply end_args
