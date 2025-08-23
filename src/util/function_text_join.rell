@@ -5,6 +5,7 @@ val separator = "#^#";
 
 // Joins a list of text into one big text.
 function util_text_join_list(player_rotation_summaries: list<text>) :text {
+    //log("Joining list of " + player_rotation_summaries.size() + " rot descriptions");
     var player_rotation_summaries_str = "";
     var is_first = true;
     var i = 0;
@@ -17,8 +18,10 @@ function util_text_join_list(player_rotation_summaries: list<text>) :text {
         } else {
             player_rotation_summaries_str += separator + player_rotation_summary;
         }
+        is_first = false;
     }
 
+    //log("Joining list restult: " + player_rotation_summaries_str);
     return player_rotation_summaries_str;
 }
 

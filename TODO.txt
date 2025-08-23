@@ -1,7 +1,9 @@
 
+
+
 Show check.
 Test a game with multiple spells.
-
+Create remove board button.
 
 
 Fix timeout ending for Local games/Bot.
