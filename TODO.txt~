@@ -1,5 +1,4 @@
 
-Bug: only first row of description is stored in the game table?
 
 
 Show check.
@@ -11,9 +10,14 @@ Fix timeout ending for Local games/Bot.
 
 TODO: Remove the damage from history in classical mode.
 
+Test everything in chaos mode
+
 
  TODO Client: 
 -------------
+Remove battle dice in classic mode.
+
+
  
 
 Client Done: 
