@@ -204,13 +204,26 @@ function move_peaceful_inner(
     // (Must happen after the portal travel, if a pawn travels to an exit at the final rank)
     promote_all_pawns_at_final_rank(game_id, minimal_game.game, new_turn, board_positions_all, our_team, my_color, end_args);
 
-    // Every change has been made, we can compress the board
-    val board_compressed_str: text = board_compress(game_id, board_positions_all);
     // ----------------
     // Check/stale/mate
     // ----------------
     // B.5 Verify if we just won via checkmate?
     val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args);
+
+    // Every change has been made, we can compress the board
+    val board_compressed_str: text = board_compress_move(
+        game_id, 
+        board_positions_all, 
+        end_args, 
+        m_args, 
+        minimal_game.is_white, 
+        is_check, 
+        null, // Only for attacks
+        null, // Only for attacks
+        is_castle, 
+        castle_rook_from, 
+        castle_rook_to
+    );
 
     var is_repetition = false; 
     var is_50_rule = false; 

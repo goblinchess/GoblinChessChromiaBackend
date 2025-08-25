@@ -7,6 +7,7 @@ import ^.end.*;
 import ^.battle.*;
 import ^.external_data.*;
 // Heavy modules
+import ^.compress.*;
 import ^.move_base.*;
 import ^.game.*;
 import ^.turn.*;

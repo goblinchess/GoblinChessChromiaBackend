@@ -15,10 +15,19 @@ function align_wpat_create_obstacle(pos: integer): with_pos_and_alignment_and_ty
 // This can be used to print the board for example, or to 
 // encode the entire board setup as a condensed string.
 // -------------------------------------------------
-function align_wpat_to_code(wpat: with_pos_and_alignment_and_type): text {
+function align_wpat_to_code(wpat: with_pos_and_alignment_and_type, is_white_turn: boolean, is_check: boolean): text {
+    var check_white_king: boolean = false;
+    var check_black_king: boolean = false;
+    if (is_white_turn) {
+        check_black_king = is_check; // Only black king can be checked
+    } else {
+        check_white_king = is_check; // Only white king can be checked
+    }
+
+    
     when(wpat.alignment) {
-        alignment.WHITE -> return align_white_to_code_plus(wpat.p_type, wpat.is_knighted);
-        alignment.BLACK -> return align_black_to_code_plus(wpat.p_type, wpat.is_knighted);
+        alignment.WHITE -> return align_white_to_code_plus(wpat.p_type, wpat.is_knighted, check_white_king); 
+        alignment.BLACK -> return align_black_to_code_plus(wpat.p_type, wpat.is_knighted, check_black_king);
         alignment.NEUTRAL -> return align_neutral_to_code_plus(wpat.p_type, wpat.is_knighted, wpat.is_obstacle);
         else -> {
             log("Error: align_wpat_to_code() what is this?: " + wpat.alignment + ".");
@@ -27,14 +36,14 @@ function align_wpat_to_code(wpat: with_pos_and_alignment_and_type): text {
     }
 }
 
-function align_white_to_code_plus(p_type: piece_type, is_knighted: boolean): text {
-    val x = align_white_to_code(p_type);
-    return align_inner_add_knighted(x, is_knighted);
+function align_white_to_code_plus(p_type: piece_type, is_knighted: boolean, is_check: boolean): text {
+    var x = align_white_to_code(p_type);
+    return align_inner_add_postfix(x, is_knighted, p_type, is_check);
 }
 
-function align_black_to_code_plus(p_type: piece_type, is_knighted: boolean): text {
-    val x = align_black_to_code(p_type);
-    return align_inner_add_knighted(x, is_knighted);
+function align_black_to_code_plus(p_type: piece_type, is_knighted: boolean, is_check: boolean): text {
+    var x = align_black_to_code(p_type);
+    return align_inner_add_postfix(x, is_knighted, p_type, is_check);
 }
 
 function align_neutral_to_code_plus(
@@ -44,7 +53,7 @@ function align_neutral_to_code_plus(
 ): text {
     if (is_obstacle) {
         // Expected
-        return align_inner_add_knighted("O", is_knighted); // Not sure if they can be knighted?
+        return align_inner_add_postfix("O", is_knighted, p_type, false); // Not sure if they can be knighted?
     } else {
         // Cannot happen in v1.0, but v2.0 should have neutral pieces.
         val x = align_black_to_code(p_type);
@@ -52,20 +61,30 @@ function align_neutral_to_code_plus(
     }
 }
 
-function align_inner_add_knighted(x: text, is_knighted: boolean): text {
+function align_inner_add_postfix(x: text, is_knighted: boolean, p_type: piece_type, is_check: boolean): text {
+    var ret = x;
+    var has_postfix = false;
+
     if (is_knighted) {
-        return x + "k"; // This is a "knighted piece"
-    } else {
-        return x + " "; // To make all pieces two character long.
+        ret += "k"; // This is a "knighted piece"
+        has_postfix = true;
+    } 
+    if (p_type == piece_type.KING and is_check) {
+        ret += "+"; 
+        has_postfix = true;
     }
+    if (not has_postfix) {
+        ret += " "; // To make all pieces two character long.
+    }
+    return ret;
 }
 
 // Not used in ver 1.0, but let's add it anyways 
 function align_inner_add_knighted_neutral(x: text, is_knighted: boolean): text {
     if (is_knighted) {
-        return "+" + x; // This is a "knighted neutral piece"
+        return "+" + x; // This is a "knighted neutral piece". TODO: Remove "+" means check.
     } else {
-        return "=" + x; // "=" means neutral. Not sure what symbol would be best?
+        return "=" + x; // "=" means neutral. TODO: Remove, "=" means promoted
     }
 }
 

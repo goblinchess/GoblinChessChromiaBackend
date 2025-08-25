@@ -1,0 +1,174 @@
+
+
+
+// ---------------------------------------------------------------------
+// Returns the entire board as a compact text string. 
+// 
+// Note:
+// This format is not ideal for showing a human, but is good enought to store in the DB.
+// This should contain the same info as the debug version, so that we could
+// send these strings to the client, and it should be able to display the board
+// in some primitive manner.
+//
+// ? -> !  = Peaceful move (from, to)
+// ? -> x! = Attack move, if the piece manages to kill (capture) the foe. It both ends up there (!) and kills (x).
+// - -> @  = Teleportation from to.
+// % -> $  = Rook from -> to during castling
+// *       = Attackable en-passant square
+// ^       = Resurrecion took place here.
+// =       = Promotion to queen
+//
+// k+ = Black king in check
+// nk = Black knighted knight (=enchanted)
+// ---------------------------------------------------------------------
+function board_compress_move(
+    game_id: integer, 
+    board_all: board_positions_all,
+    end_args: move_end_events_arguments?,
+    m_args: move_arguments?,
+    is_white_turn: boolean,
+    is_check: boolean,
+    att_args: move_attack_arguments?,
+    en_passant_defender_orig_pos: integer?, // During en-passant the defender pawn is moved from its original position.
+    is_castle: boolean,
+    castle_rook_from: integer?,
+    castle_rook_to: integer?
+): text {
+    var out = "";
+
+    // Move arguments
+    val piece_from: integer? = m_args?.from_position;
+    val piece_to: integer? = m_args?.to_position;
+    val attack_pos = att_args?.attacked_position;
+
+    // End events
+    val used_portals: list<integer> = if (end_args != null) end_args.used_portals else [];
+    val resurrection_pos: integer? = end_args?.resurrection_pos;
+    val promotions: list<integer> = if (end_args != null) end_args.promotions else [];
+
+    for (pos in range(0, 64)) {
+        var obj = board_compress_object(board_all, pos, is_white_turn, is_check);
+
+        // Normal moves
+        if (pos == piece_from) {
+            obj += "?";
+        }
+        if (pos == piece_to) {
+            obj += "!";
+        }
+        if (pos == attack_pos) {
+            obj += "x";
+        }
+
+        // Castling
+        if (is_castle) {
+            if (pos == castle_rook_from) {
+                obj += "%"; // The rook's old pos
+            } else if (pos == castle_rook_to) {
+                obj += "$"; // The rook's new pos
+            }
+        }
+
+
+        if (pos == en_passant_defender_orig_pos) {
+            obj += "-"; // We see this as teleportation.
+        }
+
+        obj += board_compress_end_args(board_all, pos, used_portals, resurrection_pos, promotions);
+
+        if (obj.size() > 0) { // We only store squares with something on them.
+            out += pos + ":" + obj + ","; // Gotta store the square nr.
+        }
+    }
+    return out;
+}
+
+function board_compress_skip(
+    game_id: integer, 
+    board_all: board_positions_all,
+    end_args: move_end_events_arguments?,
+    is_check: boolean,
+    is_white_turn: boolean
+): text {
+    var out = "";
+
+    val used_portals: list<integer> = if (end_args != null) end_args.used_portals else [];
+    val resurrection_pos: integer? = end_args?.resurrection_pos;
+    val promotions: list<integer> = if (end_args != null) end_args.promotions else [];
+
+    for (pos in range(0, 64)) {
+        var obj = board_compress_object(board_all, pos, is_white_turn, is_check);
+
+        obj += board_compress_end_args(board_all, pos, used_portals, resurrection_pos, promotions);
+
+        if (obj.size() > 0) { // We only store squares with something on them.
+            out += pos + ":" + obj + ","; // Gotta store the square nr.
+        }
+    }
+    return out;
+}
+
+function board_compress_end_args(board_all: board_positions_all, pos: integer, used_portals: list<integer>, resurrection_pos: integer?, promotions: list<integer>): text {
+    var obj = "";
+
+    if (resurrection_pos != null and pos == resurrection_pos) {
+        obj += "^"; // Where the resurrected piece popped up
+    }
+
+    for (portalPos in used_portals) {
+        if (board_all.board_portal_entry.contains(pos)) 
+        {
+            val p_simple: portal_simple = board_all.board_portal_entry[pos];
+            if (pos == p_simple.entry_pos) {
+                obj += "-";
+            } else if (pos == p_simple.exit_pos) {
+                obj += "@";
+            }
+        }
+    }
+
+    for (promotionPos in promotions) {
+        if (pos == promotionPos) {
+            obj += "="; 
+        }
+    }
+
+    return obj;
+}
+
+// We're using the same characters as when debugging.
+function board_compress_object(board_all: board_positions_all, pos: integer, is_white_turn: boolean, is_check: boolean): text {
+    var out = "";
+    if (board_all.board_characters.contains(pos)) {
+        val piece = board_all.board_characters[pos];
+        out += align_wpat_to_code(piece, is_white_turn, is_check).trim();
+    } else if (board_all.board_obstacles.contains(pos)) {
+        out += "O";
+    }
+
+    // We don't have the requirement that we max must have two characters per square.
+    if (board_all.board_vuln_square.contains(pos)) {
+        out += "*"; // Somewhat unclear if this is good to save, but the client can choose to ignore this one on the board if it doesn't want it.
+    } 
+    
+    if (board_all.board_portal_entry.contains(pos)) {
+        // We only show portal entry if the square is empty
+        val portal = board_all.board_portal_entry[pos];
+        if (portal.owner_alignment == alignment.WHITE) {
+            out += "1>";
+        } else {
+            out += "2>";
+        }
+    } 
+    if (board_all.board_portal_exit.contains(pos)) {
+        // We only show portal exit if the square is empty
+        val portal = board_all.board_portal_exit[pos];
+        if (portal.owner_alignment == alignment.WHITE) {
+            out += "<1";
+        } else {
+            out += "<2";
+        }
+    }
+    
+    return out;
+}

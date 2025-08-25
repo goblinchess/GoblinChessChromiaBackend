@@ -1,9 +1,5 @@
 
 
-When a spell has no picks, should we make ALL squares blue? For resurrect it looks really strtange that the board doesn't change at all.
-
-
-Show check.
 Test a game with multiple spells.
 Create remove board button.
 

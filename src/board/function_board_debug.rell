@@ -26,7 +26,7 @@ function board_debug_print(game_id: integer, last_rot_nr: integer, board_all: bo
 function board_debug_object(board_all: board_positions_all, pos: integer): text {
     if (board_all.board_characters.contains(pos)) {
         val piece = board_all.board_characters[pos];
-        return align_wpat_to_code(piece);
+        return align_wpat_to_code(piece, false, false); // Don't care about check here
     } else if (board_all.board_obstacles.contains(pos)) {
         return "O ";
     } else if (board_all.board_vuln_square.contains(pos)) {
@@ -35,17 +35,17 @@ function board_debug_object(board_all: board_positions_all, pos: integer): text 
         // We only show portal entry if the square is empty
         val portal = board_all.board_portal_entry[pos];
         if (portal.owner_alignment == alignment.WHITE) {
-            return "->";
+            return "1>";
         } else {
-            return "=>";
+            return "2>";
         }
     } else if (board_all.board_portal_exit.contains(pos)) {
         // We only show portal exit if the square is empty
         val portal = board_all.board_portal_exit[pos];
         if (portal.owner_alignment == alignment.WHITE) {
-            return "<-";
+            return "<1";
         } else {
-            return "<=";
+            return "<2";
         }
     } else {
         return ". "; // Empty
