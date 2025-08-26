@@ -129,6 +129,7 @@ struct player_rotation_compressed {
     // Either a move or a skipped move (but not both)
     move: move_compressed? = null;
     skipped_move: skipped_move_compressed? = null;
+    move_end_compressed: text? = null; // Has value if something happened after the move.
 
     // ----------------------
     // 5. Neutral move
@@ -137,6 +138,7 @@ struct player_rotation_compressed {
     // but this is null, then it means that the move was skipped.
     // Note, for double moves, this will be the second move.
     extra_move: move_compressed? = null;
+    extra_move_end_compressed: text? = null; // Has value if something happened after the move.
 
 
 }

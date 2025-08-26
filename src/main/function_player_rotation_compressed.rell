@@ -19,6 +19,9 @@ function player_rotation_compressed_get_all(game_id: integer, gme: game, g_max_r
     // Fetch all skipped moves
     val turn_skipped_map: map<integer, skipped_move_compressed> = move_base_compressed_find_all_skipped_moves(game_id, gme);
 
+    // Fetch the move ends (not all moves have move ends)
+    val turn_move_end_map: map<integer, text> = move_base_compressed_find_all_moves_ends(game_id, gme);
+
     val rot_desc_mega_str = gme.player_rotation_descriptions;
     val rot_desc_map: map<integer, text> = util_text_split_to_map(rot_desc_mega_str);
 
@@ -43,10 +46,12 @@ function player_rotation_compressed_get_all(game_id: integer, gme: game, g_max_r
         // 2. The standard move is played next (only normal OR skipped will be found, not both.)
         val found_move: move_compressed? = turn_move_map.get_or_null(curr_turn_nr);
         val found_skipped: skipped_move_compressed? = turn_skipped_map.get_or_null(curr_turn_nr);
+        val found_move_end: text? = turn_move_end_map.get_or_null(curr_turn_nr);
         curr_turn_nr += 1;
 
         // 3. The extra move is played the following turn (usually empty)
         val found_extra_move: move_compressed? = turn_move_map.get_or_null(curr_turn_nr);
+        val found_extra_move_end: text? = turn_move_end_map.get_or_null(curr_turn_nr);
         curr_turn_nr += 1;
 
 
@@ -57,7 +62,9 @@ function player_rotation_compressed_get_all(game_id: integer, gme: game, g_max_r
             card_played_data = found_card,
             move = found_move,
             skipped_move = found_skipped,
-            extra_move = found_extra_move
+            move_end_compressed = found_move_end,
+            extra_move = found_extra_move,
+            extra_move_end_compressed = found_extra_move_end
         );
 
         ret_list.add(old_rot_data);

@@ -40,6 +40,21 @@ function board_portal_find_my_from_entry(
     return null;
 }
 
+// Do we have a portal owned by "my_align" that has "pos" as its exit point?
+function board_portal_find_my_from_exit(
+    board_positions_all, 
+    pos: integer, 
+    align: alignment
+): portal_simple? {
+    if (board_positions_all.board_portal_exit.contains(pos)) {
+        val portal: portal_simple = board_positions_all.board_portal_exit[pos];
+        if (board_portal_is_owned_by(portal, align)) {
+            return portal;
+        }
+    }
+    return null;
+}
+
 // --------------------------------------
 // Returns all portals where:
 // b) the portal is owned by me

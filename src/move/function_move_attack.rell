@@ -222,9 +222,37 @@ function move_attack_inner(
     val attacker_still_alive = move_battle_update_health(battle_res, is_chaos_mode, p, opp_vuln, board_positions_all, our_team, opp_team);
 
     if (attacker_still_alive) {
-        // B.3 Same as for peaceful move
+        // B.2.b Same as for peaceful move
         move_common_change_piece_position(game_id, last_rot_nr, p.vuln.a, m_args.from_position, m_args.to_position, board_positions_all, our_team);
     }
+
+    // ----------------
+    // B.3 Compress the board before we apply the end arguments.
+    // ----------------
+    val check_sb_data = check_sb_build_calculator(
+        game_id,
+        opp_king.vuln.position, // We're supposed to check the opponent's king
+        our_team, // we are the checking team
+        board_positions_all // This isn't a hypothetical move, must use the new board positions
+    );
+    // Just a temporary check calc (not very expensive)
+    val (is_pre_check, check_pre_desc) = check_sb_is_check_with_desc(check_sb_data);
+    if (is_pre_check) {
+        log("game_id: "+game_id+" - Attack Move pre check found: " + check_pre_desc);
+    }
+    val en_passant_defender_orig_pos: integer? = if (en_passant) opp_vuln.position else null;
+    val (board_compressed_before_str: text, naked_compressed_before_str: text) = board_compress_move_only(
+        game_id, 
+        board_positions_all, 
+        m_args, 
+        minimal_game.is_white, 
+        is_pre_check, 
+        att_args, 
+        en_passant_defender_orig_pos, 
+        false, // Only for peaceful
+        null, // Only for peaceful
+        null // Only for peaceful
+    );
 
     // ----------------
     // 4. Apply end_args
@@ -284,22 +312,6 @@ function move_attack_inner(
     // B.5.a Verify if we just won via checkmate?
     val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_align, opp_king, our_team, opp_team, check_args);
 
-    // Every change has been made, we can compress the board
-    val en_passant_defender_orig_pos: integer? = if (en_passant) opp_vuln.position else null;
-    val board_compressed_str: text = board_compress_move(
-        game_id, 
-        board_positions_all, 
-        end_args, 
-        m_args, 
-        minimal_game.is_white, 
-        is_check, 
-        att_args, 
-        en_passant_defender_orig_pos, 
-        false, // Only for peaceful
-        null, // Only for peaceful
-        null // Only for peaceful
-    );
-
     // B.5.b Verify our attack generated a draw?
     var is_insufficient_mating_material = false;
     if (not is_checkmate and not is_stalemate) { // No point checking this if game is over.
@@ -310,7 +322,18 @@ function move_attack_inner(
 
     // B.6 Turn and static move
     val is_castle = false; // Must be false for attacks
-    val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_enchanted_jump, is_check, board_compressed_str); 
+    val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_enchanted_jump, is_pre_check, is_check, board_compressed_before_str, naked_compressed_before_str); 
+
+    if (move_end_events_has_data(end_args)) { // Only do this if something happened in the end of the turn.
+        val board_compressed_after_str: text = board_compress_after_move(
+            game_id, 
+            board_positions_all, 
+            end_args, 
+            minimal_game.is_white, 
+            is_check // <-- Using the re-calculated is_check
+        );
+        move_end_create(new_turn, board_compressed_after_str);
+    }
 
     // ----------------
     // B.7. Create events

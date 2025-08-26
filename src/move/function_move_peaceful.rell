@@ -191,6 +191,33 @@ function move_peaceful_inner(
     move_common_change_piece_position(game_id, last_rot_nr, p.vuln.a, m_args.from_position, m_args.to_position, board_positions_all, our_team);
 
     // ----------------
+    // B.3 Compress the board before we apply the end arguments.
+    // ----------------
+    val check_sb_data = check_sb_build_calculator(
+        game_id,
+        opp_king.vuln.position, // We're supposed to check the opponent's king
+        our_team, // we are the checking team
+        board_positions_all // This isn't a hypothetical move, must use the new board positions
+    );
+    // Just a temporary check calc (not very expensive)
+    val (is_pre_check, check_pre_desc) = check_sb_is_check_with_desc(check_sb_data);
+    if (is_pre_check) {
+        log("game_id: "+game_id+" - Peaceful Move pre check found: " + check_pre_desc);
+    }
+    val (board_compressed_before_str: text, naked_compressed_before_str: text) = board_compress_move_only(
+        game_id, 
+        board_positions_all, 
+        m_args, 
+        minimal_game.is_white, 
+        is_pre_check, 
+        null, // Only for attacks
+        null, // Only for attacks
+        is_castle, 
+        castle_rook_from, 
+        castle_rook_to
+    );
+
+    // ----------------
     // Apply end_args
     // ----------------
     // B.4.a Use all unblocked portals
@@ -210,20 +237,7 @@ function move_peaceful_inner(
     // B.5 Verify if we just won via checkmate?
     val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args);
 
-    // Every change has been made, we can compress the board
-    val board_compressed_str: text = board_compress_move(
-        game_id, 
-        board_positions_all, 
-        end_args, 
-        m_args, 
-        minimal_game.is_white, 
-        is_check, 
-        null, // Only for attacks
-        null, // Only for attacks
-        is_castle, 
-        castle_rook_from, 
-        castle_rook_to
-    );
+
 
     var is_repetition = false; 
     var is_50_rule = false; 
@@ -241,7 +255,7 @@ function move_peaceful_inner(
         // Also: note that we only look in the "move" entity, not in "skipped_move", since if a move was skipped it's a signal that 
         // something "progressing" is going on, and should not be counted as a repetition move.
         // ----------------
-        val comp_boards = move_base_find_duplicated_boards(game_id, minimal_game.game, board_compressed_str);
+        val comp_boards = move_base_find_duplicated_boards(game_id, minimal_game.game, naked_compressed_before_str);
         if (comp_boards > 1) {
             // We found (at least) two copies of this setup. This will be the third time the same board comes up => Must make it a draw.
             log("game_id: " + game_id + " - 3x move repetition rule triggered.");
@@ -266,7 +280,18 @@ function move_peaceful_inner(
     }
 
     // B.6 Create move event
-    val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_enchanted_jump, is_check, board_compressed_str); 
+    val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_enchanted_jump, is_pre_check, is_check, board_compressed_before_str, naked_compressed_before_str); 
+
+    if (move_end_events_has_data(end_args)) { // Only do this if something happened in the end of the turn.
+        val board_compressed_after_str: text = board_compress_after_move(
+            game_id, 
+            board_positions_all, 
+            end_args, 
+            minimal_game.is_white, 
+            is_check // <-- Using the re-calculated is_check
+        );
+        move_end_create(new_turn, board_compressed_after_str);
+    }
 
     // ----------------
     // B.7 Is it over?

@@ -6,6 +6,7 @@ struct move_compressed {
     from_position: integer; // 0-63
     to_position: integer; // 0-63
     is_castle: boolean; // If the move is a castling move
+    is_pre_check: boolean; // "true" if we have a check before the "end-events" have played out.
     is_check: boolean; // If the move causes check 
     board_compressed_str: text; // A compressed string of the board state after the move.
 }
@@ -13,7 +14,8 @@ struct move_compressed {
 // Describes a skipped move (Even a skipped move has some interesting data: portal travels and potential check mate)
 struct skipped_move_compressed {
     turn_nr: integer; // The turn that this move belongs to
+    is_pre_check: boolean; // "true" if we have a check before the "end-events" have played out.
     is_check: boolean; // Note: even if a switch happens during play card, it's during the skipped move we do the check/stale/mate calculation.
-    board_compressed_str: text; // A compressed string of the board state after the move.
+    board_compressed_str: text; // A compressed string of the board state after the spell's effect has been taken in.
 }
 

@@ -21,10 +21,14 @@
 // k+ = Black king in check
 // nk = Black knighted knight (=enchanted)
 // ---------------------------------------------------------------------
-function board_compress_move(
+
+
+// Only cares about the move, but nothing after
+// Returns first the "rich" compression (for the UI) and then 
+// the "naked" version, without movements on it (for board comparisons).
+function board_compress_move_only(
     game_id: integer, 
     board_all: board_positions_all,
-    end_args: move_end_events_arguments?,
     m_args: move_arguments?,
     is_white_turn: boolean,
     is_check: boolean,
@@ -33,21 +37,20 @@ function board_compress_move(
     is_castle: boolean,
     castle_rook_from: integer?,
     castle_rook_to: integer?
-): text {
+): (text, text) {
     var out = "";
+    var out_naked = "";
+
+    val align = if (is_white_turn) alignment.WHITE else alignment.BLACK;
 
     // Move arguments
     val piece_from: integer? = m_args?.from_position;
     val piece_to: integer? = m_args?.to_position;
     val attack_pos = att_args?.attacked_position;
 
-    // End events
-    val used_portals: list<integer> = if (end_args != null) end_args.used_portals else [];
-    val resurrection_pos: integer? = end_args?.resurrection_pos;
-    val promotions: list<integer> = if (end_args != null) end_args.promotions else [];
-
     for (pos in range(0, 64)) {
         var obj = board_compress_object(board_all, pos, is_white_turn, is_check);
+        var obj_naked = obj;
 
         // Normal moves
         if (pos == piece_from) {
@@ -69,12 +72,34 @@ function board_compress_move(
             }
         }
 
-
         if (pos == en_passant_defender_orig_pos) {
             obj += "-"; // We see this as teleportation.
         }
 
-        obj += board_compress_end_args(board_all, pos, used_portals, resurrection_pos, promotions);
+        if (obj.size() > 0) { // We only store squares with something on them.
+            out += pos + ":" + obj + ","; // Gotta store the square nr.
+        }
+        if (obj_naked.size() > 0) { // We only store squares with something on them.
+            out_naked += pos + ":" + obj_naked + ","; // Gotta store the square nr.
+        }
+    }
+    return (out, out_naked);
+}
+
+
+// Only shows the basic stuff, but this will show the effect of the card.
+function board_compress_only_skip(
+    game_id: integer, 
+    board_all: board_positions_all,
+    is_white_turn: boolean,
+    is_check: boolean
+): text {
+    var out = "";
+
+    val align = if (is_white_turn) alignment.WHITE else alignment.BLACK;
+
+    for (pos in range(0, 64)) {
+        var obj = board_compress_object(board_all, pos, is_white_turn, is_check);
 
         if (obj.size() > 0) { // We only store squares with something on them.
             out += pos + ":" + obj + ","; // Gotta store the square nr.
@@ -83,15 +108,19 @@ function board_compress_move(
     return out;
 }
 
-function board_compress_skip(
+// Takes into account everything that happened after the move.
+function board_compress_after_move(
     game_id: integer, 
     board_all: board_positions_all,
     end_args: move_end_events_arguments?,
-    is_check: boolean,
-    is_white_turn: boolean
+    is_white_turn: boolean,
+    is_check: boolean
 ): text {
     var out = "";
 
+    val align = if (is_white_turn) alignment.WHITE else alignment.BLACK;
+
+    // End events
     val used_portals: list<integer> = if (end_args != null) end_args.used_portals else [];
     val resurrection_pos: integer? = end_args?.resurrection_pos;
     val promotions: list<integer> = if (end_args != null) end_args.promotions else [];
@@ -99,7 +128,9 @@ function board_compress_skip(
     for (pos in range(0, 64)) {
         var obj = board_compress_object(board_all, pos, is_white_turn, is_check);
 
-        obj += board_compress_end_args(board_all, pos, used_portals, resurrection_pos, promotions);
+        // Don't care about the normal move here
+
+        obj += board_compress_end_args(board_all, pos, align, used_portals, resurrection_pos, promotions);
 
         if (obj.size() > 0) { // We only store squares with something on them.
             out += pos + ":" + obj + ","; // Gotta store the square nr.
@@ -108,20 +139,38 @@ function board_compress_skip(
     return out;
 }
 
-function board_compress_end_args(board_all: board_positions_all, pos: integer, used_portals: list<integer>, resurrection_pos: integer?, promotions: list<integer>): text {
+
+function board_compress_end_args(board_all: board_positions_all, pos: integer, align: alignment, used_portals: list<integer>, resurrection_pos: integer?, promotions: list<integer>): text {
     var obj = "";
 
     if (resurrection_pos != null and pos == resurrection_pos) {
         obj += "^"; // Where the resurrected piece popped up
     }
 
-    for (portalPos in used_portals) {
-        if (board_all.board_portal_entry.contains(pos)) 
-        {
-            val p_simple: portal_simple = board_all.board_portal_entry[pos];
-            if (pos == p_simple.entry_pos) {
+    val enp: portal_simple? = board_portal_find_my_from_entry(board_all, pos, align);
+    if (enp != null) {
+        // There's only one portal that could be in question, but we still don't know if it was USED this turn?
+        for (portalEntryPos in used_portals) {
+            if (portalEntryPos == enp.entry_pos) {
+                // This portal was used. Last check
+                if (pos != enp.entry_pos) {
+                    log("Internal Error: Something is wrong! portal entry pos: "+ enp.entry_pos + " != pos: " + pos);
+                }
                 obj += "-";
-            } else if (pos == p_simple.exit_pos) {
+            }
+        }
+    }
+
+    val exp: portal_simple? = board_portal_find_my_from_exit(board_all, pos, align);
+    if (exp != null) 
+    {
+        // There's only one portal that could be in question, but we still don't know if it was USED this turn?
+        for (portalEntryPos in used_portals) {
+            if (portalEntryPos == exp.entry_pos) {
+                // This portal was used. Last check
+                if (pos != exp.exit_pos) {
+                    log("Internal Error: Something is wrong! portal exit pos: "+ exp.exit_pos + " != pos: " + pos);
+                }
                 obj += "@";
             }
         }

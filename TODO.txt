@@ -1,5 +1,5 @@
-
-
+Test check and pre_check?
+Test 3x repetition (naked string)
 Test a game with multiple spells.
 Create remove board button.
 
@@ -24,6 +24,7 @@ Client Done:
 
  TODO Node: 
 -------------
+
  
  4. Use Luck
 
@@ -31,6 +32,8 @@ Client Done:
 
 
 Node DONE:
+
+
 
 
 

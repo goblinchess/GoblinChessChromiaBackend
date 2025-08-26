@@ -11,18 +11,28 @@ entity move {
 
     // Some extra info
     is_castle: boolean;
-    is_check: boolean;
+    is_pre_check: boolean; // "true" if we have a check before the "end-events" have played out.
+    is_check: boolean; // "true" if opponent is in check when this turn is completely over.
 
     board_compressed_str: text; // A compressed string of the board state after the move.
+    board_compressed_naked_str: text; // A compressed string of the board state after the move, without !?+-@* (=no movement signals).
+}
+
+// Only use this when something happens after the move, promation/resurrection/portal travel.
+entity move_end {
+    index turn: turn; // The turn when this move was made
+    board_compressed_str: text; // A compressed string of the board state after the post-move events
 }
 
 // Even a skipped move has a lot of data, portal travels and potential check mate.
 entity skipped_move {
     index turn: turn; // The turn when this move was skipped
-    is_check: boolean; // Note: even if a switch happens during play card, it's during the skipped move we do the check/stale/mate calculation.
+    // Note: even if a switch happens during play card, it's during the skipped move we do the check/stale/mate calculation.
+    is_pre_check: boolean; // "true" if we have a check before the "end-events" have played out.
+    is_check: boolean;  // "true" if opponent is in check when this turn is completely over.
 
-    // Pieces are being promoted, travelling portals etc even on skipped moves. Must save the board.
-    board_compressed_str: text; // A compressed string of the board state after the move.
+    // A spell might have changed the board. 
+    board_compressed_str: text; // A compressed string of the board state
 }
 
 // A move that is an attack (perhaps a capture)

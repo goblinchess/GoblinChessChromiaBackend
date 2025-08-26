@@ -115,8 +115,10 @@ function move_event_creation(
         piece,
         is_castle: boolean, 
         is_enchanted_jump: boolean,
+        is_pre_check: boolean,
         is_check: boolean, 
-        board_compressed_str: text
+        board_compressed_str: text,
+        board_compressed_naked_str: text
 ): move
 {
     // Create move entity
@@ -126,8 +128,10 @@ function move_event_creation(
         from_position = m_args.from_position, 
         to_position = m_args.to_position,
         is_castle = is_castle,
+        is_pre_check = is_pre_check,
         is_check = is_check,
-        board_compressed_str = board_compressed_str
+        board_compressed_str = board_compressed_str,
+        board_compressed_naked_str = board_compressed_naked_str
     );
 
     if (is_enchanted_jump) {
@@ -135,6 +139,13 @@ function move_event_creation(
     }
 
     return mv;
+}
+
+function move_end_create(new_turn: turn, board_compressed_str: text) {
+    create move_end (
+        .turn = new_turn,
+        .board_compressed_str = board_compressed_str
+    );
 }
 
 

@@ -4,10 +4,10 @@
 // Find dupcliacted boards
 // ------------------------------------------------------------------------------
 
-function move_base_find_duplicated_boards(game_id: integer, gme: game, compressed_board_str: text): integer {
+function move_base_find_duplicated_boards(game_id: integer, gme: game, new_naked_str: text): integer {
 
     val res = (m: move, t: turn) @* {
-            m.board_compressed_str == compressed_board_str,
+            m.board_compressed_naked_str == new_naked_str, // Comparing the naked compressions, since there are many ways of arriving at the same board.
             m.turn == t,
             t.game == gme // Everything from the same game should be searched
         } ( m );

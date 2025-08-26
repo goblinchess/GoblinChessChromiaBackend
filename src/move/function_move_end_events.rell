@@ -1,0 +1,16 @@
+
+
+function move_end_events_has_data(end_args: move_end_events_arguments?): boolean {
+    if (end_args != null) {
+        if (end_args.used_portals.size() > 0) {
+            return true;
+        } 
+        if (end_args.resurrection_pos != null) {
+            return true;
+        }
+        if (end_args.promotions.size() > 0) {
+            return true;
+        }
+    }
+    return false;
+}
