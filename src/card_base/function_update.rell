@@ -1,0 +1,12 @@
+
+
+
+// Update the card that was played the given turn with the compressed board.
+//
+// The way we use this is pretty ugly! 
+// (We update the card after the card turn is over)
+// The reason is that we don't want to do the check calculation when the card is played.
+function card_base_update_with_compressed_board(trn_card_was_played: turn, comp_str: text) {
+
+    update (c: card)@  {c.turn == trn_card_was_played} (.board_compressed_str = comp_str);
+}

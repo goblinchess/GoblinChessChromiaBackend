@@ -1,12 +1,14 @@
+
+
+Handle completely empty games: Start game = Game over
+Show both player's names and rating 
+
+Test SWITCH + check
 Test check and pre_check?
 Test 3x repetition (naked string)
-Test a game with multiple spells.
 Create remove board button.
 
-
 Fix timeout ending for Local games/Bot.
-
-TODO: Remove the damage from history in classical mode.
 
 Test everything in chaos mode
 
@@ -14,12 +16,11 @@ Test everything in chaos mode
  TODO Client: 
 -------------
 
-
  
 
 Client Done: 
+-------------
 
-1. 
 
 
  TODO Node: 
@@ -32,7 +33,6 @@ Client Done:
 
 
 Node DONE:
-
 
 
 

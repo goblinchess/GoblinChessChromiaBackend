@@ -238,7 +238,7 @@ function card_play_inner_core(
     // -----------    
     // B.1. Create the turn record
     // Do this FIRST since lots of verification in here.
-    val (new_turn, new_turn_nr, last_rotation_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white, false);
+    val (new_turn, new_turn_nr, last_rotation_nr, prev_turn, prev_turn_type) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white, false);
 
     // B.2. Create the events
     for (reverted in reverted_list) {
@@ -249,7 +249,7 @@ function card_play_inner_core(
     val rnd_list = list<rnd_result>();
 
     // B.3. We create the card when it's played
-    val new_card = create card(minimal_game.player_game, new_turn, c_type, card_order_number);
+    val new_card = create card(minimal_game.player_game, new_turn, c_type, card_order_number, "");
 
     // B.4. Count down the cards left
     update minimal_game.player_game (.cards_left = cards_left - 1);
@@ -328,6 +328,13 @@ function card_play_inner_core(
             card_delayed_create_double_move(minimal_game.player_game, new_card);
         }
     }
+
+    // -----------    
+    // B.7. Set the compressed board.
+    // -----------    
+    //val is_check = false; // We don't care about check here, we do that calculation after move/skipped_move.
+    //val board_compressed_after_str: text = board_compress_only_check(game_id, board_positions_all, minimal_game.is_white, is_check);
+ 
 
     // B.7. Move to next turn
     log("game_id: " + game_id + " - /Play Card End, new turn type: " + new_turn_type + ", type: " + card_type_str + ", order number: " 

@@ -30,7 +30,7 @@ function card_skip_inner(
 
     // B.1. Create the turn record
     // Lots of verification in here.
-    val (new_turn, new_turn_nr, last_rotation_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white, false);
+    val (new_turn, new_turn_nr, last_rotation_nr, prev_turn, prev_turn_type) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white, false);
 
     // B.2 Maybe Revert Enchantments
     val reverted_list: list<card_enchantment_reverted> = card_enchantment_revert_timed_out(minimal_game.game, minimal_game.player_game);

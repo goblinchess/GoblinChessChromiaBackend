@@ -69,27 +69,18 @@ function move_primary_skip_inner(
     // B.1. Create the turn record
     // ----------------
     // lots of verification in here.
-    val (new_turn, new_turn_nr, last_rot_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white, false);
+    val (new_turn, new_turn_nr, last_rot_nr, prev_turn, prev_turn_type) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white, false);
 
     // Expensive, so we wait until last moment
     val our_team = team_build_from_db(minimal_game.game, my_color);
     val our_king = team_get_king(our_team)!!;
 
     // ----------------
-    // B.1.a Compress the board before we apply the end arguments.
+    // B.1.a Compress the board and save to the card entity
     // ----------------
-    val check_sb_data = check_sb_build_calculator(
-        game_id,
-        opp_king.vuln.position, // We're supposed to check the opponent's king
-        our_team, // we are the checking team
-        board_positions_all // This isn't a hypothetical move, must use the new board positions
-    );
-    // Just a temporary check calc (not very expensive)
-    val (is_pre_check, check_pre_desc) = check_sb_is_check_with_desc(check_sb_data);
-    if (is_pre_check) {
-        log("game_id: "+game_id+" - Skip Move pre check found: " + check_pre_desc);
-    }
-    val board_compressed_before_str: text = board_compress_only_skip(game_id, board_positions_all, minimal_game.is_white, is_pre_check);
+    // We know that prev turn was a card.
+    // Note: This belongs to the card's turn, but we do this here since we don't want to do the check calc during play card.
+    move_common_update_card_with_compressed_board(game_id, board_positions_all, minimal_game, opp_king.vuln.position, our_team, prev_turn);
 
     // ----------------
     // B.2. Apply end_args
@@ -119,7 +110,7 @@ function move_primary_skip_inner(
     // B.4 Verify if we just won via checkmate?
     val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args);
 
-    move_skipped_create(new_turn, is_pre_check, is_check, board_compressed_before_str);
+    move_skipped_create(new_turn, is_check);
 
     if (move_end_events_has_data(end_args)) { // Only do this if something happened in the end of the turn.
         val board_compressed_after_str: text = board_compress_after_move(
@@ -165,11 +156,9 @@ function move_primary_skip_inner(
 // -------------------------------------
 // Create a skipped move
 // -------------------------------------
-function move_skipped_create(new_turn: turn, is_pre_check: boolean, is_check: boolean, board_compressed_str: text) {
+function move_skipped_create(new_turn: turn, is_check: boolean) {
     create skipped_move (
         .turn = new_turn,
-        .is_pre_check = is_pre_check,
-        .is_check = is_check,
-        .board_compressed_str = board_compressed_str
+        .is_check = is_check
     );
 }

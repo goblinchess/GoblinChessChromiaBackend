@@ -27,7 +27,8 @@ function move_debug_str(m_args: move_arguments, check_args: move_check_arguments
 
 function move_common_get_turn_type(
     m_type: move_type, 
-    is_white: boolean): turn_type {
+    is_white: boolean
+): turn_type {
     if (is_white) { 
         if (m_type == move_type.DOUBLE_MOVE_LAST) {
             return turn_type.NEUTRAL_MOVE_1_HIJACKED;
@@ -115,7 +116,7 @@ function move_event_creation(
         piece,
         is_castle: boolean, 
         is_enchanted_jump: boolean,
-        is_pre_check: boolean,
+        after_move_check: boolean,
         is_check: boolean, 
         board_compressed_str: text,
         board_compressed_naked_str: text
@@ -128,7 +129,7 @@ function move_event_creation(
         from_position = m_args.from_position, 
         to_position = m_args.to_position,
         is_castle = is_castle,
-        is_pre_check = is_pre_check,
+        is_after_move_check = after_move_check,
         is_check = is_check,
         board_compressed_str = board_compressed_str,
         board_compressed_naked_str = board_compressed_naked_str
@@ -183,7 +184,7 @@ function move_cleanup_after_move(is_enchanted_jump: boolean, opp_vuln_ctxt: pre_
 // -----------------------------------------------------------------------
 function move_common_use_all_unblocked_portals(
     game_id: integer,
-    last_rot_nr: integer,
+    last_rot_nr: integer, // Only used for debug
     game,
     curr_turn: turn, 
     board_positions_all,
@@ -298,5 +299,30 @@ function move_common_use_portal_depending_on_piece_type(
     } else {
         return null;
     }
+}
+
+
+// If LAST turn was a card, we should call this method to update the [card] entity with the compressed board.
+function move_common_update_card_with_compressed_board(
+    game_id: integer, 
+    board_positions_all, 
+    minimal_game: minimal_game_result, 
+    opp_king_pos: integer,
+    our_team: character_team,
+    prev_turn: turn) 
+{
+    val check_sb_data = check_sb_build_calculator(
+        game_id,
+        opp_king_pos, // We're supposed to check the opponent's king
+        our_team, // we are the checking team
+        board_positions_all // This isn't a hypothetical move, must use the new board positions
+    );
+    // Just a temporary check calc (not very expensive)
+    val (after_card_check, after_card_check_desc) = check_sb_is_check_with_desc(check_sb_data);
+    if (after_card_check) {
+        log("game_id: "+game_id+" - After card, check found: " + after_card_check_desc);
+    }
+    val board_compressed_before_str: text = board_compress_only_check(game_id, board_positions_all, minimal_game.is_white, after_card_check);
+    card_base_update_with_compressed_board(prev_turn, board_compressed_before_str);
 }
 

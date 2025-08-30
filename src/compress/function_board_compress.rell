@@ -88,11 +88,11 @@ function board_compress_move_only(
 
 
 // Only shows the basic stuff, but this will show the effect of the card.
-function board_compress_only_skip(
+function board_compress_only_check(
     game_id: integer, 
     board_all: board_positions_all,
     is_white_turn: boolean,
-    is_check: boolean
+    is_check: boolean // If true we will mark the king with a "+"
 ): text {
     var out = "";
 

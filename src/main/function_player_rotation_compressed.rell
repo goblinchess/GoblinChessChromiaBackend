@@ -11,13 +11,13 @@
 // ------------------------------------------------------------
 function player_rotation_compressed_get_all(game_id: integer, gme: game, g_max_rotations: integer): list<player_rotation_compressed> {
     // Fetch all cards
-    val turn_card_map: map<integer, card_played_data> = card_played_data_get_all(game_id, gme);
+    val turn_card_map: map<integer, card_compressed> = card_compressed_get_all(game_id, gme);
   
     // Fetch all moves 
     val turn_move_map: map<integer, move_compressed> = move_base_compressed_find_all_moves(game_id, gme);
 
     // Fetch all skipped moves
-    val turn_skipped_map: map<integer, skipped_move_compressed> = move_base_compressed_find_all_skipped_moves(game_id, gme);
+    //val turn_skipped_map: map<integer, skipped_move_compressed> = move_base_compressed_find_all_skipped_moves(game_id, gme);
 
     // Fetch the move ends (not all moves have move ends)
     val turn_move_end_map: map<integer, text> = move_base_compressed_find_all_moves_ends(game_id, gme);
@@ -40,12 +40,12 @@ function player_rotation_compressed_get_all(game_id: integer, gme: game, g_max_r
         }
 
         // 1. The card is played at the first turn of the rotation.
-        val found_card: card_played_data? = turn_card_map.get_or_null(curr_turn_nr);
+        val found_card: card_compressed? = turn_card_map.get_or_null(curr_turn_nr);
         curr_turn_nr += 1;
 
         // 2. The standard move is played next (only normal OR skipped will be found, not both.)
         val found_move: move_compressed? = turn_move_map.get_or_null(curr_turn_nr);
-        val found_skipped: skipped_move_compressed? = turn_skipped_map.get_or_null(curr_turn_nr);
+        //val found_skipped: skipped_move_compressed? = turn_skipped_map.get_or_null(curr_turn_nr);
         val found_move_end: text? = turn_move_end_map.get_or_null(curr_turn_nr);
         curr_turn_nr += 1;
 
@@ -59,9 +59,9 @@ function player_rotation_compressed_get_all(game_id: integer, gme: game, g_max_r
             rotation_nr = curr_rot_nr,
             is_white = curr_rot_nr % 2 == 1,
             rotation_description = rot_desc,
-            card_played_data = found_card,
+            card_compressed = found_card,
             move = found_move,
-            skipped_move = found_skipped,
+            //skipped_move = found_skipped,
             move_end_compressed = found_move_end,
             extra_move = found_extra_move,
             extra_move_end_compressed = found_extra_move_end

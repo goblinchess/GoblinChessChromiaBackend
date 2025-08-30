@@ -121,15 +121,15 @@ struct player_rotation_compressed {
     // ----------------------
     // If the [curr_turn_nr] indicates that opponent has played a card, 
     // but this is null, then it means that the card was skipped.
-    card_played_data: card_played_data? = null;
+    card_compressed: card_compressed? = null;
 
     // ----------------------
     // 4. Move data
     // ----------------------
     // Either a move or a skipped move (but not both)
     move: move_compressed? = null;
-    skipped_move: skipped_move_compressed? = null;
-    move_end_compressed: text? = null; // Has value if something happened after the move.
+    //skipped_move: skipped_move_compressed? = null;
+    move_end_compressed: text? = null; // Has value if something happened after the move (can be populated even if the move was skipped!)
 
     // ----------------------
     // 5. Neutral move
@@ -138,7 +138,7 @@ struct player_rotation_compressed {
     // but this is null, then it means that the move was skipped.
     // Note, for double moves, this will be the second move.
     extra_move: move_compressed? = null;
-    extra_move_end_compressed: text? = null; // Has value if something happened after the move.
+    extra_move_end_compressed: text? = null; // Has value if something happened after the extra move (must have extra move for this to exist)
 
 
 }

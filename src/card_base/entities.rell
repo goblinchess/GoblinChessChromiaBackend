@@ -33,5 +33,9 @@ entity card {
     index played_by: player_game;
     card_type: card_type;
     draw_order_nr: integer; // The order number when the card was drawn.
+    // A spell might change the board, so we save the compressed board after the spell was played.
+    // Warning: If the game ends (by resignation for example) directly after some cards been played (Frog, Jump etc)
+    // this will hald an empty string, so don't trust this to always have a value.
+    mutable board_compressed_str: text; // A compressed string of the board state
     key played_by, draw_order_nr; // Every draw number must be unique for the player
 }

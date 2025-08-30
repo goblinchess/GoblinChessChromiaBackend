@@ -1,0 +1,30 @@
+
+
+
+// Create a new rotation if needed, or return the existing one.
+function rotation_maybe_create(
+    gme: game, 
+    created_by: player_game, 
+    new_t_type: turn_type, 
+    old_t_number: integer, 
+    old_r_number: integer, 
+    old_p_rotation: player_rotation
+): (integer, player_rotation) {
+    // Do we need a new rotation?
+    var new_rotation_nr = old_r_number;
+    var new_rotation: player_rotation = old_p_rotation;
+    if (turn_is_first_of_rotation(new_t_type)) {
+        require(old_t_number % 3 == 0, "New turn type: " + new_t_type + " indicates first of rotation, but old turn_number: " + old_t_number + " is not a multiple of 3.");
+
+        new_rotation_nr++;
+        // Yes, create it
+        new_rotation = create player_rotation(
+            .game = gme,
+            .rotation_nr = new_rotation_nr,
+            .created_by = created_by,
+            .created_at = op_context.last_block_time
+        );
+    }
+
+    return (new_rotation_nr, new_rotation);
+}

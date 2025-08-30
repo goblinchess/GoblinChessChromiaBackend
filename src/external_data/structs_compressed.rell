@@ -1,0 +1,36 @@
+
+
+// ---------------------------------------
+// These structs have one thing in common:
+// they all carry the the compressed board.
+// ---------------------------------------
+
+// Describes a card played 
+struct card_compressed {
+    card_type_str: text;  // Type of card played
+    card_order_number: integer; // The order number when the card was drawn/generated, starting from 0.
+    card_picks: list<integer>; // The squares picked by the player when playing the card.
+    // If the game ends (by resignation for example) directly after some cards been played (Frog, Jump etc)
+    // this will hald an empty string.
+    board_compressed_str: text; // A compressed string of the board state after the move.
+}
+
+// Describes the move that happened during a turn
+struct move_compressed {
+    turn_nr: integer; // The turn that this move belongs to
+    from_position: integer; // 0-63
+    to_position: integer; // 0-63
+    is_castle: boolean; // If the move is a castling move
+    is_after_move_check: boolean; // "true" if we have a check after the move, but before the "end-events" have played out.
+    is_check: boolean; // If the move causes check 
+    board_compressed_str: text; // A compressed string of the board state after the move.
+}
+
+/*
+// Describes a skipped move (Even a skipped move has some interesting data: portal travels and potential check mate)
+struct skipped_move_compressed {
+    turn_nr: integer; // The turn that this move belongs to
+    is_check: boolean; // Note: even if a switch happens during play card, it's during the skipped move we do the check/stale/mate calculation.
+}
+*/
+

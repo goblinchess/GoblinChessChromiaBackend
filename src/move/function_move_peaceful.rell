@@ -173,7 +173,16 @@ function move_peaceful_inner(
     // Create the turn record
     // ----------------
     // B.1 Do this FIRST since lots of verification in here.
-    val (new_turn, new_turn_nr, last_rot_nr) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white, is_pawn_move);
+    val (new_turn, new_turn_nr, last_rot_nr, prev_turn, prev_turn_type) = turn_create(minimal_game.game, minimal_game.player_game, new_turn_type, minimal_game.is_white, is_pawn_move);
+
+    // ----------------
+    // B.1.a Compress the board and save to the card entity
+    // ----------------
+    if (prev_turn_type == turn_type.WHITE_CARD or prev_turn_type == turn_type.BLACK_CARD) {
+        // We played a card last turn, update it with the compressed board.
+        // Note: This belongs to the card's turn, but we do this here since we don't want to do the check calc during play card.
+        move_common_update_card_with_compressed_board(game_id, board_positions_all, minimal_game, opp_king.vuln.position, our_team, prev_turn);
+    }
 
     // B.2.a) Typically when castling we move king first, but I want the rook to be debugged at the correct place
     if (is_castle) {
@@ -200,16 +209,16 @@ function move_peaceful_inner(
         board_positions_all // This isn't a hypothetical move, must use the new board positions
     );
     // Just a temporary check calc (not very expensive)
-    val (is_pre_check, check_pre_desc) = check_sb_is_check_with_desc(check_sb_data);
-    if (is_pre_check) {
-        log("game_id: "+game_id+" - Peaceful Move pre check found: " + check_pre_desc);
+    val (after_move_check, after_move_check_desc) = check_sb_is_check_with_desc(check_sb_data);
+    if (after_move_check) {
+        log("game_id: "+game_id+" - Peaceful Move pre check found: " + after_move_check_desc);
     }
-    val (board_compressed_before_str: text, naked_compressed_before_str: text) = board_compress_move_only(
+    val (board_compressed_mid_str: text, naked_compressed_mid_str: text) = board_compress_move_only(
         game_id, 
         board_positions_all, 
         m_args, 
         minimal_game.is_white, 
-        is_pre_check, 
+        after_move_check, 
         null, // Only for attacks
         null, // Only for attacks
         is_castle, 
@@ -255,7 +264,7 @@ function move_peaceful_inner(
         // Also: note that we only look in the "move" entity, not in "skipped_move", since if a move was skipped it's a signal that 
         // something "progressing" is going on, and should not be counted as a repetition move.
         // ----------------
-        val comp_boards = move_base_find_duplicated_boards(game_id, minimal_game.game, naked_compressed_before_str);
+        val comp_boards = move_base_find_duplicated_boards(game_id, minimal_game.game, naked_compressed_mid_str);
         if (comp_boards > 1) {
             // We found (at least) two copies of this setup. This will be the third time the same board comes up => Must make it a draw.
             log("game_id: " + game_id + " - 3x move repetition rule triggered.");
@@ -280,7 +289,7 @@ function move_peaceful_inner(
     }
 
     // B.6 Create move event
-    val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_enchanted_jump, is_pre_check, is_check, board_compressed_before_str, naked_compressed_before_str); 
+    val m = move_event_creation(m_args, minimal_game, new_turn, p.p, is_castle, is_enchanted_jump, after_move_check, is_check, board_compressed_mid_str, naked_compressed_mid_str); 
 
     if (move_end_events_has_data(end_args)) { // Only do this if something happened in the end of the turn.
         val board_compressed_after_str: text = board_compress_after_move(

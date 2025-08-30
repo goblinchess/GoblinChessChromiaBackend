@@ -27,3 +27,5 @@ entity remove_enchantment_event {
     card;
     piece; // The piece that is no longer enchanted
 }
+
+

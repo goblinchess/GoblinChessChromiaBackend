@@ -3,6 +3,7 @@ import ^.rnd.*;
 import ^.board.*;
 // Heavy modules
 import ^.card_base.*;
+import ^.compress.*;
 import ^.external_data.*;
 import ^.turn.*;
 import ^.piece.*;

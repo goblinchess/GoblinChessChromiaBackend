@@ -14,7 +14,7 @@ function move_base_compressed_find_all_moves(game_id: integer, gme: game): map<i
         from_position = m.from_position, // 0-63
         to_position = m.to_position, // 0-63
         is_castle = m.is_castle,
-        is_pre_check = m.is_pre_check,
+        is_after_move_check = m.is_after_move_check,
         is_check = m.is_check,
         comp_str = m.board_compressed_str
     );
@@ -28,7 +28,7 @@ function move_base_compressed_find_all_moves(game_id: integer, gme: game): map<i
             from_position = m.from_position,
             to_position = m.to_position,
             is_castle = m.is_castle, // We could have solved this via "rook_from" and "rook_to" but we didn't save that in the [move] entity.
-            is_pre_check = m.is_pre_check,
+            is_after_move_check = m.is_after_move_check,
             is_check = m.is_check,
             board_compressed_str = m.comp_str
         );
@@ -41,6 +41,7 @@ function move_base_compressed_find_all_moves(game_id: integer, gme: game): map<i
 }
 
 
+/*
 function move_base_compressed_find_all_skipped_moves(game_id: integer, gme: game): map<integer, skipped_move_compressed> {
 
     val sm_list = (sm: skipped_move, t: turn) @* { 
@@ -49,9 +50,7 @@ function move_base_compressed_find_all_skipped_moves(game_id: integer, gme: game
         } 
     (
         turn_nr = t.number,
-        is_pre_check = sm.is_pre_check,
-        is_check = sm.is_check,
-        comp_str = sm.board_compressed_str
+        is_check = sm.is_check
     );
 
     val ret_map = map<integer, skipped_move_compressed>();
@@ -60,9 +59,7 @@ function move_base_compressed_find_all_skipped_moves(game_id: integer, gme: game
         // Return the skipped move data
         val sm_data =  skipped_move_compressed(
             turn_nr = sm.turn_nr,
-            is_pre_check = sm.is_pre_check,
-            is_check = sm.is_check,
-            board_compressed_str = sm.comp_str
+            is_check = sm.is_check
         );
 
         ret_map[sm.turn_nr] = sm_data;
@@ -70,7 +67,7 @@ function move_base_compressed_find_all_skipped_moves(game_id: integer, gme: game
    
     log("game_id: " + game_id + " - Found " + ret_map.size() + " skipped moves");
     return ret_map;
-}
+} */
 
 function move_base_compressed_find_all_moves_ends(game_id: integer, gme: game): map<integer, text> {
 

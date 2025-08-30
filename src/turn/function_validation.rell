@@ -58,12 +58,19 @@ function turn_is_blacks_rotation(most_recent_turn_type: turn_type): boolean {
 
 // Main function
 // Returns an error message if the old turn type is not valid for the new turn type.
-function verify_old_turn_type_new_turn_type(game: game, player_game: player_game, old_turn_type: turn_type, new_turn_type: turn_type, old_turn_number: integer, is_white: boolean): text? {
+function verify_old_turn_type_new_turn_type(
+    game: game, 
+    player_game: player_game, 
+    old_t_type: turn_type, 
+    new_t_type: turn_type, 
+    old_t_number: integer, 
+    is_white: boolean
+): text? {
     if (is_white) {
-        return validate_white_turn(game, player_game, old_turn_type, new_turn_type, old_turn_number);
+        return validate_white_turn(game, player_game, old_t_type, new_t_type, old_t_number);
 
     } else {
-        return validate_black_turn(game, player_game, old_turn_type, new_turn_type, old_turn_number);
+        return validate_black_turn(game, player_game, old_t_type, new_t_type, old_t_number);
     }
 }
 

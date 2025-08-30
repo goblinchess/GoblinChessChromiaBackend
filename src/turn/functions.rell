@@ -3,12 +3,16 @@
 // -------------------------------------
 
 // Returns the last seen turn type and its number.
-function get_current_turn(game: game): (turn_type: turn_type, number: integer, rotation_nr: integer, p_rotation: player_rotation) {
+function get_current_turn(game: game): (trn: turn, t_type: turn_type, t_number: integer, rotation_nr: integer, p_rotation: player_rotation) {
     return (ct: current_turn, t: turn, r: player_rotation)@ {
         ct.game == game,
         ct.current_turn == t,
         t.player_rotation == r
-    } (t.turn_type, t.number, r.rotation_nr, p_rotation = r);
+    } (trn = t, 
+       t_type = t.turn_type, 
+       t_number = t.number, 
+       rotation_nr = r.rotation_nr, 
+       p_rotation = r);
 }
 
 function turn_is_first_of_rotation(tt: turn_type): boolean {
@@ -75,52 +79,48 @@ function turn_create_first(g: game, creatoor: player_game): turn {
 }
 
 // -------------------------------------
-// When we create a (non first) turn, 
-// we must also send the TURN_TYPE, 
+// Returns 
+// 1) the new turn, 
+// 2) new turn nr, 
+// 3) last rot nr
+//
+// When we create a (non first) turn, we must also send the TURN_TYPE, 
 // and the PLAYER_COLOR (that is the color of the player that is playing).
-// These values must be validated, to detect if the client playing 
-// out of turn.
+// These values must be validated, to detect if the client playing out of turn.
 // -------------------------------------
-function turn_create(gme: game, created_by: player_game, new_turn_type: turn_type, is_white: boolean, is_pawn_move_or_capture: boolean): (turn, integer, integer) {
+function turn_create(
+    gme: game, 
+    created_by: player_game, 
+    new_t_type: turn_type, 
+    is_white: boolean, 
+    is_pawn_move_or_capture: boolean
+): (turn, integer, integer, turn, turn_type) {
 
     // Validation 
-    val (t_type: turn_type, t_number: integer, r_number: integer, p_rotation: player_rotation) = get_current_turn(gme);
+    val (old_turn: turn, old_t_type: turn_type, old_t_number: integer, old_r_number: integer, old_p_rotation: player_rotation) = get_current_turn(gme);
 
-    val err: text? = verify_old_turn_type_new_turn_type(gme, created_by, t_type, new_turn_type, t_number, is_white);
+    val err: text? = verify_old_turn_type_new_turn_type(gme, created_by, old_t_type, new_t_type, old_t_number, is_white);
     if (err != null) {
         require(false, err);
     }
 
-    // Do we need a new rotation?
-    var last_rotation_nr = r_number;
-    var last_rotation: player_rotation = p_rotation;
-    if (turn_is_first_of_rotation(new_turn_type)) {
-        require(t_number % 3 == 0, "New turn type: " + new_turn_type + " indicates first of rotation, but old turn_number: " + t_number + " is not a multiple of 3.");
-
-        last_rotation_nr++;
-        // Yes, create it
-        last_rotation = create player_rotation(
-            .game = gme,
-            .rotation_nr = last_rotation_nr,
-            .created_by = created_by,
-            .created_at = op_context.last_block_time
-        );
-    }
+    // Do we need a new rotation? This will potentially create a new rotation if needed.
+    val (new_rotation_nr: integer, new_rotation: player_rotation) = rotation_maybe_create( gme, created_by, new_t_type, old_t_number, old_r_number, old_p_rotation);
 
     // Creation
-    val new_turn_nr = t_number + 1;
+    val new_turn_nr = old_t_number + 1;
     val new_turn = create turn(
         .game = gme,
         .number = new_turn_nr,
-        .turn_type = new_turn_type,
-        .player_rotation = last_rotation,
+        .turn_type = new_t_type,
+        .player_rotation = new_rotation,
         .created_at = op_context.last_block_time
     );
 
     update current_turn@ {gme} (.current_turn = new_turn);
 
     //GAME cannot have a reference to the (current) TURN since we don't allow two-way FKs.
-    update gme (.current_rotation_nr = last_rotation_nr, .current_turn_nr = new_turn_nr);  
+    update gme (.current_rotation_nr = new_rotation_nr, .current_turn_nr = new_turn_nr);  
     if (is_pawn_move_or_capture) {
         update gme (.last_turn_when_pawn_advanced = new_turn_nr); // For the 50-move rule  
     }
@@ -136,7 +136,7 @@ function turn_create(gme: game, created_by: player_game, new_turn_type: turn_typ
     // ---------------------------------------------------------------------------------------
     game_timeout_set_both_player_alive(gme);
 
-    return (new_turn, new_turn_nr, last_rotation_nr);
+    return (new_turn, new_turn_nr, new_rotation_nr, old_turn, old_t_type);
 }
 
 
