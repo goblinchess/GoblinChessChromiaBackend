@@ -1,0 +1,147 @@
+
+// -------------------------------------
+// Lobby
+// -------------------------------------
+
+//-----------------------
+// Get
+//-----------------------
+// This only happens when the player enters the lobby, after this there will only be bumps.
+function lobby_get_entry_inner(
+    player_signer: pubkey,
+    game_type_str_raw: text,
+    curr_ms: timestamp
+) :pubkey? {
+
+    // Get the requesting player with ELO
+    val (requesting_player: player, requesting_player_elo: integer) = (p: player)@{
+        p.signer == player_signer
+    } (p, .elo_rating);
+
+    log("player_id = " + requesting_player.rowid.to_integer() + " - Look for a match in the lobby, requesting player ELO = " + requesting_player_elo);
+
+    val game_type_str = game_type_str_raw.upper_case();
+    val g_type: game_type = game_type.value(game_type_str);
+
+    val old_ms = 10 * 1000; // 10 seconds
+
+    // Find closest ELO match in lobby for the same game type
+    // Exclude the requesting player and filter by ELO range
+    val match = (l: lobby, opp: player) @? {
+        opp == l.player,
+        l.game_type == g_type,
+        opp != requesting_player, // So we don't match with ourselves
+        abs(opp.elo_rating - requesting_player_elo) <= 200,
+        curr_ms - l.last_heartbeat < old_ms
+    }
+    ( @sort abs(opp.elo_rating - requesting_player_elo), opp.signer )
+    limit 1;
+
+    if (match == null) {
+        log("player_id = " + requesting_player.rowid.to_integer() + " - Lobby match not found.");
+        return null;
+    }
+    else {
+        log("player_id = " + requesting_player.rowid.to_integer() + " - Lobby match found.");
+        return match.signer;
+    }
+}
+
+//-----------------------
+// Enter
+//-----------------------
+function lobby_enter_inner(
+    caller_pubkey: pubkey, 
+    name_raw: text, 
+    game_type_str_raw: text
+) {
+    // Doesn't happen often, so we can afford a small SELECT like this.
+    val playa = player@ {.signer == caller_pubkey};
+
+    val game_type_str = game_type_str_raw.upper_case();
+    val g_type = game_type.value(game_type_str);
+
+    val existing_lobby = lobby@? {
+        .player == playa, 
+        .game_type == g_type
+    };
+    if (existing_lobby == null) {
+
+        // Background/Requirements:
+        // Before a player can enter the lobby (s)he must terminate any old (unfinished) game
+        // (since there can only be one ongoing game per player).
+        // However, if this fails we won't allow the player to enter the lobby.
+        val (maximal_game, game_time, opp_timeout_data) = maximal_game_and_timeout_data_get(caller_pubkey);
+        if (maximal_game != null) {
+            // We have an ongoing game, so we must try to terminate it.
+            val all_clear: boolean = game_timeout_any_player_if_possible(maximal_game, game_time!!, opp_timeout_data!!);
+            require(all_clear, "Cannot enter lobby for " + name_raw + " , since you are in an existing game that has not been timed out yet.");
+        }
+
+        log("player_id = " + playa.rowid.to_integer() + " - enter_lobby " + name_raw);
+        create lobby(
+            .player = playa,
+            .game_type = g_type,
+            .last_heartbeat = op_context.last_block_time
+        );
+    }
+    else {
+        // Didn't exactly expected this, but it is not a problem really.
+        log("player_id = " + playa.rowid.to_integer() + " - enter_lobby for " + name_raw + " but there is already a lobby entry");
+        update existing_lobby (.last_heartbeat = op_context.last_block_time);
+    }
+}
+
+//-----------------------
+// Bump
+//-----------------------
+// We allow multiple simultaneous lobby entries at once, but only one per [game_type].
+// Let's bump them all.
+function lobby_bump_inner(
+    caller_pubkey: pubkey, 
+    name_raw: text
+) {
+    // Pretty common operation, so we wanna do minimal SQLs, but here 
+    // we do it with a SELECT first only to be able generate a slightly better error message, 
+    // but it's overkill really. Could have done the update directly.
+    val existing_lobby = lobby@* {
+        .player == (player@ {.signer == caller_pubkey})
+    };
+    if (existing_lobby.size() > 0) {
+        // Don't even log it, this will happen often
+        update lobby@* {
+            .player == (player@ {.signer == caller_pubkey})
+        } (
+            .last_heartbeat = op_context.last_block_time
+        );
+    } else {
+        // Shouldn't happeen, so ok spending some resources on this.
+        val playa = player@ {.signer == caller_pubkey};
+
+        log("player_id = " + playa.rowid.to_integer() + " - bump_lobby " + name_raw + " but there is no lobby entry to bump?");
+        val minimal_game = minimal_game_data_get(caller_pubkey);
+
+        // Since we're updating an existing lobby entry, the most 
+        // likely explanation is that someone created a game with us 
+        // and removed our entry. So if we have an ongoing game, 
+        // we'll pick it up next time we call "in_game()" and all is well.
+        // But if we don't have a game here something is broken.
+        require(minimal_game != null, "Cannot bump our lobby entry, and there is no new game either.");
+    }
+}
+
+
+//-----------------------
+// Exit
+//-----------------------
+function lobby_exit_inner(
+    caller_pubkey: pubkey, 
+    name_raw: text
+) {
+    val playa = player@ {.signer == caller_pubkey};
+    
+    // Remove caller's lobby
+    log("player_id = " + playa.rowid.to_integer() + " - exit_lobby " + name_raw);
+    delete lobby@* {.player == playa};
+}
+

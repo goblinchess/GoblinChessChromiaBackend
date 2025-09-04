@@ -28,7 +28,7 @@ function game_create_via_lobby_inner(opponent_player: player, game_type_str_raw:
         require(can_go_on, "Cannot create game, since you are in an existing game that has not been timed out yet.");
     }
 
-    val new_game = game_create_random_black_white(caller_player, opponent_player, game_type_str);
+    val new_game = game_create_random_black_white(caller_player, opponent_player, g_type);
 
     // Remove opponent's lobby
     delete lobby@* {.player == opponent_player};
@@ -38,7 +38,42 @@ function game_create_via_lobby_inner(opponent_player: player, game_type_str_raw:
     return new_game;
 }
 
-function game_create_random_black_white(caller_player: player, opponent_player: player, game_type_str: text): game {
+// Handles the creation of a game
+function game_create_accept_challenge_inner(caller_pubkey: pubkey, challenge_rowid: integer): game {
+    
+    val cid = rowid(challenge_rowid);
+    // Get this player entity
+    val accepting_player = player@{.signer == caller_pubkey};
+
+    val maybe_existing_challenge = challenge@? {
+        .challenged_player == accepting_player, // Security thing. No need to let someone act on other people's challenges
+        .rowid == cid
+    };
+    require(maybe_existing_challenge != null, "Challenge is gone "+ challenge_rowid);
+    val existing_challenge = maybe_existing_challenge;
+    // We don't care exactly why, likely the challenger withdrew it.
+    require(existing_challenge.is_open, "Challenge is no longer open "+ challenge_rowid);
+    
+    // Don't think this can happen, since how can we accept the challenge if we are in a game?
+    // Just before creating the game, we terminate any running games 
+    val (maximal_game, game_time, opp_timeout_data) = maximal_game_and_timeout_data_get(accepting_player.signer);
+    if (maximal_game != null) {
+        // We have an ongoing game, so we must try to terminate it.
+        val can_go_on = game_timeout_any_player_if_possible(maximal_game, game_time!!, opp_timeout_data!!);
+        require(can_go_on, "Cannot create game, since you are in an existing game that has not been timed out yet.");
+    }
+
+    val new_game = game_create_random_black_white(accepting_player, existing_challenge.challenging_player, existing_challenge.game_type);
+
+    // Yes we could just remove the challenge, but we keep it around some more 
+    // and set the "is_accepted" flag instead. A challenge is more dynamic than 
+    // the lobby, so we need more insight if something goes south.
+    update existing_challenge (.is_open = false, .is_accepted = true);
+
+    return new_game;
+}
+
+function game_create_random_black_white(caller_player: player, opponent_player: player, g_type: game_type): game {
     // Determine who plays white based on timestamp
     val timestamp_is_even = (op_context.last_block_time / 1000) % 2 == 0;
     
@@ -48,15 +83,12 @@ function game_create_random_black_white(caller_player: player, opponent_player: 
      else 
         (caller_player, opponent_player);
     
-    return game_create_inner(white_player, black_player, game_type_str);
+    return game_create_inner(white_player, black_player, g_type);
 }
 
 // We create the GAME and 
 // one HAND for each player
-function game_create_inner(white_player: player, black_player: player, game_type_str_raw: text): game {
-
-    val game_type_str = game_type_str_raw.upper_case();
-    val g_type: game_type = game_type.value(game_type_str);
+function game_create_inner(white_player: player, black_player: player, g_type: game_type): game {
 
     // Fetching the most recent Block RID 
     val last_height = op_context.block_height - 1;

@@ -1,21 +1,26 @@
 
+Bug: Portal King will be in check? After picking a6.
 
-Handle completely empty games: Start game = Game over
-Show both player's names and rating 
-
-Test SWITCH + check
-Test check and pre_check?
-Test 3x repetition (naked string)
-Create remove board button.
-
-Fix timeout ending for Local games/Bot.
++---------------------------+
+|Game: 4 (r: 7)
++---------------------------+
+|8= r  .  b  q  k  b  .  r  |
+|7= p  p  p  .  p  p  p  p  |
+|6= n  .  .  .  .  n  .  .  |
+|5= .  .  .  O  .  .  .  .  |
+|4= .  .  .  .  .  N  .  .  |
+|3= .  .  .  .  .  .  .  .  |
+|2= P  P  .  P  .  P  P  P  |
+|1= R  N  B  Q  K  B  P  R  |
++---------------------------+
+|   a  b  c  d  e  f  g  h  |
++---------------------------+
 
 Test everything in chaos mode
 
 
  TODO Client: 
 -------------
-
  
 
 Client Done: 
@@ -25,7 +30,6 @@ Client Done:
 
  TODO Node: 
 -------------
-
  
  4. Use Luck
 

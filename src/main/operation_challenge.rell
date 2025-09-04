@@ -1,0 +1,56 @@
+
+// -------------------------------------
+// challenge 
+// -------------------------------------
+// A challenge is a request from one player to another.  
+// The challenge can be accepted or refused.
+// -------------------------------------
+
+// We are creating the challenge.
+// Requires that we're not already in a game.
+operation create_challenge(opponent_pubkey: pubkey, opponent_name: text, game_type_str: text) {
+
+    val current_signers = op_context.get_signers();
+    val caller_pubkey = current_signers[0];
+
+    challenge_create_inner(caller_pubkey, opponent_pubkey, opponent_name, game_type_str);
+}
+
+// If we already have entered the challenge (via "create_challenge()") we are required to 
+// regularly bump the time of our challenge ently so that the other player know we are
+// still waiting.
+operation bump_challenge(challenge_rowid: integer) {
+
+    val current_signers = op_context.get_signers();
+    val caller_pubkey = current_signers[0];
+
+    challenge_bump_inner(caller_pubkey, challenge_rowid);
+} 
+
+
+// Refuse the challenge 
+// 
+// This is when the player doesn't want to accept the challenge.
+operation refuse_challenge(challenge_rowid: integer) {
+
+    val current_signers = op_context.get_signers();
+    val caller_pubkey = current_signers[0];
+     
+    challenge_refuse_inner(caller_pubkey, challenge_rowid);
+}
+
+// Withdraw the challenge 
+// 
+// This is when the player is kind enough to click the "stop waiting" button,
+// instead of just shutting down the game client.
+operation withdraw_challenge(challenge_rowid: integer) {
+
+    val current_signers = op_context.get_signers();
+    val caller_pubkey = current_signers[0];
+     
+    challenge_withdraw_inner(caller_pubkey, challenge_rowid);
+}
+
+
+
+

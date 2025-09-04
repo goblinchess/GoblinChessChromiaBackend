@@ -1,0 +1,13 @@
+
+// Represents a player waiting for a challenge to be accepted
+entity challenge {
+    index challenging_player: player;
+    index challenged_player: player;
+    game_type: game_type;
+    key challenging_player, challenged_player, game_type; // Somewhat pointless, since the logic we won't allow simultaneous challanges anyway.
+    mutable is_open: boolean; // True, until the challenge is accepted or refused.
+    mutable is_refused: boolean; // True, if the other player don't want to play.
+    mutable is_accepted: boolean; // True, if the other player accepts. This instance has no value no more, and could potentially been removed instead. But we will scrapp it at some later date.
+    mutable is_withdrawn: boolean; // True, if the challenger go tired of waiting.
+    mutable last_heartbeat: timestamp; // Used to see if the challenge is alive
+}

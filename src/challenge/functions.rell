@@ -1,0 +1,181 @@
+
+
+// -------------------------------------
+// challenge 
+// -------------------------------------
+
+//-----------------------
+// Find
+//-----------------------
+function challenge_find_inner(
+    caller_pubkey: pubkey,
+    curr_ms: timestamp) :challenge_data? {
+
+    val old_ms = 10 * 1000; // 10 seconds
+
+    // Find one challenge
+    // Exclude old challenges
+    val match = (c: challenge, me:player, opp: player) @? {
+        me.signer == caller_pubkey,
+        c.challenged_player == me,
+        c.is_open == true, // Don't care about withdrawn etc
+        opp == c.challenging_player,
+        curr_ms - c.last_heartbeat < old_ms // If opp has not updated the heartbeat, they likely shut down the client.
+    }
+    (c.rowid, c.game_type, opp.signer, opp.name, opp.elo_rating)
+    limit 1;
+
+    if (match == null) {
+        return null; // Nothing found (typical case)
+    }
+    else {
+        return challenge_data(
+            challenge_rowid = match.rowid.to_integer(),
+            game_type_str = match.game_type.name,
+            opp_pubkey = match.signer,
+            opp_name = match.name,
+            opp_elo_rating = match.elo_rating
+        );
+    }
+
+}
+
+//-----------------------
+// Create
+//-----------------------
+function challenge_create_inner(caller_pubkey: pubkey, opp_pubkey: pubkey, opponent_name_raw: text, game_type_str_raw: text) {
+
+    val opp_name = opponent_name_raw.trim(); 
+     
+    val playa = player@ {.signer == caller_pubkey};
+
+    log("player_id = " + playa.rowid.to_integer() + " - create_challenge " + opp_name);
+
+    val game_type_str = game_type_str_raw.upper_case();
+    val g_type = game_type.value(game_type_str);
+
+    // No point having many challenges at a time.
+    // If we have anything in here it is just junk
+    delete challenge@* {
+        .challenging_player == playa
+    }; 
+
+    // Background/Requirements:
+    // Before a player can create the challenge (s)he must terminate any old (unfinished) game
+    // (since there can only be one ongoing game per player).
+    // However, if this fails we won't allow the player to create the challenge.
+    val (maximal_game, game_time, opp_timeout_data) = maximal_game_and_timeout_data_get(caller_pubkey);
+    if (maximal_game != null) {
+        // We have an ongoing game, so we must try to terminate it.
+        val all_clear: boolean = game_timeout_any_player_if_possible(maximal_game, game_time!!, opp_timeout_data!!);
+        require(all_clear, "Cannot enter challenge for " + opp_name + " , since you are in an existing game that has not been timed out yet.");
+    }
+
+    // Should we fail if the opponent is currently playing a game? 
+    // It seems like a waste of time to sit and wait.
+    val opp_min_game = minimal_game_data_get(opp_pubkey);
+    if (opp_min_game != null) {
+        require(false, "Opponent is currently playing a game. Player_id = " + playa.rowid.to_integer() + " - opponent name " + opp_name + ".");
+    } else {
+        create challenge(
+            .challenging_player = playa,
+            .challenged_player = (player@ {.signer == opp_pubkey}),
+            .game_type = g_type,
+            .is_open = true,
+            .is_refused = false,
+            .is_accepted = false,
+            .is_withdrawn = false,
+            .last_heartbeat = op_context.last_block_time
+        );
+        log("player_id = " + playa.rowid.to_integer() + " - create_challenge " + opp_name + " - success");
+    }
+}
+
+//-----------------------
+// Bump
+//-----------------------
+function challenge_bump_inner(caller_pubkey: pubkey, challenge_rowid: integer) {
+    val cid = rowid(challenge_rowid);
+
+    val maybe_existing_challenge = challenge@? { // We do it with "?" to generate a slightly better error message, but overkill really
+        .challenging_player == (player@ {.signer == caller_pubkey}), // Security thing. No need to let someone act on other people's challenges
+        .rowid == cid
+    };
+    require(maybe_existing_challenge != null, "Challenge is gone "+ challenge_rowid); 
+    val existing_challenge = maybe_existing_challenge;
+    if (existing_challenge.is_open) {
+        // Don't even log it, this will happen often
+        existing_challenge.last_heartbeat = op_context.last_block_time;
+    } else {
+        if (existing_challenge.is_refused) {
+            delete existing_challenge; // Ok to delete it now, the other player already reacted to it, and this player gets the error message back.
+            require(false, "Opponent refused your challenge.  - challange id " + challenge_rowid + ".");
+        } else if (existing_challenge.is_accepted) {
+            // This shouldn't happen, since the standard flow is to check "in_game()" before calling bump_challenge.
+            require(false, "Opponent accepted your challenge. Why are you not in the game with them?  - challange id " + challenge_rowid + ".");
+        } else if (existing_challenge.is_withdrawn) {
+            // This shouldn't happen 
+            require(false, "Error: You withdrew your challenge. Why are you updating it?  - challange id " + challenge_rowid + ".");
+        } else {
+            require(false, "Internal error: The challenge is no longer open, but is neither refused nor accepted.  - challange id " + challenge_rowid + ".");
+        }
+    }
+}
+
+//-----------------------
+// Refuse
+//-----------------------
+function challenge_refuse_inner(caller_pubkey: pubkey, challenge_rowid: integer) {
+     
+    val cid = rowid(challenge_rowid);
+    val playa = player@ {.signer == caller_pubkey};
+    
+    // Remove caller's challenge
+    log("player_id = " + playa.rowid.to_integer() + " - refuse_challenge " + challenge_rowid);
+    update challenge@ {
+        .rowid == cid, 
+        .challenged_player == playa // Security thing. No need to let someone refuse other people's challenges
+    } (
+        .is_open = false,
+        .is_refused = true
+    );
+}
+
+//-----------------------
+// Exit
+//-----------------------
+// Opponent has not responded to the challenge, and 
+function challenge_withdraw_inner(caller_pubkey: pubkey, challenge_rowid: integer) {
+     
+    val cid = rowid(challenge_rowid);
+    val playa = player@ {.signer == caller_pubkey};
+
+    val existing_challenge = challenge@ {
+        .challenging_player == playa, // Security thing. No need to let someone act on other people's challenges
+        .rowid == cid
+    };
+    if (existing_challenge.is_open) {
+        // Don't even log it, this will happen often
+        log("player_id = " + playa.rowid.to_integer() + " - withdraw_challenge " + challenge_rowid);
+        update existing_challenge (.is_open = false, .is_withdrawn = true);
+    } else {
+        if (existing_challenge.is_refused) {
+            // Doesn't matter that the challenge is refused.
+            log("player_id = " + playa.rowid.to_integer() + " - withdraw_challenge " + challenge_rowid + " - refused");
+            delete existing_challenge; // Ok to delete it now, the other player won't accept
+        } else if (existing_challenge.is_accepted) {
+            // This shouldn't happen, since the standard flow is to check "in_game()" before calling exit_challenge
+            require(false, "Opponent accepted your challenge. Why are you not in the game with them? Player_id = " + playa.rowid.to_integer() + " - challange id " + challenge_rowid + ".");
+        } else if (existing_challenge.is_withdrawn) {
+            // This shouldn't happen 
+            require(false, "Error: You already withdrew your challenge. Player_id = " + playa.rowid.to_integer() + " - challange id " + challenge_rowid + ".");
+        } else {
+            require(false, "Internal error: The challenge is no longer open, but is neither refused nor accepted. Player_id = " + playa.rowid.to_integer() + " - challange id " + challenge_rowid + ".");
+        }
+    }
+}
+
+
+
+
+

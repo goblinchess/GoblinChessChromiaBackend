@@ -1,3 +1,4 @@
+
 // The alignment of a piece/vulnerable or a player
 enum alignment {
     WHITE, // The white player

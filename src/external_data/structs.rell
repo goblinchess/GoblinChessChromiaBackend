@@ -52,3 +52,11 @@ struct timeout_data {
     game_started_at: timestamp; // When the game was started
 }
 
+// When we found that someone challenged us.
+struct challenge_data {
+    challenge_rowid: integer; // Makse it easier for the client to refer to this challenge
+    game_type_str: text;
+    opp_pubkey: pubkey; // TODO: Is it needed? We have the challenge_rowid.
+    opp_name: text;
+    opp_elo_rating: integer;
+}

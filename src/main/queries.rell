@@ -1,5 +1,34 @@
 
 
+
+
+// -------------------------------------
+// Lobby 
+// -------------------------------------
+
+query consume_lobby_entry(
+    player_signer: pubkey,  // The player's own pubkey
+    curr_ms: timestamp,
+    game_type_str: text
+) :pubkey? {
+    return lobby_get_entry_inner(player_signer, game_type_str, curr_ms);
+}
+
+
+// -------------------------------------
+// Challenge 
+// -------------------------------------
+
+// Returns one or zero challenger
+// (ff we find many, we'll just return one of them).
+// If the player refuses this one, well be able to fetch others later.
+query find_challenge(
+    player_signer: pubkey,  // The player's own pubkey
+    curr_ms: timestamp
+) :challenge_data? {
+    return challenge_find_inner(player_signer, curr_ms);
+}
+
 // -------------------------------------
 // Debug queries
 // -------------------------------------

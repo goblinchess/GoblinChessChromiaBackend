@@ -3,6 +3,8 @@ import ^.game.*;
 import ^.card.*;
 import ^.turn.*;
 import ^.move.*;
+import ^.challenge.*;
+import ^.lobby.*;
 import ^.rnd_validation.*;
 import ^.timeout.*;
 import ^.util.*;
