@@ -1,6 +1,12 @@
 
 
 
+// Small player UI representation
+struct mini_player_data {
+    signer: pubkey;
+    name: text;
+    elo_rating: integer;
+}
 
 
 // ------------------------------------------------------------
@@ -76,71 +82,3 @@ struct player_rotation_actions {
     // Only filled with data if the [curr_turn_nr] indicates that the game has ended.
     game_end_data: game_end_data? = null;
 }
-
-struct entire_game_data {
-
-    // ----------------------
-    // 1. Some general info
-    // ----------------------
-    game_type_str: text;
-    white_name: text; 
-    black_name: text;
-    white_elo_before_game: integer; 
-    black_elo_before_game: integer;
-
-    // ----------------------
-    // 2. All player rotations
-    // ----------------------
-    rotations: list<player_rotation_compressed>;
-
-    // ----------------------
-    // 3. Game end info
-    // ----------------------
-    // Only filled with data if the [curr_turn_nr] indicates that the game has ended.
-    game_end_data: game_end_data? = null;
-}
-
-// ------------------------------------------------------------
-// Holds info about what happened during a rotation. 
-// 
-// Compressed data means we don't have full info, this is ideal for stepping through 
-// and analyzing entire (old) games.
-// ------------------------------------------------------------
-struct player_rotation_compressed {
-
-    // 1. Player rotation
-    rotation_nr: integer; // The rotation number.
-
-    // 2. Color
-    is_white: boolean; // True if this is a white move
-
-    rotation_description: text; // A description of what happened this rotation, almost chess notation.
-
-    // ----------------------
-    // 3. Card data
-    // ----------------------
-    // If the [curr_turn_nr] indicates that opponent has played a card, 
-    // but this is null, then it means that the card was skipped.
-    card_compressed: card_compressed? = null;
-
-    // ----------------------
-    // 4. Move data
-    // ----------------------
-    // Either a move or a skipped move (but not both)
-    move: move_compressed? = null;
-    //skipped_move: skipped_move_compressed? = null;
-    move_end_compressed: text? = null; // Has value if something happened after the move (can be populated even if the move was skipped!)
-
-    // ----------------------
-    // 5. Neutral move
-    // ----------------------
-    // If the [curr_turn_nr] indicates that the neutral move has been completed,
-    // but this is null, then it means that the move was skipped.
-    // Note, for double moves, this will be the second move.
-    extra_move: move_compressed? = null;
-    extra_move_end_compressed: text? = null; // Has value if something happened after the extra move (must have extra move for this to exist)
-
-
-}
-
-

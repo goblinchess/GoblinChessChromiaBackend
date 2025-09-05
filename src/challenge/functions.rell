@@ -155,7 +155,6 @@ function challenge_withdraw_inner(caller_pubkey: pubkey, challenge_rowid: intege
         .rowid == cid
     };
     if (existing_challenge.is_open) {
-        // Don't even log it, this will happen often
         log("player_id = " + playa.rowid.to_integer() + " - withdraw_challenge " + challenge_rowid);
         update existing_challenge (.is_open = false, .is_withdrawn = true);
     } else {

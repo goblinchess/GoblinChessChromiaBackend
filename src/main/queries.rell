@@ -44,6 +44,20 @@ query get_player_by_name(search_name: text) {
     return player@? {.name == search_name} (.signer);
 }
 
+query get_mini_player_by_name(search_name: text): mini_player_data? {
+    val res = player@? {.name == search_name} (.signer, .name, .elo_rating);
+
+    if (res != null) {
+        return mini_player_data(
+            signer = res.signer,
+            name = res.name,
+            elo_rating = res.elo_rating
+        );
+    } else {
+        return null;
+    }
+
+}
 
 
 
