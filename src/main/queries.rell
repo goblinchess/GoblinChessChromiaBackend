@@ -40,14 +40,14 @@ query get_player_names() {
     return player@* {} (.name);
 }
 
-query get_player_by_name(search_name_raw: text) {
-    val search_name = search_name_raw.trim();
-    return player@? {.name == search_name} (.signer);
+query get_player_by_name(search_name: text) {
+    val search_name_clean = search_name.trim();
+    return player@? {.name == search_name_clean} (.signer);
 }
 
-query get_mini_player_by_name(search_name_raw: text): mini_player_data? {
-    val search_name = search_name_raw.trim();
-    val res = player@? {.name == search_name} (.signer, .name, .elo_rating);
+query get_mini_player_by_name(search_name: text): mini_player_data? {
+    val search_name_clean = search_name.trim();
+    val res = player@? {.name == search_name_clean} (.signer, .name, .elo_rating);
 
     if (res != null) {
         return mini_player_data(
