@@ -8,7 +8,7 @@
 // Find
 //-----------------------
 function challenge_find_inner(
-    caller_pubkey: pubkey,
+    player_signer: pubkey,
     curr_ms: timestamp) :challenge_data? {
 
     val old_ms = 10 * 1000; // 10 seconds
@@ -16,7 +16,7 @@ function challenge_find_inner(
     // Find one challenge
     // Exclude old challenges
     val match = (c: challenge, me:player, opp: player) @? {
-        me.signer == caller_pubkey,
+        me.signer == player_signer,
         c.challenged_player == me,
         c.is_open == true, // Don't care about withdrawn etc
         opp == c.challenging_player,
@@ -132,7 +132,7 @@ function challenge_refuse_inner(caller_pubkey: pubkey, challenge_rowid: integer)
     
     // Remove caller's challenge
     log("player_id = " + playa.rowid.to_integer() + " - refuse_challenge " + challenge_rowid);
-    update challenge@ {
+    update challenge@? {  // Using "?" since we don't care if the challeng is already removed
         .rowid == cid, 
         .challenged_player == playa // Security thing. No need to let someone refuse other people's challenges
     } (
