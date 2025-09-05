@@ -35,7 +35,7 @@ query in_game (
 
         return in_game_result(
             game_rowid = g_data.rowid.to_integer(),
-            game_type = minimal_game.game_type,
+            game_type_str = minimal_game.game_type.name,
             is_white = plays_white,
             opponent_pubkey = opp.signer,
             opponent_name = opp.name,

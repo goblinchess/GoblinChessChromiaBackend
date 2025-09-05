@@ -491,7 +491,7 @@ function test_full_game() {
     }
 
 
-    assert_equals(the_game.game_type, game_type.SPEED_10_CLASSIC);
+    assert_equals(the_game.game_type_str, "SPEED_10_CLASSIC");
     assert_equals(the_game.opponent_pubkey, opp_player);
     assert_equals(the_game.opponent_name, "Charlie");
     assert_equals(the_game.opponent_elo, 1200);

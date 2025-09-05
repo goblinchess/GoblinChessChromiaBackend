@@ -1,0 +1,7 @@
+// Represents game configuration
+enum game_type {
+    SPEED_5_CHAOTIC,
+    SPEED_10_CHAOTIC,
+    SPEED_5_CLASSIC,
+    SPEED_10_CLASSIC
+}

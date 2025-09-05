@@ -5,7 +5,7 @@
 // Info that tells a player if (s)he is in a game or not.
 struct in_game_result {
     game_rowid: integer; // Makes it easier for the client to refer to the game.
-    game_type: game_type;
+    game_type_str: text; // Text version of the game_type enum.
     is_white: boolean;
     opponent_pubkey: pubkey;
     opponent_name: text;
