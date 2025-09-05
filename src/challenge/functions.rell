@@ -60,6 +60,8 @@ function challenge_create_inner(caller_pubkey: pubkey, opp_pubkey: pubkey, oppon
         .challenging_player == playa
     }; 
 
+    require(opp_pubkey != caller_pubkey, "You cannot challenge yourself");
+
     // Background/Requirements:
     // Before a player can create the challenge (s)he must terminate any old (unfinished) game
     // (since there can only be one ongoing game per player).
