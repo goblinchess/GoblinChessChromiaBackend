@@ -29,6 +29,15 @@ query find_challenge(
     return challenge_find_inner(player_signer, curr_ms);
 }
 
+// Returns our most recently created challenge.
+// Typically called immediately after a challenge was created, 
+// to fetch the challenge_rowid.
+query find_challenge_by_creator(
+    creator_signer: pubkey
+) :challenge_data? {
+    return challenge_find_by_creator_inner(creator_signer);
+}
+
 // -------------------------------------
 // Debug queries
 // -------------------------------------

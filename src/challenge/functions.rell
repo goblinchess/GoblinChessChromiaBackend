@@ -37,7 +37,38 @@ function challenge_find_inner(
             opp_elo_rating = match.elo_rating
         );
     }
+}
 
+function challenge_find_by_creator_inner(
+    creator_signer: pubkey
+    ) :challenge_data? {
+
+    // We don't care about how old the challenge is, 
+    // if we find many open (actually an error) we just pick the most recent.
+    // Find the one challenge with the highest rowid (= most recently created one)
+    // All this is somewhat defensive, since it shouldn't happen anyway.
+    val match = (c: challenge, me:player, opp: player) @? {
+        me.signer == creator_signer,
+        c.challenging_player == me,
+        c.is_open == true, // Don't care about withdrawn etc
+        opp == c.challenged_player
+    }
+    (@sort_desc c.rowid, c.game_type, opp.signer, opp.name, opp.elo_rating)
+    limit 1; // Exclude old challenges
+
+    if (match == null) {
+        return null; // Nothing found (not good)
+    }
+    else {
+        // Expected
+        return challenge_data(
+            challenge_rowid = match.rowid.to_integer(),
+            game_type_str = match.game_type.name,
+            opp_pubkey = match.signer,
+            opp_name = match.name,
+            opp_elo_rating = match.elo_rating
+        );
+    }
 }
 
 //-----------------------
