@@ -9,7 +9,7 @@ A decentralized chess variant built on the Chromia blockchain using the Rell pro
 - [🃏 Spell Cards](#-spell-cards)
   - [Enchantments](#enchantments)
   - [Board Manipulation](#board-manipulation)
-  - [Tactical Spells](#tactical-spells)
+  - [Delayed Spells](#delayed-spells)
 - [🎯 Game Modes](#-game-modes)
   - [Classic Mode](#classic-mode)
   - [Chaotic Mode](#chaotic-mode)
@@ -26,7 +26,6 @@ A decentralized chess variant built on the Chromia blockchain using the Rell pro
   - [Running Game Operations](#running-game-operations)
 - [🔧 Queries](#-queries)
   - [Query Operations](#query-operations)
-- [🏆 Competitive Features](#-competitive-features)
 - [🛠️ Development](#️-development)
   - [For Client Developers](#for-client-developers)
   - [For Rell Learners](#for-rell-learners)
@@ -51,11 +50,13 @@ GoblinChess is an innovative chess variant that introduces magical elements to t
 ### Key Features
 
 - **Traditional Chess Foundation**: Standard chess pieces (King, Queen, Rook, Bishop, Knight, Pawn) with familiar movement patterns
-- **Spell Card System**: 10 unique spell cards that can alter gameplay dynamics
+- **Spell Card System**: 10 spell cards that can alter gameplay dynamics
 - **Turn-Based Structure**: Each player rotation consists of 3 phases: Card → Move → Neutral
 - **Multiple Game Modes**: Classic and Chaotic variants with different time controls
 - **ELO Rating System**: Competitive ranking system for players
-- **Decentralized**: Fully on-chain game state and logic
+- **Modern Chess Rules**: Supports En passant, repetition draw (3x), stalemate and everything you'd expect from competitive chess
+- **Replay System**: Full game reconstruction from event logs
+- **Decentralized**: Fully on-chain. Nothing off-chain
 
 ## 🃏 Spell Cards
 
@@ -71,48 +72,43 @@ GoblinChess is an innovative chess variant that introduces magical elements to t
 - **🧱 Wall**: Create barriers on the board to block movement
 - **🌀 Portal**: Create magical gateways for piece teleportation
 
-### Tactical Spells
+### Delayed Spells
 - **💀 Resurrect**: Bring back a captured piece (delayed effect)
 - **⏳ Double Move**: Make two moves in a single turn
 
 ## 🎯 Game Modes
 
 ### Classic Mode
-- Traditional chess emphasis with few random events. 
+- Traditional chess emphasis on few random events and a lot of strategy. 
 
 ### Chaotic Mode
 - More unpredictable gameplay, since the result of every attack is determined by rolling dice. Primarily for kids or if you want to beat someone above your rating. 
 
 ## 🏗️ Architecture
 
-This dApp is built using **Rell**, Chromia's domain-specific language for blockchain development. The architecture follows a modular design:
+This is a "dApp" and it is built using **Rell**, Chromia's domain-specific language for blockchain development. The archtecture is based on the entity-relationship concept (from relational databases). Here are some core conepts:
 
 ### Core Modules
-- **Game Management**: Player registration, game creation, lobby system
-- **Turn System**: Complex turn progression with card/move/neutral phases
-- **Piece Logic**: Traditional chess piece behavior and movement validation
-- **Card System**: Spell casting mechanics and effect resolution
-- **Board State**: Position tracking and compressed game state storage
-- **Check/Mate Detection**: Advanced chess rule validation, since the cards effect mate calculation.
-- **Event System**: Game event logging and replay functionality
+- **Game Management**: Player registration, game creation, lobby system.
+- **Turn System**: Turn progression with card/move/neutral phases.
+- **Piece Logic**: Traditional chess piece behavior and movement validation, with extra rules for enchanted pieces.
+- **Card System**: Spell casting mechanics and effect resolution.
+- **Board State**: Keeping the board in memory during an operation is usually the most performant alternative. We use the `board_positions_all` struct to pass this information around.
+- **Check/Mate Detection**: Chess rule validation expanding on the traditional ones, since the cards (especially portals) effect the checkmate calculation.
+- **Event System**: Game event logging and replay functionality. Old games can be analyzed.
 
-### Database Schema
-- **Players**: User profiles with ELO ratings and statistics
-- **Games**: Active and completed game states
-- **Turns**: Granular turn-by-turn game progression
-- **Pieces**: Individual piece tracking with enchantments
-- **Cards**: Spell card plays and effects
-- **Events**: Comprehensive game event logging
+
 
 ## 🚀 Developer Getting Started
-You want to fork this repository, or just try to run it on your local computer.
+You can try out this code by cloning the repo and and start a Chromia node on your local computer.
 
 ### Prerequisites
-- Chromia blockchain environment
-- Rell compiler version 0.14.2 or higher
+- PostgreSQL.
+- Chromia blockchain environment, but only the `CHR` tool is needed.
+- An editor with a Rell plugin is nice (Rell version 0.14.2 or higher), unless you like to read code in black-n-white?
 
 ### Installation
-For how to setup your environment you need to go to https://chromia.com.
+For how to setup your environment you can visit https://chromia.com.
 You can also watch my videos explaining how I did it for this game: https://www.youtube.com/@GoblinChess_Olle
 
 ### Playing the Game
@@ -147,11 +143,7 @@ Chromia makes a clear distinctions between operations and queries, where the lat
 - `in_game(player_pubkey)` - Retrieve the current game for the player, if any
 - `find_challenge(player_pubkey, timestamp)` - Returns a not-too-old challenge for the player, if any.
 
-## 🏆 Competitive Features
 
-- **ELO Rating System**: Dynamic skill-based matchmaking
-- **Game Statistics**: Track wins, losses, draws, and performance
-- **Replay System**: Full game reconstruction from event logs
 
 ## 🛠️ Development
 
@@ -165,6 +157,8 @@ This codebase serves as a tutorial for:
 - Game logic implementation
 - Event-driven architecture
 - Query optimization and how to reduce load on the database/blockchain.
+
+There are plenty of comments around the code, partly because Olle needs it, but also to make this one big tutorial.
 
 ## 📚 Technical Documentation
 ### Entity Relationship diagram
