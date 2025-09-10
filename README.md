@@ -125,6 +125,10 @@ This codebase serves as a tutorial for:
 - Query optimization and how to reduce load on the database/blockchain.
 
 ## 📚 Technical Documentation
+### Entity Relationship diagram
+Chromia is unique among blockchain platforms since it builds on database tables. This is the ER-diagram for this game for example. 
+
+![Entity Relationship Diagram](doc/img/rell_er.png)
 
 ### Turn Structure
 Each player rotation consists of three turns:
@@ -151,7 +155,7 @@ If you find a bug/security hole, please create a pull request.
 
 ## 🔗 Links
 
-- **Chromia Documentation**: https://docs.chromia.com/rell/
+- **Chromia Documentation**: https://docs.chromia.com/
 - **Rell Language Reference**: https://docs.chromia.com/rell/language-features/
 - **About the game**: http://goblinchess.com/
 
