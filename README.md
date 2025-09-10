@@ -2,6 +2,48 @@
 
 A decentralized chess variant built on the Chromia blockchain using the Rell programming language. GoblinChess combines traditional chess mechanics with magical spells and enchantments, creating a unique strategic gaming experience where players can cast cards to alter the battlefield.
 
+## 📋 Table of Contents
+
+- [🎮 What is GoblinChess?](#-what-is-goblinchess)
+  - [Key Features](#key-features)
+- [🃏 Spell Cards](#-spell-cards)
+  - [Enchantments](#enchantments)
+  - [Board Manipulation](#board-manipulation)
+  - [Tactical Spells](#tactical-spells)
+- [🎯 Game Modes](#-game-modes)
+  - [Classic Mode](#classic-mode)
+  - [Chaotic Mode](#chaotic-mode)
+- [🏗️ Architecture](#️-architecture)
+  - [Core Modules](#core-modules)
+  - [Database Schema](#database-schema)
+- [🚀 Developer Getting Started](#-developer-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Playing the Game](#playing-the-game)
+- [🔧 Operations](#-operations)
+  - [Player Operations](#player-operations)
+  - [Begin Game Operations](#begin-game-operations)
+  - [Running Game Operations](#running-game-operations)
+- [🔧 Queries](#-queries)
+  - [Query Operations](#query-operations)
+- [🏆 Competitive Features](#-competitive-features)
+- [🛠️ Development](#️-development)
+  - [For Client Developers](#for-client-developers)
+  - [For Rell Learners](#for-rell-learners)
+- [📚 Technical Documentation](#-technical-documentation)
+  - [Entity Relationship diagram](#entity-relationship-diagram)
+  - [Turn Structure](#turn-structure)
+  - [Randomness Handling](#randomness-handling)
+  - [Main Menu](#main-menu)
+  - [Modules](#modules)
+  - [Automatic Testing](#automatic-testing)
+- [🤝 Build and Fork](#-build-and-fork)
+  - [QnA](#qna)
+- [📄 License](#-license)
+- [🔗 Links](#-links)
+
+
+
 ## 🎮 What is GoblinChess?
 
 GoblinChess is an innovative chess variant that introduces magical elements to the classic game. Players not only move pieces according to traditional chess rules but can also play spell cards to enchant pieces, manipulate the board, and create strategic advantages.
@@ -126,7 +168,7 @@ This codebase serves as a tutorial for:
 
 ## 📚 Technical Documentation
 ### Entity Relationship diagram
-Chromia is unique among blockchain platforms since it builds on database tables. This is the ER-diagram for this game for example. 
+Chromia is unique among blockchain platforms since it builds on database tables, called "entities". There are also "structs", and "enums" which work just like in other programming languages. This is the ER-diagram for this game for example. 
 
 ![Entity Relationship Diagram](doc/img/rell_er.png)
 
@@ -134,19 +176,19 @@ Chromia is unique among blockchain platforms since it builds on database tables.
 Each player rotation consists of three turns:
 1. **Card Turn**: Play a spell card (optional)
 2. **Move Turn**: Make a chess move
-3. **Neutral Turn**: Reserved for future neutral piece mechanics
+3. **Neutral Turn**: Reserved for future neutral piece mechanics OR a double move.
 
 There is a state machine validating that the progression from one turn to the next follows our rules called `verify_old_turn_type_new_turn_type()`:
 
 [View turn validation logic →](src/turn/function_validation.rell)
 
 ### Randomness Handling
-Handling random numbers is hard on the blockchain, since everything we save becomes public info. In this game we simply accept any random number from the client, but in the very end of the game we will verify all the sent random numbers in one go, by generating them just like the client did, using the client's seed. This works since both clients are required to provide their seeds at the end of the game, and if a player just shuts down their client they will lose. Had we stored the seeds early in the game, a player might try to fetch the opponent's seed and this way be able to generate the opponent's cards (which are supposed to be secret). This pic illustrates seed validation:  
+Handling random numbers is hard on the blockchain, since everything we save becomes public info. In this game we simply accept any random number from the client, but in the very end of the game we will verify all the sent random numbers in one go, by generating them just like the client did, using the client's seed. This works since both clients are required to provide their seeds at the end of the game, and if a player just shuts down their client they will lose. Had we stored the seeds early in the game, a player might try to fetch the opponent's seed and this way be able to generate the opponent's cards (which are supposed to be secret). This pic illustrates the seed validation process:  
 
 ![Game End Flow](doc/img/rell_game_over_flow.png)
 
 ### Main Menu
-The Main Menu in my game client uses this flow, shown in the picture: 
+The Main Menu of the game client uses this flow, shown in the picture below. The red arrows can be ignored, since they only become relevant if there is an unexpected error happening on the node. Note that wherever we are - as long as we have "gone online" - we can always accept an incoming challenge, this way beginning a new game. 
 
 ![Game End Flow](doc/img/main_menu_state_machine.png)
 
@@ -170,16 +212,43 @@ The code has one big test that runs a complete game, from the first move to the 
 
 [View turn validation logic →](src/test/test_all.rell)
 
-## 🤝 Contributing
+## 🤝 Build and Fork
 
-This codebase is open for specifically implementations of new game client. Should this become a popular game, having the data open from get-go will prevent the original developer (me) from raising prices or whatever evil things I might do in the future.
+You are free to implemenent a new game client, fork this code and/or fork the blockchain. Should this become a popular game, having the data open from get-go will prevent the original developer (me) from raising prices or whatever evil things I might do in the future. Keeping everything in the open is a solid strategy.
 
 If you find a bug/security hole, please create a pull request.
 
+### QnA
+
+## Tokens?
+Yes this is a blockchain, but there are no tokens in this game. The standard client can be bought for a few bucks, that is the only income-generating part of the project.
+
+## Why Chromia?
+Chromia is a great platform for developing software, no matter if you are using tokens or not. The principle is openness. Open source, open data.
 
 ## 📄 License
 
-[License information to be added]
+MIT License
+
+Copyright (c) 2025 Panaq AB, Olle Kullberg
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ## 🔗 Links
 
