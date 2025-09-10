@@ -136,16 +136,39 @@ Each player rotation consists of three turns:
 2. **Move Turn**: Make a chess move
 3. **Neutral Turn**: Reserved for future neutral piece mechanics
 
-There is a state machine validating that the progression from one turn to the next follows our rules:
+There is a state machine validating that the progression from one turn to the next follows our rules called `verify_old_turn_type_new_turn_type()`:
 
 [View turn validation logic →](src/turn/function_validation.rell)
 
-
-### State Compression
-Games use sophisticated compression algorithms to minimize on-chain storage while maintaining full game state reconstruction capabilities.
-
 ### Randomness Handling
-Cryptographically secure randomness for spell effects using blockchain block data and player signatures.
+Handling random numbers is hard on the blockchain, since everything we save becomes public info. In this game we simply accept any random number from the client, but in the very end of the game we will verify all the sent random numbers in one go, by generating them just like the client did, using the client's seed. This works since both clients are required to provide their seeds at the end of the game, and if a player just shuts down their client they will lose. Had we stored the seeds early in the game, a player might try to fetch the opponent's seed and this way be able to generate the opponent's cards (which are supposed to be secret). This pic illustrates seed validation:  
+
+![Game End Flow](doc/img/rell_game_over_flow.png)
+
+### Main Menu
+The Main Menu in my game client uses this flow, shown in the picture: 
+
+![Game End Flow](doc/img/main_menu_state_machine.png)
+
+To create a game is easy, but waiting for other players to accept an invitation means we need to do polling. This is because a blockchain is ignorant about the world outside, and cannot initiate contacts from server to client. Especially challenges are tricky, since both the player creating the challenge, and the player about to be challenged are polling for news at the same time. The picture below shows an example of a successful challenge: 
+
+![Game End Flow](doc/img/rell_challenge_logic_happy_path.png)
+
+The process is similar for the Lobby: 
+
+![Game End Flow](doc/img/rell_lobby_logic_happy_path.png)
+
+### Modules
+We structure our Rell code into modules, and the idea is to encapsulate logic and keep the dependencies between modules to a minimum. In this game the module structure looks like this:
+
+![Game End Flow](doc/img/rell_modules.png)
+
+The "light modules" don't have any dependencies to entities, and are fast/easy to test automatically. The "heavy modules" likely require a full game to be tested properly. 
+
+### Automatic Testing
+The code has one big test that runs a complete game, from the first move to the inevitable checkmate, where we try to insert as many strange situations as possible:
+
+[View turn validation logic →](src/test/test_all.rell)
 
 ## 🤝 Contributing
 
