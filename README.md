@@ -136,6 +136,11 @@ Each player rotation consists of three turns:
 2. **Move Turn**: Make a chess move
 3. **Neutral Turn**: Reserved for future neutral piece mechanics
 
+There is a state machine validating that the progression from one turn to the next follows our rules:
+
+[View turn validation logic →](src/turn/function_validation.rell)
+
+
 ### State Compression
 Games use sophisticated compression algorithms to minimize on-chain storage while maintaining full game state reconstruction capabilities.
 
