@@ -6,6 +6,9 @@ A decentralized chess variant built on the Chromia blockchain using the Rell pro
 
 - [🎮 What is GoblinChess?](#-what-is-goblinchess)
   - [Key Features](#key-features)
+- [🛠️ Who is this for?](#️-who-is-this-for)
+  - [For Client Developers](#for-client-developers)
+  - [For Rell Learners](#for-rell-learners)
 - [🃏 Spell Cards](#-spell-cards)
   - [Enchantments](#enchantments)
   - [Board Manipulation](#board-manipulation)
@@ -13,22 +16,15 @@ A decentralized chess variant built on the Chromia blockchain using the Rell pro
 - [🎯 Game Modes](#-game-modes)
   - [Classic Mode](#classic-mode)
   - [Chaotic Mode](#chaotic-mode)
-- [🏗️ Architecture](#️-architecture)
+- [🏗️ Gameplay and Core Modules](#️-gameplay-and-core-modules)
+  - [Playing the Game](#playing-the-game)
   - [Core Modules](#core-modules)
-  - [Database Schema](#database-schema)
+- [🔧 API](#-api)
+  - [Operations](#operations)
+  - [Queries](#queries)
 - [🚀 Developer Getting Started](#-developer-getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
-  - [Playing the Game](#playing-the-game)
-- [🔧 Operations](#-operations)
-  - [Player Operations](#player-operations)
-  - [Begin Game Operations](#begin-game-operations)
-  - [Running Game Operations](#running-game-operations)
-- [🔧 Queries](#-queries)
-  - [Query Operations](#query-operations)
-- [🛠️ Development](#️-development)
-  - [For Client Developers](#for-client-developers)
-  - [For Rell Learners](#for-rell-learners)
 - [📚 Technical Documentation](#-technical-documentation)
   - [Entity Relationship diagram](#entity-relationship-diagram)
   - [Turn Structure](#turn-structure)
@@ -38,6 +34,8 @@ A decentralized chess variant built on the Chromia blockchain using the Rell pro
   - [Automatic Testing](#automatic-testing)
 - [🤝 Build and Fork](#-build-and-fork)
   - [QnA](#qna)
+- [Tokens?](#tokens)
+- [Why Chromia?](#why-chromia)
 - [📄 License](#-license)
 - [🔗 Links](#-links)
 
@@ -48,33 +46,52 @@ A decentralized chess variant built on the Chromia blockchain using the Rell pro
 GoblinChess is an innovative chess variant that introduces magical elements to the classic game. Players not only move pieces according to traditional chess rules but can also play spell cards to enchant pieces, manipulate the board, and create strategic advantages.
 
 ### Key Features
-
 - **Traditional Chess Foundation**: Standard chess pieces (King, Queen, Rook, Bishop, Knight, Pawn) with familiar movement patterns
 - **Spell Card System**: 10 spell cards that can alter gameplay dynamics
 - **Turn-Based Structure**: Each player rotation consists of 3 phases: Card → Move → Neutral
 - **Multiple Game Modes**: Classic and Chaotic variants with different time controls
-- **ELO Rating System**: Competitive ranking system for players
+- **ELO Rating System**: Standard chess ranking system for anyone playing online
 - **Modern Chess Rules**: Supports En passant, repetition draw (3x), stalemate and everything you'd expect from competitive chess
-- **Replay System**: Full game reconstruction from event logs
+- **Replay System**: Full game reconstruction from event logs. 
 - **Decentralized**: Fully on-chain. Nothing off-chain
 
+
+## 🛠️ Who is this for? 
+
+### For Client Developers
+This backend provides a complete API for building GoblinChess clients. Being on a blockchain means that the data belongs to everyone and nobody, it's yours if you want to.
+
+### For Rell Learners
+This codebase serves as a tutorial for:
+- Complex entity relationships in Rell
+- State management in blockchain applications
+- Game logic implementation
+- Event-driven architecture
+- Query optimization and how to reduce load on the database/blockchain.
+
+There are plenty of comments around the code, it is meant to be one big tutorial.
+
+
 ## 🃏 Spell Cards
+GoblinChess is chess-with-cards. The more twisted the cards are, the harder it is to implement them without bugs!
 
 ### Enchantments
 - **🐸 Frog**: Transform a piece temporarily, altering its movement capabilities
-- **🗿 Turn to Stone**: Petrify a piece, making it immobile for several turns
-- **🧪 Potion**: Enhance a piece with special abilities
+- **🗿 Turn to Stone**: Petrify a piece, making it immobile for 3 turns
+- **🧪 Potion**: Enhance a piece with extra hitpoints (only works for Chaos mode)
 - **⚔️ Knighted**: Grant knight-like movement to any piece
 - **🦘 Jump**: Allow a piece to leap over obstacles
 
 ### Board Manipulation
 - **🔄 Switch Place**: Swap positions of two pieces instantly
 - **🧱 Wall**: Create barriers on the board to block movement
-- **🌀 Portal**: Create magical gateways for piece teleportation
+- **🌀 Portal**: Create a permanent magical gateway for piece teleportation
 
 ### Delayed Spells
 - **💀 Resurrect**: Bring back a captured piece (delayed effect)
 - **⏳ Double Move**: Make two moves in a single turn
+
+
 
 ## 🎯 Game Modes
 
@@ -84,11 +101,21 @@ GoblinChess is an innovative chess variant that introduces magical elements to t
 ### Chaotic Mode
 - More unpredictable gameplay, since the result of every attack is determined by rolling dice. Primarily for kids or if you want to beat someone above your rating. 
 
-## 🏗️ Architecture
 
-This is a "dApp" and it is built using **Rell**, Chromia's domain-specific language for blockchain development. The archtecture is based on the entity-relationship concept (from relational databases). Here are some core conepts:
+
+## 🏗️ Gameplay and Core Modules 
+
+This is a "dApp" - a Decentralized Application - which is built using **Rell**, Chromia's domain-specific language for blockchain development. 
+
+### Playing the Game
+The gameplay consists of four main phases:
+1. **Register as a Player**: Create your player profile with a unique username
+2. **Join Lobby or Create Challenge**: Find opponents through the lobby system or direct challenges
+3. **Play**: Alternate between playing spell cards and moving pieces
+4. **Win Conditions**: Achieve checkmate, stalemate, or timeout victory
 
 ### Core Modules
+The archtecture is based on the entity-relationship concept (from relational databases). Here are some core conepts:
 - **Game Management**: Player registration, game creation, lobby system.
 - **Turn System**: Turn progression with card/move/neutral phases.
 - **Piece Logic**: Traditional chess piece behavior and movement validation, with extra rules for enchanted pieces.
@@ -99,68 +126,57 @@ This is a "dApp" and it is built using **Rell**, Chromia's domain-specific langu
 
 
 
-## 🚀 Developer Getting Started
-You can try out this code by cloning the repo and and start a Chromia node on your local computer.
 
-### Prerequisites
-- PostgreSQL.
-- Chromia blockchain environment, but only the `CHR` tool is needed.
-- An editor with a Rell plugin is nice (Rell version 0.14.2 or higher), unless you like to read code in black-n-white?
+## 🔧 API
+A Chromia dApp exposes a host of REST endpoints, divided into "operations" and "queries":
 
-### Installation
-For how to setup your environment you can visit https://chromia.com.
-You can also watch my videos explaining how I did it for this game: https://www.youtube.com/@GoblinChess_Olle
+### Operations
+To get a feel for the API we here describe the most common operations. A "Chromia operation" is something that updates the blockchain, and will therefore take some time (a fraction of a second) before the next block is built and the new data is visible.
 
-### Playing the Game
-
-1. **Register as a Player**: Create your player profile with a unique username
-2. **Join Lobby or Create Challenge**: Find opponents through the lobby system or direct challenges
-3. **Play**: Alternate between playing spell cards and moving pieces
-4. **Win Conditions**: Achieve checkmate, stalemate, or timeout victory
-
-## 🔧 Operations
-To get a feel for the API, we here describe the most common operations. A Chromia operation is something that updates the blockchain, and will therefore take some time (a fraction of a second) before the next block is built and the new data is visible.
-
-### Player Operations
+#### Initial Operations
 - `create_player(name)` - Register a new player
 - `enter_lobby(name, game_type)` - Join matchmaking lobby, looking for someone within your rating range to play the given type of game.
 - `create_challenge(opponent, game_type)` - Challenge specific player on a specific type of game
 
-### Begin Game Operations
+#### Game Creating Operations
 - `create_game_via_lobby(opponent, game_type)` - Start game from lobby
 - `create_game_accept_challenge(challenge_id)` - Accept a challenge
 
-### Running Game Operations
+#### Running Game Operations
 - `play_card(game_id, card_data, picks)` - Cast a spell card
 - `move_peaceful/move_attack(game_id, move_data)` - Make chess moves
 - `skip_neutral_move(game_id)` - Skip neutral phase. This needed to be forward compatible with version 2.0.
 
-## 🔧 Queries 
-Chromia makes a clear distinctions between operations and queries, where the latter won't update the blockchain, and will therefore return immediately.
+### Queries 
+A Chromia query won't update the blockchain, and will therefore return data immediately to the caller:
 
-### Query Operations
+#### Sample Queries
 - `get_player_by_name(player_name)` - Get the player's pubkey from the name, if found
 - `in_game(player_pubkey)` - Retrieve the current game for the player, if any
 - `find_challenge(player_pubkey, timestamp)` - Returns a not-too-old challenge for the player, if any.
 
 
 
-## 🛠️ Development
 
-### For Client Developers
-This backend provides a complete API for building GoblinChess clients. The game state is fully deterministic and can be reconstructed from blockchain data. Being on a blockchain means that the data belongs to everyone and nobody, it's yours if you want to.
+## 🚀 Developer Getting Started
+You can try out this code by cloning the repo and and start a Chromia node on your local computer.
 
-### For Rell Learners
-This codebase serves as a tutorial for:
-- Complex entity relationships in Rell
-- State management in blockchain applications
-- Game logic implementation
-- Event-driven architecture
-- Query optimization and how to reduce load on the database/blockchain.
+### Prerequisites
+- PostgreSQL
 
-There are plenty of comments around the code, partly because Olle needs it, but also to make this one big tutorial.
+### Installation
+You will need to install these Chromia-specific tools:
+- Chromia blockchain environment, but only the `CHR` tool is needed.
+- An editor with a Rell plugin is nice (Rell version 0.14.2 or higher), unless you like to read code in black-n-white?
+
+For how to setup your environment you can visit: https://docs.chromia.com/
+You can also watch my videos explaining how I did it for this game: https://www.youtube.com/@GoblinChess_Olle
+
+
+
 
 ## 📚 Technical Documentation
+
 ### Entity Relationship diagram
 Chromia is unique among blockchain platforms since it builds on database tables, called "entities". There are also "structs", and "enums" which work just like in other programming languages. This is the ER-diagram for this game for example. 
 
