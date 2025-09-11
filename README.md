@@ -8,7 +8,7 @@ A decentralized chess variant built on the Chromia blockchain using the Rell pro
 
 - [🎮 What is GoblinChess?](#-what-is-goblinchess)
   - [Key Features](#key-features)
-- [🛠️ Who is this for?](#️-who-is-this-for)
+- [👥 Who is this for?](#-who-is-this-for)
   - [For Client Developers](#for-client-developers)
   - [For Rell Learners](#for-rell-learners)
 - [🎯 Gameplay](#-gameplay)
@@ -38,7 +38,7 @@ A decentralized chess variant built on the Chromia blockchain using the Rell pro
   - [Randomness Handling](#randomness-handling)
   - [Main Menu](#main-menu)
   - [Automatic Testing](#automatic-testing)
-- [🤝 QnA](#-qna)
+- [❓ QnA](#-qna)
   - [Tokens?](#tokens)
   - [Why put games on the blockchain?](#why-put-games-on-the-blockchain)
   - [Why Chromia?](#why-chromia)
@@ -62,7 +62,7 @@ GoblinChess is an innovative chess variant that introduces magical elements to t
 - **Decentralized**: Fully on-chain. Nothing stored off-chain
 
 
-## 🛠️ Who is this for? 
+## 👥 Who is this for? 
 Why are you reading this?
 
 ### For Client Developers
@@ -239,7 +239,7 @@ The code has one big test that runs a complete game, from the first move to the 
 
  We could have created more isolated tests, with unique database setup for each one. The benefit of this method is that we'll get an exact error message for every single test. But we were too lazy to do that in this project, instead we just setup a full game and tried to catch as many situations as possible inside this test-game. This is one way to do it, not necessarily the best one.
 
-## 🤝 QnA
+## ❓ QnA
 
 ### Tokens?
 Yes this is a blockchain, but there are no tokens in this game. The commercial gaming-client can be bought for a few bucks, that is the only income-generating part of the project.
