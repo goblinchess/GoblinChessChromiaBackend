@@ -37,6 +37,7 @@ A decentralized chess variant built on the Chromia blockchain using the Rell pro
   - [Turn Structure](#turn-structure)
   - [Randomness Handling](#randomness-handling)
   - [Main Menu](#main-menu)
+  - [Polling](#polling)
   - [Automatic Testing](#automatic-testing)
 - [❓ QnA](#-qna)
   - [Tokens?](#tokens)
@@ -219,11 +220,12 @@ This pic illustrates the seed validation process:
 ![Game End Flow](doc/img/rell_game_over_flow.png)
 
 ### Main Menu
-The Main Menu of the game client uses this flow, shown in the picture below. The red arrows can be ignored, since they only become relevant if there is an unexpected error happening on the node. Note that wherever we are - as long as we have "gone online" - we can always accept an incoming challenge, this way beginning a new game. 
+The Main Menu of the first game client uses this flow, shown in the picture below. The red arrows can be ignored, since they only become relevant if there is an unexpected error happening on the Chromia node. Note that wherever we are - as long as we have "gone online" - we can always accept an incoming challenge, this way beginning a new game. 
 
 ![Game End Flow](doc/img/main_menu_state_machine.png)
 
-To create a game is easy, but waiting for other players to accept an invitation means we need to do polling. This is because a blockchain is ignorant about the world outside, and cannot initiate contacts from server to client. Especially challenges are tricky, since both the player creating the challenge, and the player about to be challenged are polling for news at the same time. The picture below shows an example of a successful challenge: 
+### Polling
+To create a game is easy, but waiting for other players to accept an invitation means we need to do polling. This is because a blockchain is ignorant about the world outside, and cannot initiate contacts from "server" (=node) to client. Especially challenges are tricky, since both the player creating the challenge, and the player about to be challenged are polling for news at the same time. The picture below shows an example of a successful challenge: 
 
 ![Create a Game via Challenge](doc/img/rell_challenge_logic_happy_path.png)
 
@@ -245,10 +247,10 @@ The code has one big test that runs a complete game, from the first move to the 
 Yes this is a blockchain, but there are no tokens in this game. The commercial gaming-client can be bought for a few bucks, that is the only income-generating part of the project.
 
 ### Why put games on the blockchain?
-For on-chain games you (the reader) are free to implement a new game client, fork this code and/or fork the blockchain. Should this become a popular game, having the data open from the get-go will prevent the original developer (me) from raising prices or whatever evil things I might do in the future. Keeping everything in the open is a solid strategy.
+The principle is openness: open source, open data. For on-chain games you (the reader) are free to implement a new game client, fork this code and/or fork the blockchain. Should this become a popular game, having the data open from the get-go will prevent the original developer from raising prices or whatever evil things they might do in the future. Keeping everything in the open is a solid strategy, prevents vendor lock-in.
 
 ### Why Chromia?
-Chromia is a great platform for developing software, no matter if you are using tokens or not. The principle is openness: Open source, open data. The multi-chain approach makes performance problems a breeze. There are no transaction fees, making everything much easier. Disclaimer: Olle is a Core developer working for Chromaway, the company behind Chromia.
+Chromia is a great platform for developing software, no matter if you are using tokens or not. The multi-chain approach makes performance problems a breeze. There are no transaction fees, making everything much easier. Disclaimer: Olle is a Core developer working for Chromaway, the company behind Chromia.
 
 ### How do I report problems?
 If you find a bug/security hole, please create a pull request or email info _at_ goblinchess (dot) com. 
