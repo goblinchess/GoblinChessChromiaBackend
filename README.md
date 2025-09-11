@@ -163,7 +163,7 @@ You will need to install these Chromia-specific tools:
 - Chromia blockchain environment, but only the `CHR` tool is needed.
 - An editor with a Rell plugin is nice (Rell version 0.14.2 or higher), unless you like to read code in black-n-white?
 
-For how to setup your environment you can visit: https://docs.chromia.com/
+For how to setup your environment you can visit: https://docs.chromia.com/ .
 You can also watch my videos explaining how I did it for this game: https://www.youtube.com/@GoblinChess_Olle
 
 
@@ -172,7 +172,7 @@ You can also watch my videos explaining how I did it for this game: https://www.
 ## 📚 Technical Documentation
 
 ### Entity Relationship diagram
-Chromia is unique among blockchain platforms since it builds on database tables, called "entities". There are also "structs", and "enums" which work just like in other programming languages. This is the ER-diagram for this game for example. 
+Chromia is unique among blockchain platforms since it builds on database tables, called "entities". There are also "structs", and "enums" which work just like in other programming languages. This is the ER-diagram for the game: 
 
 ![Entity Relationship Diagram](doc/img/rell_er.png)
 
@@ -189,10 +189,10 @@ The "light modules" don't have any dependencies to entities. They are fast/easy 
 - **Game**: Contains the entities `game`, `player` and the connection table `player_game`. Also handles various statistics for finished games.  
 - **Challenge/Lobby**: These are the only two ways to create a new game.
 - **Turn**: Turn progression with card/move/neutral phases.
-- **Piece**: Controlse the life-cycle of the pieces. Enities like `alive`, `limbo` and `dead`. 
+- **Piece**: Controlse the life-cycle of the pieces. Contains enities like `alive`, `limbo` and `dead`. 
 - **Move**: Traditional chess piece movement validation, with extra rules for enchanted pieces.
 - **Card**: Spell casting mechanics and effect resolution.
-- **Board State**: Keeping the board in memory during an operation is usually the most performant alternative. We use the `board_positions_all` struct to pass this information around.
+- **Board**: Keeping the board in memory during an operation is usually the most performant alternative. We use the `board_positions_all` struct to pass this information around.
 - **Check**: Chess rule validation expanding on the traditional ones, since the cards (especially portals) effect the checkmate calculation.
 - **Event**: Events are immutable, an can be used for replay functionality. This means old games can be analyzed by looking at (only) the event entities.
 
@@ -208,7 +208,13 @@ There is a state machine validating that the progression from one turn to the ne
 [View turn validation logic →](src/turn/function_validation.rell)
 
 ### Randomness Handling
-Handling random numbers is hard on the blockchain, since everything we save becomes public info. In this game we simply accept any random number from the client, but in the very end of the game we will verify all the sent random numbers in one go, by generating them just like the client did, using the client's seed. This works since both clients are required to provide their seeds at the end of the game, and if a player just shuts down their client they will lose. Had we stored the seeds early in the game, a player might try to fetch the opponent's seed and this way be able to generate the opponent's cards (which are supposed to be secret). This pic illustrates the seed validation process:  
+Handling random numbers is hard on the blockchain, since everything we save becomes public info. In this game we simply accept any random number from the client, but in the very end of the game we will verify all the sent random numbers in one go, by generating them just like the client did, using the client's seed. This works since both clients are required to provide their seeds at the end of the game, and if a player just shuts down their client prematurely they will lose due to the missing seed. 
+
+> **⚠️ Security Note**
+> 
+> Had we stored the seeds early in the game, a player might try to fetch the opponent's seed and this way be able to generate the opponent's cards (which are supposed to be secret). 
+
+This pic illustrates the seed validation process:  
 
 ![Game End Flow](doc/img/rell_game_over_flow.png)
 
