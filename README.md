@@ -177,14 +177,14 @@ Chromia is unique among blockchain platforms since it builds on database tables,
 ![Entity Relationship Diagram](doc/img/rell_er.png)
 
 ### Modules
-We structure our Rell code into modules, and the idea is to encapsulate logic and keep the dependencies between modules to a minimum. In this game the module structure looks like this:
+The archtecture is based on the entity-relationship concept (from relational databases), but the logic is structured into modules, whereas each module holds a mix of entities, structs, enums and functions. Just like for programming in general, the idea is to encapsulate logic and keep the dependencies between modules to a minimum. In this game the module structure looks like this:
 
 ![Game End Flow](doc/img/rell_modules.png)
 
-The "light modules" don't have any dependencies to entities. They are fast/easy to test automatically. The "heavy modules" likely require a full game to be tested properly. 
+The "light modules" don't have any dependencies to entities. They are fast/easy to test automatically. The "heavy modules" are harder to unit test, since they will need extensive preparation of data before each test.
 
 #### Core Modules
-The archtecture is based on the entity-relationship concept (from relational databases). Here are some core conepts:
+ the logic of the code is  Here are some core conepts:
 - **Main**: All operations and queries are defined in here. It's the entry point to the dApp.
 - **Game**: Contains the entities `game`, `player` and the connection table `player_game`. Also handles various statistics for finished games.  
 - **Challenge/Lobby**: These are the only two ways to create a new game.
@@ -230,6 +230,8 @@ The process is similar for the Lobby:
 The code has one big test that runs a complete game, from the first move to the inevitable checkmate, where we try to insert as many strange situations as possible:
 
 [View turn validation logic →](src/test/test_all.rell)
+
+ We could have created more isolated tests, with unique database setup for each one. The benefit of this method is that we'll get an exact error message for every single test. But we were too lazy to do that in this project, instead we just setup a full game and tried to catch as many situations as possible inside this test-game. This is one way to do it, not necessarily the best one.
 
 ## 🤝 QnA
 
