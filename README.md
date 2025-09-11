@@ -1,4 +1,6 @@
-# GoblinChess 🏰⚔️
+
+
+![GoblinChess](doc/img/2k_logo_banner_1920x348.png)
 
 A decentralized chess variant built on the Chromia blockchain using the Rell programming language. GoblinChess combines traditional chess mechanics with magical spells and enchantments, creating a unique strategic gaming experience where players can cast cards to alter the battlefield.
 
@@ -94,6 +96,7 @@ GoblinChess is chess-with-cards. The more twisted the cards are, the harder it i
 
 
 ## 🎯 Game Modes
+The game can be played in one of two modes:
 
 ### Classic Mode
 - Traditional chess emphasis on few random events and a lot of strategy. 
