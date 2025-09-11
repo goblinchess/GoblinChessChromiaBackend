@@ -70,11 +70,11 @@ This backend provides a complete API for building GoblinChess clients. Being on 
 
 ### For Rell Learners
 This codebase serves as a tutorial for:
-- Complex entity relationships in Rell
-- State management in blockchain applications
-- Game logic implementation
-- Event-driven architecture
-- Query optimization and how to reduce load on the database/blockchain.
+- Real-world entity relationships in Rell
+- State management in blockchain applications (nothing can be kept in memory between two requests)
+- Turn-based game logic 
+- Query optimization / how to reduce load on the database/blockchain
+- How to keep future random numbers secret 
 
 There are plenty of comments around the code, it is meant to be one big tutorial.
 
@@ -108,7 +108,7 @@ The game can be played in one of two modes:
 - Traditional chess emphasis on few random events and a lot of strategy. 
 
 #### Chaotic Mode
-- More unpredictable gameplay, since the result of every attack is determined by rolling dice. Primarily for kids or if you want to beat someone above your rating. 
+- More unpredictable gameplay, since the result of every attack is determined by rolling dice. Introduces a big portion of luck, making far-reaching calculation hopeless. 
 
 
 ### Playing the Game
@@ -164,7 +164,7 @@ You will need to install these Chromia-specific tools:
 - An editor with a Rell plugin is nice (Rell version 0.14.2 or higher), unless you like to read code in black-n-white?
 
 For how to setup your environment you can visit: https://docs.chromia.com/ .
-You can also watch my videos explaining how I did it for this game: https://www.youtube.com/@GoblinChess_Olle
+You can also watch videos explaining how we did it for this game: https://www.youtube.com/@GoblinChess_Olle
 
 
 
@@ -184,17 +184,17 @@ The archtecture is based on the entity-relationship concept (from relational dat
 The "light modules" don't have any dependencies to entities. They are fast/easy to test automatically. The "heavy modules" are harder to unit test, since they will need extensive preparation of data before each test.
 
 #### Core Modules
- the logic of the code is  Here are some core conepts:
+Below the most important modules are listed:
 - **Main**: All operations and queries are defined in here. It's the entry point to the dApp.
 - **Game**: Contains the entities `game`, `player` and the connection table `player_game`. Also handles various statistics for finished games.  
 - **Challenge/Lobby**: These are the only two ways to create a new game.
 - **Turn**: Turn progression with card/move/neutral phases.
-- **Piece**: Controlse the life-cycle of the pieces. Contains enities like `alive`, `limbo` and `dead`. 
+- **Piece**: Controls the life-cycle of the pieces. Contains enities like `alive`, `limbo` and `dead`. 
 - **Move**: Traditional chess piece movement validation, with extra rules for enchanted pieces.
 - **Card**: Spell casting mechanics and effect resolution.
 - **Board**: Keeping the board in memory during an operation is usually the most performant alternative. We use the `board_positions_all` struct to pass this information around.
-- **Check**: Chess rule validation expanding on the traditional ones, since the cards (especially portals) effect the checkmate calculation.
-- **Event**: Events are immutable, an can be used for replay functionality. This means old games can be analyzed by looking at (only) the event entities.
+- **Check**: Chess rule validation expanding on the traditional ones, since the cards (especially portals) affect the checkmate calculation.
+- **Event**: Events are immutable, and can be used for replay functionality. This means old games can be analyzed by looking at (only) the event entities.
 
 
 ### Turn Structure
@@ -237,7 +237,7 @@ The code has one big test that runs a complete game, from the first move to the 
 
 [View turn validation logic →](src/test/test_all.rell)
 
- We could have created more isolated tests, with unique database setup for each one. The benefit of this method is that we'll get an exact error message for every single test. But we were too lazy to do that in this project, instead we just setup a full game and tried to catch as many situations as possible inside this test-game. This is one way to do it, not necessarily the best one.
+ We could have created more isolated tests, with unique database setup for each one. The benefit of this method is that we'll get an exact error message for every single test. But we didn't have time to do that in this project, instead we just setup a full game and tried to catch as many situations as possible inside this test-game. This is one way to do it, not necessarily the best one.
 
 ## ❓ QnA
 
@@ -245,7 +245,7 @@ The code has one big test that runs a complete game, from the first move to the 
 Yes this is a blockchain, but there are no tokens in this game. The commercial gaming-client can be bought for a few bucks, that is the only income-generating part of the project.
 
 ### Why put games on the blockchain?
-For on-chain games you (the reader) are free to implemenent a new game client, fork this code and/or fork the blockchain. Should this become a popular game, having the data open from get-go will prevent the original developer (me) from raising prices or whatever evil things I might do in the future. Keeping everything in the open is a solid strategy.
+For on-chain games you (the reader) are free to implement a new game client, fork this code and/or fork the blockchain. Should this become a popular game, having the data open from the get-go will prevent the original developer (me) from raising prices or whatever evil things I might do in the future. Keeping everything in the open is a solid strategy.
 
 ### Why Chromia?
 Chromia is a great platform for developing software, no matter if you are using tokens or not. The principle is openness: Open source, open data. The multi-chain approach makes performance problems a breeze. There are no transaction fees, making everything much easier. Disclaimer: Olle is a Core developer working for Chromaway, the company behind Chromia.
