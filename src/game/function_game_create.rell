@@ -1,0 +1,80 @@
+
+
+// Create a game where any of the given player can play white.
+function game_create_random_black_white(caller_player: player, opponent_player: player, g_type: game_type): game {
+    // Determine who plays white based on timestamp
+    val timestamp_is_even = (op_context.last_block_time / 1000) % 2 == 0;
+    
+    // If timestamp is even, opponent plays white. If odd, caller plays white
+    val (white_player, black_player) = if (timestamp_is_even) 
+        (opponent_player, caller_player)
+     else 
+        (caller_player, opponent_player);
+    
+    return game_create_inner(white_player, black_player, g_type);
+}
+
+// We create the GAME and 
+// one HAND for each player
+function game_create_inner(white_player: player, black_player: player, g_type: game_type): game {
+
+    // Fetching the most recent Block RID 
+    val last_height = op_context.block_height - 1;
+    var last_block_rid = byte_array("00").repeat(32);
+    if (last_height >= 0) {
+        last_block_rid = (b: block)@ {b.block_height == last_height} (.block_rid);
+    } else {
+        log("Warning: Are we really building the block 0? "+last_height);
+    }
+    
+    val new_game = create game(
+        .white_player = white_player,
+        .black_player = black_player,
+        .game_type = g_type,
+        .current_rotation_nr = 0, // Starting at 0 means first (actual) rotation will be 1.
+        .current_turn_nr = 0, // Starting at 0 means first (actual) turn will be 1.
+        .last_turn_when_pawn_advanced = 0, 
+        .created_at = op_context.last_block_time,
+        .last_player_rotation_at = op_context.last_block_time,
+        .seed_material = last_block_rid
+    );
+
+    val start_time_remaining = game_type_to_time_left(g_type);
+
+    // Create white player_game
+    val white_player_game = create player_game(
+        .player = white_player,
+        .game = new_game,
+        .is_white = true,
+        .elo_rating_before_game = white_player.elo_rating,
+        .in_check = false,
+        .cards_left = 5,
+        .total_time_left = start_time_remaining,
+        .last_heartbeat = op_context.last_block_time,
+        .claimed_end = false
+    );
+
+    // Create black player_game
+    val black_player_game = create player_game(
+        .player = black_player,
+        .game = new_game,
+        .is_white = false,
+        .elo_rating_before_game = black_player.elo_rating,
+        .in_check = false,
+        .cards_left = 5,
+        .total_time_left = start_time_remaining,
+        .last_heartbeat = op_context.last_block_time,
+        .claimed_end = false
+    );
+
+    // The turn before anything has happened
+    turn_create_first(
+        new_game, 
+        white_player_game // We don't know who created the game here, but doesn't matter.
+        );
+
+    // Create 16 pieces for each player
+    piece_create_all(new_game, white_player_game, black_player_game);
+
+    return new_game;
+}

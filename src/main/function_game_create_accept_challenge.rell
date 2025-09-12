@@ -1,0 +1,61 @@
+
+// Handles the creation of a game
+function game_create_accept_challenge_inner(caller_pubkey: pubkey, challenge_rowid: integer): game {
+    
+    val cid = rowid(challenge_rowid);
+    // Get this player entity
+    val accepting_player = player@{.signer == caller_pubkey};
+
+    // --------------------------
+    // 1. Find the challenge
+    // --------------------------
+    val maybe_existing_challenge = challenge@? {
+        .challenged_player == accepting_player, // Security thing. No need to let someone act on other people's challenges
+        .rowid == cid
+    };
+    require(maybe_existing_challenge != null, "Challenge is gone "+ challenge_rowid);
+    val existing_challenge = maybe_existing_challenge;
+    // We don't care exactly why, likely the challenger withdrew it.
+    require(existing_challenge.is_open, "Challenge is no longer open "+ challenge_rowid);
+    
+    // --------------------------
+    // 2. Paranoid stuff
+    // --------------------------
+    // Don't think this can happen, since how can we accept the challenge if we are in a game?
+    // Just before creating the game, we terminate any running games 
+    val (maximal_game, game_time, opp_timeout_data) = maximal_game_and_timeout_data_get(accepting_player.signer);
+    if (maximal_game != null) {
+        // We have an ongoing game, so we must try to terminate it.
+        val can_go_on = game_timeout_any_player_if_possible(maximal_game, game_time!!, opp_timeout_data!!);
+        require(can_go_on, "Cannot create game, since you are in an existing game that has not been timed out yet.");
+    }
+
+    // --------------------------
+    // 3. Create the game
+    // --------------------------
+    val new_game = game_create_random_black_white(accepting_player, existing_challenge.challenging_player, existing_challenge.game_type);
+
+    // --------------------------
+    // 4. Cleanup
+    // --------------------------
+    // Since a challenge can be accepted from anywhere in the game (except from within an ongoing game)
+    // we need to be careful with the cleanup after we accept.
+
+    // 4.a)
+    // Yes we could just remove the challenge, but we keep it around some more 
+    // and set the "is_accepted" flag instead. A challenge is more dynamic than 
+    // the lobby, so we need more insight if something goes south.
+    update existing_challenge (.is_open = false, .is_accepted = true);
+
+    // 4.b)
+    // Withdraw any other potential challenge accepting player might have open
+    // (The accepting player might be waiting for another challenge when they accepted this one)
+    update challenge@* {.challenging_player == accepting_player} (.is_open = false, .is_withdrawn = true);
+
+    // 4.c)
+    // Remove caller's lobby
+    // (The accepting player might be waiting in the lobby when they accepted)
+    delete lobby@* {.player == accepting_player};
+
+    return new_game;
+}
