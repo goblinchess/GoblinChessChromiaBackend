@@ -10,15 +10,23 @@
 // Usually players find each other in the lobby
 // Here we send the opponent player name and the game type
 operation create_game_via_lobby_by_name(opp_player_name: text, game_type_str: text) {
+
+    val current_signers = op_context.get_signers();
+    val caller_pubkey = current_signers[0];
+    
     val opponent_player = player@{.name == opp_player_name};
-    val new_game: game = game_create_via_lobby_inner(opponent_player, game_type_str);
+    val new_game: game = game_create_via_lobby_inner(caller_pubkey, opponent_player, game_type_str);
     log("- game created, game_id: " + new_game.rowid.to_integer() + " type: " + game_type_str + " opp player: " + opp_player_name);
 }
 
 // Here we send the opponent player pubkey and the game type
 operation create_game_via_lobby(opp_player: pubkey, game_type_str: text) {
+
+    val current_signers = op_context.get_signers();
+    val caller_pubkey = current_signers[0];
+    
     val opponent_player = player@{.signer == opp_player};
-    val new_game: game = game_create_via_lobby_inner(opponent_player, game_type_str);
+    val new_game: game = game_create_via_lobby_inner(caller_pubkey, opponent_player, game_type_str);
     log("- game created, game_id: " + new_game.rowid.to_integer() + " type: " + game_type_str);
 }
 
