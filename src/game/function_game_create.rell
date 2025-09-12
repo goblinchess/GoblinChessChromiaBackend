@@ -26,7 +26,7 @@ function game_create_inner(white_player: player, black_player: player, g_type: g
     } else {
         log("Warning: Are we really building the block 0? "+last_height);
     }
-    
+
     val new_game = create game(
         .white_player = white_player,
         .black_player = black_player,

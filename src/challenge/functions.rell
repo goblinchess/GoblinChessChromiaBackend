@@ -76,6 +76,9 @@ function challenge_find_by_creator_inner(
 //-----------------------
 function challenge_create_inner(caller_pubkey: pubkey, opp_pubkey: pubkey, opponent_name_raw: text, game_type_str_raw: text) {
 
+    //-----------------------
+    // 1. Get data
+    //-----------------------
     val opp_name = opponent_name_raw.trim(); 
      
     val playa = player@ {.signer == caller_pubkey};
@@ -85,14 +88,30 @@ function challenge_create_inner(caller_pubkey: pubkey, opp_pubkey: pubkey, oppon
     val game_type_str = game_type_str_raw.upper_case();
     val g_type = game_type.value(game_type_str);
 
+    //-----------------------
+    // 2. Validations
+    //-----------------------
+
     // No point having many challenges at a time.
     // If we have anything in here it is just junk
     delete challenge@* {
         .challenging_player == playa
     }; 
 
+    // 2.a) Stupidity check
     require(opp_pubkey != caller_pubkey, "You cannot challenge yourself");
 
+    // 2.b) 
+    // Has the opponent been seen lately?
+    val one_hour_ago = op_context.last_block_time - (60 * 60 * 1000); // 60 min
+    val opp_player = player@? {
+        .signer == opp_pubkey,  // We are pretty certain that the opp exists, how else would the client get hold of the pubkey
+        .last_player_online > one_hour_ago
+    };
+    require(opp_player != null, "Opponent has not been seen online for an hour");
+
+    // 2.c) Sudden exit of old game?
+    //
     // Background/Requirements:
     // Before a player can create the challenge (s)he must terminate any old (unfinished) game
     // (since there can only be one ongoing game per player).
@@ -104,15 +123,19 @@ function challenge_create_inner(caller_pubkey: pubkey, opp_pubkey: pubkey, oppon
         require(all_clear, "Cannot enter challenge for " + opp_name + " , since you are in an existing game that has not been timed out yet.");
     }
 
-    // Should we fail if the opponent is currently playing a game? 
+    // 2.d) Should we fail if the opponent is currently playing a game? 
     // It seems like a waste of time to sit and wait.
     val opp_min_game = minimal_game_data_get(opp_pubkey);
     if (opp_min_game != null) {
         require(false, "Opponent is currently playing a game. Player_id = " + playa.rowid.to_integer() + " - opponent name " + opp_name + ".");
     } else {
+
+        //-----------------------
+        // 3. Create the challenge
+        //-----------------------
         create challenge(
             .challenging_player = playa,
-            .challenged_player = (player@ {.signer == opp_pubkey}),
+            .challenged_player = opp_player,
             .game_type = g_type,
             .is_open = true,
             .is_refused = false,
@@ -122,6 +145,9 @@ function challenge_create_inner(caller_pubkey: pubkey, opp_pubkey: pubkey, oppon
         );
         log("player_id = " + playa.rowid.to_integer() + " - create_challenge " + opp_name + " - success");
     }
+
+    // We can update the flag every time we see a sign of life from the player
+    playa.last_player_online = op_context.last_block_time;
 }
 
 //-----------------------
@@ -153,6 +179,9 @@ function challenge_bump_inner(caller_pubkey: pubkey, challenge_rowid: integer) {
             require(false, "Internal error: The challenge is no longer open, but is neither refused nor accepted.  - challange id " + challenge_rowid + ".");
         }
     }
+
+    // We can update the flag every time we see a sign of life from the player
+    update player@ {.signer == caller_pubkey} (.last_player_online = op_context.last_block_time);
 }
 
 //-----------------------
@@ -172,6 +201,9 @@ function challenge_refuse_inner(caller_pubkey: pubkey, challenge_rowid: integer)
         .is_open = false,
         .is_refused = true
     );
+
+    // We can update the flag every time we see a sign of life from the player
+    playa.last_player_online = op_context.last_block_time;
 }
 
 //-----------------------
@@ -205,6 +237,9 @@ function challenge_withdraw_inner(caller_pubkey: pubkey, challenge_rowid: intege
             require(false, "Internal error: The challenge is no longer open, but is neither refused nor accepted. Player_id = " + playa.rowid.to_integer() + " - challange id " + challenge_rowid + ".");
         }
     }
+
+    // We can update the flag every time we see a sign of life from the player
+    playa.last_player_online = op_context.last_block_time;
 }
 
 

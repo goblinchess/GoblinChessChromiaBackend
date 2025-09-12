@@ -90,6 +90,9 @@ function lobby_enter_inner(
         log("player_id = " + playa.rowid.to_integer() + " - enter_lobby for " + name_raw + " but there is already a lobby entry");
         update existing_lobby (.last_heartbeat = op_context.last_block_time);
     }
+
+    // We can update the flag every time we see a sign of life from the player
+    playa.last_player_online = op_context.last_block_time;
 }
 
 //-----------------------
@@ -128,6 +131,9 @@ function lobby_bump_inner(
         // But if we don't have a game here something is broken.
         require(minimal_game != null, "Cannot bump our lobby entry, and there is no new game either.");
     }
+
+    // We can update the flag every time we see a sign of life from the player
+    update player@ {.signer == caller_pubkey} (.last_player_online = op_context.last_block_time);
 }
 
 
