@@ -6,6 +6,7 @@ struct mini_player_data {
     signer: pubkey;
     name: text;
     elo_rating: integer;
+    last_seen_online: timestamp; 
 }
 
 

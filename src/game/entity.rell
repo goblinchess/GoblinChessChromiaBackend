@@ -7,8 +7,10 @@ entity player {
     mutable games_lost: integer;
     mutable games_drawn: integer;
     mutable elo_rating: integer;
-    mutable last_player_online: timestamp; // Updated whenever a player goes online
-                                           // We use this to list recently seen players
+    index mutable last_player_online: timestamp; // Updated whenever a player goes online
+                                                 // We use this to list recently seen players
+                                                 // Yes, the DB index will have to be updated a lot,
+                                                 // but it cannot be helped.
 }
 
 

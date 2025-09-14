@@ -1,0 +1,94 @@
+
+// -------------------------------------
+// Find a pubkey
+// -------------------------------------
+// Return the pubkey corresponding to the given player name
+query get_player_by_name(search_name: text) { // We don't HAVE to specify the return type, even though it's good practice.
+    val search_name_clean = search_name.trim();
+    return player@? {.name == search_name_clean} (.signer); // Will return pubkey, the type of the ".signer" field.
+}
+
+// -------------------------------------
+// Find player data
+// -------------------------------------
+// Return the [mini_player_data] corresponding to the given player name
+query get_mini_player_by_name(search_name: text): mini_player_data? {
+    val search_name_clean = search_name.trim();
+    val res = player@? {
+        .name == search_name_clean
+    } (
+        .signer, 
+        .name, 
+        .elo_rating, 
+        .last_player_online
+    );
+
+    if (res != null) {
+        return mini_player_data(
+            signer = res.signer,
+            name = res.name,
+            elo_rating = res.elo_rating,
+            last_seen_online = res.last_player_online
+        );
+    } else {
+        return null;
+    }
+
+}
+
+
+// -------------------------------------
+// Find last seen players
+// -------------------------------------
+// We find the 50 most recent seen players and return them,
+// excluding the given signer (usually the player's own pubkey)
+//
+// Q1. Why 50? Isn't that too much?
+// A a) If the game becomes VERY successful there might very well be 50 players online around the clock,
+// and by showing 50 the player might find the opponent he is interesting in by scrolling this list. 
+// A b) If the game is less successful, and say only 5 players are currently online, 
+// the player can look at the inactive players and get a grasp of what time of day most players are active.
+// 
+// Q2. Why not let the client send the number of players to find?
+// A: That is a performance risk, since if a gaming client fetches 1 million players
+// over and over, the load will be too heavy.
+query get_most_recent_mini_players(exclude_signer: pubkey): list<mini_player_data> {
+    val results = player@* {
+        .signer != exclude_signer
+    } 
+    ( 
+        .signer, 
+        .name, 
+        .elo_rating, 
+        @sort_desc .last_player_online  // We only want the highest numbers
+    ) limit 50; 
+
+    val return_list = list<mini_player_data>();
+    for(res in results) {
+        val mp = mini_player_data(
+            signer = res.signer,
+            name = res.name,
+            elo_rating = res.elo_rating,
+            last_seen_online = res.last_player_online
+        );
+        return_list.add (mp);
+    }
+
+    return return_list;
+}
+
+
+
+// -------------------------------------
+// Debug queries
+// -------------------------------------
+// We don't want to expose this query in the real app since there might be many many players.
+/*
+query get_players() {
+    return player@* {};
+}
+
+query get_player_names() {
+    return player@* {} (.name);
+}
+*/

@@ -38,37 +38,7 @@ query find_challenge_by_creator(
     return challenge_find_by_creator_inner(creator_signer);
 }
 
-// -------------------------------------
-// Debug queries
-// -------------------------------------
-query get_players() {
-    return player@* {};
-}
 
-query get_player_names() {
-    return player@* {} (.name);
-}
-
-query get_player_by_name(search_name: text) {
-    val search_name_clean = search_name.trim();
-    return player@? {.name == search_name_clean} (.signer);
-}
-
-query get_mini_player_by_name(search_name: text): mini_player_data? {
-    val search_name_clean = search_name.trim();
-    val res = player@? {.name == search_name_clean} (.signer, .name, .elo_rating);
-
-    if (res != null) {
-        return mini_player_data(
-            signer = res.signer,
-            name = res.name,
-            elo_rating = res.elo_rating
-        );
-    } else {
-        return null;
-    }
-
-}
 
 
 
