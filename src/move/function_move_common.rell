@@ -56,13 +56,20 @@ function move_common_change_piece_position(
     board_positions_all,  // Must update the board when we move a piece
     our_team: character_team? // Must update the team when we move a piece, if we have one.
 ) {
-    update a (.position = to_position);
-    val attack_allowed = false; // Think we should protest if the position is occupied.
+    // Look for the trivial case where the piece doesn't move
+    if (from_position == to_position) {
+        log("move_common_change_piece_position() - Trivial case: piece from " + from_position + " to " + to_position + " is the same position.");
+        // This can happen in chaos mode, failed attack.
+        // We don't do anything here
+    } else {
+        update a (.position = to_position);
+        val attack_allowed = false; // Think we should protest if the position is occupied.
 
-    // Extra: Update these data structures
-    board_place_character_at(board_positions_all, from_position, to_position, attack_allowed);
-    if (our_team != null) {
-        team_move_character_from_to(our_team, from_position, to_position);
+        // Extra: Update these data structures
+        board_place_character_at(board_positions_all, from_position, to_position, attack_allowed);
+        if (our_team != null) {
+            team_move_character_from_to(our_team, from_position, to_position);
+        }
     }
 
     // Good place to print new board state to log (before something crashes)

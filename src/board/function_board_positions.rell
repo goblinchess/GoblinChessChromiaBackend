@@ -178,9 +178,6 @@ function board_place_character_at(
     dest_pos: integer,
     attack_allowed: boolean
 ) {
-    // Convert square positions to integers
-    //val from_pos_int = pos_to_int(from_pos);
-    //val dest_pos_int = pos_to_int(dest_pos);
 
     if (not attack_allowed) {
         // We MUST remove anything on the dest_pos before we do this.
