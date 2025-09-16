@@ -93,11 +93,11 @@ function internal_search_rank_random(
         require(rnd_data.min == 0, "internal_search_rank_random() - min should be 0, was " + rnd_data.min);
         val calculated_max = empty_positions.size() - 1;
         require(rnd_data.max == calculated_max, "internal_search_rank_random() - Given max was " + rnd_data.max + 
-            " but calculated max is " + calculated_max);
+            " but calculated max for rank " + y + " is " + calculated_max);
 
         val calculated_pos = empty_positions[rnd_data.result];
         require(calculated_pos == given_pos, "internal_search_rank_random() - Given pos was " + given_pos + 
-            " but we didn't find it at index: " + rnd_data.result + " (found " + calculated_pos + ").");
+            " but we didn't find it at rank " + y + " at index: " + rnd_data.result + " (found " + calculated_pos + ").");
 
         return rnd_result(
             result = rnd_data.result,

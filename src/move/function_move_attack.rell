@@ -295,11 +295,12 @@ function move_attack_inner(
 
                 // We have to wait until now to verify the random number of the resurrect position,
                 // since we need the move (and portal travels) to happen first.
+                val last_rnd_number = rnd_numbers[rnd_numbers.size() - 1]; // We know that the resurrection happens last in the turn (at least in v1.0)
                 var rnd_res: rnd_result? = null;
                 if (my_color == alignment.WHITE) {
-                    rnd_res = board_find_empty_starting_from_white_side(board_positions_all, end_args.resurrection_pos, rnd_numbers[0]);
+                    rnd_res = board_find_empty_starting_from_white_side(board_positions_all, end_args.resurrection_pos, last_rnd_number);
                 } else {
-                    rnd_res = board_find_empty_starting_from_black_side(board_positions_all, end_args.resurrection_pos, rnd_numbers[0]);
+                    rnd_res = board_find_empty_starting_from_black_side(board_positions_all, end_args.resurrection_pos, last_rnd_number);
                 }
                 rnd_results.add(rnd_res); // Don't forget to add it to the result list!
 
