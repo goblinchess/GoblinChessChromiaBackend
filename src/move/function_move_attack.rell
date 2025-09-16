@@ -196,8 +196,18 @@ function move_attack_inner(
             board_positions_all
     );
 
-    // The client should have stopped this move from happening.
-    require(not get_into_check, "Move puts us into check: " + p_dbg + " because: " + check_desc + ", id:" + game_id);
+    if (is_classic_mode) {
+        // The client should have stopped this move from happening.
+        require(not get_into_check, "(Classic) Move puts us into check: " + p_dbg + " because: " + check_desc + ", id:" + game_id);
+    } else {
+        // Chaos mode
+        if (get_into_check) {
+            // For chaos mode we sometimes allow this situation, when the attack IF SUCCESSFUL would have removed the check,
+            // but the attack result became a HIT/MISS and the threat was not elliminated.
+            require(battle_res.result == battle_result_type.HIT or battle_res.result == battle_result_type.MISS, "(Chaotic) move puts us into check: " + p_dbg + " because: " + check_desc + ", id:" + game_id);
+            // TODO: We could validate that the attack, if made with classic mode, would have removed the check, but not sure if it is worth it?
+        }
+    }
 
 
     log("game_id: " + game_id + " - Move Attack passed verification, piece " + p_dbg + ", flags: " + dbg );
