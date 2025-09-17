@@ -132,14 +132,20 @@ function alive_switch_place(align: alignment, piece1: alive, piece2: alive) {
 // Constructors
 // ------------------------------------------------------------
 
-function alive_obstacle_create(game: game, owner: player_game, pos: integer, is_enchanted_piece: boolean): vulnerable {
+function alive_obstacle_create(
+    game: game, 
+    owner: player_game, 
+    pos: integer, 
+    remaining_hit_points: integer,  // 0 for walls, but if this is an enchanted piece, we add the old HP of that piece to the stone's HP.
+    is_enchanted_piece: boolean
+): vulnerable {
     val v = create vulnerable (
         .game = game,
         .is_obstacle = true,
         .is_obstacle_enchanted_piece = is_enchanted_piece,
         .can_retaliate = false,
         .color = alignment.NEUTRAL,
-        .start_hit_points = 10,
+        .start_hit_points = 10 + remaining_hit_points,
         .remaining_hit_points = 10,
         .defence = 3 // Default 
     );
@@ -158,9 +164,9 @@ function alive_obstacle_create(game: game, owner: player_game, pos: integer, is_
 
 // CARD: WALL
 function alive_setup_wall(game:game, owner: player_game, pos1: integer, pos2: integer, pos3: integer) {
-    alive_obstacle_create(game, owner, pos1, false);
-    alive_obstacle_create(game, owner, pos2, false);
-    alive_obstacle_create(game, owner, pos3, false);
+    alive_obstacle_create(game, owner, pos1, 0, false);
+    alive_obstacle_create(game, owner, pos2, 0, false);
+    alive_obstacle_create(game, owner, pos3, 0, false);
 }
 
 

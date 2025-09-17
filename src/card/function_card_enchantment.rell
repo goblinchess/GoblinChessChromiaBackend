@@ -120,6 +120,10 @@ function card_enchantment_count_down_all_durations(
 // See description in entities.rell
 // Summary: we want to remove all enchantments that have timed out
 //    for the given owner. 
+// 
+// What if the enchanted piece is dead? Don't think it matters, since 
+// the enchanted piece should have been removed from the "alive" entity, 
+// and we can (should) remove the enchantment from the dead (it might get resurrected).
 // ------------------------------------------------------------
 function card_enchantment_revert_timed_out(g: game, owner: player_game): list<card_enchantment_reverted> {
 
@@ -168,6 +172,8 @@ function card_enchantment_revert_timed_out(g: game, owner: player_game): list<ca
             TURN_TO_STONE -> {
                 log("game_id: "+g.rowid+" - Ending STONE enchantment on  position " + position );
                 piece_bring_back_original_piece(g, owner, replacement_alive, enchanted_piece.vulnerable);
+                // We don't have to do anything about the hitpoints, since the 12 hp is tied to the stone, and 
+                // the limbo character preserved its origininal hitpoints.
             }
             // Jumps are reverted as part of the move. Not stored in the [active_replacement_enchantment] entity.
             //JUMP -> {
