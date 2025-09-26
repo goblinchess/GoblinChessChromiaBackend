@@ -1,0 +1,18 @@
+
+// ------------------------------------------------------------
+// These structs are not stricly needed for a client to work,
+// the "main" (goblinchess.com) client does not use these structs.
+// But a human who needs to debug what's happening can use them 
+// to get information about the state of the games.
+// ------------------------------------------------------------
+
+
+// Holds info about an error that happened in a game.
+// A game can theoretically have two errors but in practice all games are terminated
+// upon the very first error
+struct error_data {
+    game_id: integer; 
+    player_game_id: integer; // The player (player_game) that is responsible for the error
+    error_type: text;
+    error_message: text;
+}
