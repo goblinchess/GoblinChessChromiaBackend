@@ -41,7 +41,7 @@ function piece_set_stone(pld: piece_living_data): vulnerable {
 
 // 3. POTION (cannot be removed)
 function piece_set_potion(piece: piece) {
-    update piece.vulnerable (.remaining_hit_points += 5);
+    update piece.vulnerable (.remaining_hit_points += 5); // Note, we don't update [.start_hit_points].
 }
 
 // 4. KNIGHTED (cannot be removed)

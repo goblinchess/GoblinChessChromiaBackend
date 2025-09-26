@@ -242,6 +242,13 @@ function move_attack_inner(
     val attacker_still_alive = move_battle_update_health(battle_res, is_chaos_mode, p, opp_vuln, board_positions_all, our_team, opp_team);
 
     if (attacker_still_alive) {
+        if (is_chaos_mode) {
+            if (chaos_args!!.is_luck) {
+                // Same effect as Potion
+                piece_set_potion(p.p);
+            }
+        }
+
         // B.2.b Same as for peaceful move
         move_common_change_piece_position(game_id, last_rot_nr, p.vuln.a, m_args.from_position, m_args.to_position, board_positions_all, our_team);
     }
@@ -388,6 +395,7 @@ function move_attack_inner(
             is_luck = chaos_args.is_luck, 
             dice_results = dice_string(battle_res.rnd_attack_results)
         );
+
 
         when (battle_res.result) {
             battle_result_type.HIT -> {

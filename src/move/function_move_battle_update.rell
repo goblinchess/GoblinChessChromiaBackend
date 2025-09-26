@@ -15,7 +15,7 @@ function move_battle_update_health(
     our_team: character_team, 
     opp_team: character_team
 ): boolean {
-      when(battle_res.result) {
+    when(battle_res.result) {
         battle_result_type.KILL -> {
             move_battle_death_of_vulnerable(
                 def_vuln, 
