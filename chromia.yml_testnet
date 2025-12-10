@@ -1,0 +1,18 @@
+blockchains:
+  goblinchess_dapp:
+    module: main
+compile:
+  rellVersion: 0.14.2
+database:
+  schema: schema_goblin_chess
+test:
+  modules:
+    - test
+deployments:
+   testnet: # Deployment Target name
+     brid: x"6F1B061C633A992BF195850BF5AA1B6F887AEE01BB3F51251C230930FB792A92" # Blockchain RID for Testnet Directory Chain
+     url: https://node0.testnet.chromia.com # Target URL for one of the nodes in Testnet
+     container: 757ad7cac8a69dec9c6f002bceeeb8fee6d3f9bedc90c79e84d0a531ad6bef20
+     chains:
+       goblinchess_dapp: x"2AEBDBCAD4BFA0C4B1494C00A21B7B8878273C80ABE41B95D44F9BD27FE95666"
+

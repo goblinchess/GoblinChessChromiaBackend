@@ -1,5 +1,5 @@
 blockchains:
-  my_rell_dapp:
+  goblinchess_dapp:
     module: main
 compile:
   rellVersion: 0.14.2
@@ -8,3 +8,4 @@ database:
 test:
   modules:
     - test
+
