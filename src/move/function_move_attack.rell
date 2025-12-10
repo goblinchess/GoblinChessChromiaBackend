@@ -171,8 +171,19 @@ function move_attack_inner(
     require(found_move > 0, "Illegal move: piece " + p_dbg + ", id:" + game_id);
     require(found_move == 2, "Expected an attacking move, but on piece on attacked position, piece " + p_dbg + ", id:" + game_id);
 
-    val selected_path = move_tree_build_active_path_from_destination(game_id, m_tree, m_args.to_position);
-    require(selected_path != null, "Failed to build active path from destination: " + p_dbg + ", id:" + game_id);
+    var maybe_selected_path = move_tree_build_active_path_from_destination(game_id, m_tree, m_args.to_position);
+    if (maybe_selected_path == null) {
+        if (battle_res.result == battle_result_type.MISS) {
+            // This is most likely a missed jump, where we'll move to somewhere outside the move tree.
+            // TODO? We could validate that the destination square is reasonable, but this doesn't happen often, so not worth it.
+            // We must create the selected path manually.
+            log("game_id: " + game_id + " - Found an enchanted jump on this piece " + p_dbg + ", flags: " + dbg);
+            maybe_selected_path = path_jump_attack_2(m_args.from_position, m_args.to_position);
+        } else {
+            require(false, "Failed to build active path from destination: " + p_dbg + ", id:" + game_id);
+        }
+    }
+    val selected_path = maybe_selected_path!!;
 
     // Get all pieces of both teams
     // Expensive, so we wait until last moment

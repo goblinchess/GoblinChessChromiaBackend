@@ -9,3 +9,7 @@ function rnd_new_rnd_data_list(
     var o = rnd_results.size();
     return org_rnd_numbers.sub(o); // Remove the "o" first posts
 }
+
+function rnd_data_debug(rnd_data: rnd_data) {
+    return "(result: " + rnd_data.result + ", min: " + rnd_data.min + ", max: " + rnd_data.max + ")";
+}

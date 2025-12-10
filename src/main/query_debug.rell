@@ -7,11 +7,8 @@
 // to get information about the state of the games.
 // ------------------------------------------------------------
 
-
-
 query get_recent_errors(): list<error_data> {
-    val raw = game_error@* {} 
-        (g = .game.rowid,  pg = .player_game.rowid, et = .error_type, em = .error_message, @sort_desc .rowid) limit 10;
+    val raw = game_error @* { } ( g = .game.rowid, pg = .player_game.rowid, et = .error_type, em = .error_message, @sort_desc .rowid ) limit 10;
 
     val return_list = list<error_data>();
     for (raw_row in raw) {
@@ -28,9 +25,8 @@ query get_recent_errors(): list<error_data> {
 
 query get_error_for_game(game_id: integer): list<error_data> {
     val g_rowid = rowid(game_id);
-    val raw = game_error@* {.game.rowid == g_rowid} 
-        (g = .game.rowid,  pg = .player_game.rowid, et = .error_type, em = .error_message, @sort_desc .rowid) limit 10;
-    
+    val raw = game_error @* { .game.rowid == g_rowid } ( g = .game.rowid, pg = .player_game.rowid, et = .error_type, em = .error_message, @sort_desc .rowid ) limit 10;
+
     val return_list = list<error_data>();
     for (raw_row in raw) {
         val ed = error_data(

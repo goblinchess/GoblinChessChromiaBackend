@@ -160,24 +160,46 @@ function move_attack_verify_rnd_results(game_id: integer, battle_res: battle_res
     if (given_rnd_num_size > calc_rnd_num_size) { 
         // This CAN happen for one specific situation:
         // 1. Chaos mode +
-        // 2. Ground attack +
+        // 2. a) Ground attack or b) Jump attack +
         // 3. Miss.
         // This random number is used if we miss and want to calculate how much shorter 
-        // the advance is. A "miss" can only happens in chaos mode. The idea is that 
+        // the advance is. A "miss" can only happens in chaos mode. The idea is that:
+        // A) Ground Miss 
         // the piece moves towards the defender but swings too early. If we have a 
         // miss on a ground attack the lead will advance one or two squares shorter,
         // and there is a 50%-50% what it will be. A single D6 is used to determine it.
+        // B) Jump Miss
+        // When a Knight misses, it will land on a different square somewhere close 
+        // to the defender. The random number is a range 0-X where X is the amount 
+        // of free squares around the defender. 
         if (battle_res.result == battle_result_type.MISS) {
-            // We don't really validate that the die result 
+            // We don't really validate that the die result/
             // cause the correct move destination (it's not very important)
             // we just copy the data into the [rnd_results] list.
             val rnd_data = rnd_numbers[calc_after_attack_size]; // Note that we shouldn't use the "calc_rnd_num_size" here, since the MISS happens before the RESURRECT. But this is mood, since we cannot have a resurrect and a MISS at the same time.
             calc_rnd_num_size += 1; 
 
-            val dice_count = 1;
-            val rnd_offset = calc_after_attack_size;
-            val res: dice_number_result = dice_number_roll_d6(dice_count, rnd_numbers, rnd_offset);
-            rnd_results.add(res.rnd_results[0]);
+            if (rnd_data.min == 1) {
+                // 2.a) Ground Miss
+                log("game_id: " + game_id + " - Ground Miss, rnd_data: " + rnd_data_debug(rnd_data) + ", calc_after_attack_size: " + calc_after_attack_size + ", calc_rnd_num_size: " + calc_rnd_num_size);
+                val dice_count = 1;
+                val rnd_offset = calc_after_attack_size;
+                val res: dice_number_result = dice_number_roll_d6(dice_count, rnd_numbers, rnd_offset);
+                rnd_results.add(res.rnd_results[0]);
+            } else if (rnd_data.min == 0) {
+                // 2.b) Jump Miss
+                log("game_id: " + game_id + " - Jump Miss, rnd_data: " + rnd_data_debug(rnd_data) + ", calc_after_attack_size: " + calc_after_attack_size + ", calc_rnd_num_size: " + calc_rnd_num_size);
+                require(rnd_data.max >= rnd_data.result, "How can the result " + rnd_data.result + " be higher than the max: " + rnd_data.max + " for MISS_JUMP, id:" + game_id);
+                val res = rnd_result(
+                    result = rnd_data.result,
+                    type = rnd_nr_type.MISS_JUMP, // Not a dice roll
+                    min = rnd_data.min,
+                    max = rnd_data.max 
+                );
+                rnd_results.add(res);
+            } else {
+                require(false, "Invalid MIN random number: " + rnd_data.min + " given, expected: 1 or 0 for MISS, id:" + game_id);
+            }
         }
     }
 
