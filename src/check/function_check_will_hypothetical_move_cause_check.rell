@@ -29,7 +29,8 @@ function will_hypothetical_move_cause_check(
     align_of_mover: alignment,
     king_orig_pos: integer,
     mating_team: character_team,
-    board_pos_all: board_positions_all
+    board_pos_all: board_positions_all,
+    is_chaos_mode: boolean
 ): (boolean, text) {
     val pos_start = selected_path.path[0]; 
     val pos_dest = selected_path.path[selected_path.path.size() - 1];
@@ -46,7 +47,8 @@ function will_hypothetical_move_cause_check(
         is_king_move, 
         king_orig_pos, 
         mating_team, 
-        board_pos_all
+        board_pos_all,
+        is_chaos_mode
     );
     
     // ------------------------
@@ -62,7 +64,8 @@ function will_hypothetical_move_cause_check(
             game_id,
             selected_path, 
             mating_team, 
-            board_pos_all
+            board_pos_all,
+            is_chaos_mode
         );
     } else {
         return (check, check_desc);
@@ -78,13 +81,14 @@ function whm_build_check_calc_inner(
     is_king_move: boolean,
     king_orig_pos: integer,
     mating_team: character_team,
-    board_pos_all: board_positions_all
+    board_pos_all: board_positions_all,
+    is_chaos_mode: boolean
 ): check_stat_board_calculator_data {
     if (is_king_move) {
         // 1.b) Ignore portals
         // Don't go through the portal here, since we don't know if the portal will be used.
         return check_sb_build_hypothetical_king_move(
-            game_id, pos_start, pos_dest, mating_team, board_pos_all
+            game_id, pos_start, pos_dest, mating_team, board_pos_all, is_chaos_mode
         );
     } else {
         // 1.a) Use portals
@@ -116,7 +120,8 @@ function whm_build_check_calc_inner(
             king_orig_pos, 
             mating_team, 
             board_pos_all, 
-            count_enemy_at_pos_as_dead
+            count_enemy_at_pos_as_dead,
+            is_chaos_mode
         );
     }
 }
@@ -129,7 +134,8 @@ function whm_check_if_potential_castle_gives_check_inner(
     game_id: integer,
     selected_path: path_base,
     mating_team: character_team,
-    board_pos_all: board_positions_all
+    board_pos_all: board_positions_all,
+    is_chaos_mode: boolean
 ): (boolean, text) {
     var check = false;  // We only get here we don't have check
     var check_desc = "Nothing is checking the king";
@@ -144,7 +150,8 @@ function whm_check_if_potential_castle_gives_check_inner(
                 mid_positions, 
                 selected_path.path[0],
                 mating_team, 
-                board_pos_all
+                board_pos_all,
+                is_chaos_mode
             );
 
             check = check1;
@@ -168,7 +175,8 @@ function whm_is_check_on_the_way_to_castle(
     mid_positions: list<integer>,
     pos_start: integer,
     mating_team: character_team,
-    board_positions: board_positions_all
+    board_positions: board_positions_all,
+    is_chaos_mode: boolean
 ): (boolean, text) {
     log("game_id: "+game_id+ " - Castling move with " + mid_positions.size() + " mid positions to go.");
     
@@ -183,7 +191,7 @@ function whm_is_check_on_the_way_to_castle(
         //       the attacked square had a portal on it that the king could use.
         // ----------------------------------------------------------------
         val hypo_check_calc_data = check_sb_build_hypothetical_king_move(
-            game_id, pos_start, mid_pos, mating_team, board_positions
+            game_id, pos_start, mid_pos, mating_team, board_positions, is_chaos_mode
         );
         
         val (is_check, check_desc) = check_sb_is_check_with_desc(hypo_check_calc_data);

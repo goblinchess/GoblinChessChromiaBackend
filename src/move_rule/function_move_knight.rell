@@ -6,7 +6,8 @@ function knight_all_valid_moves(
     game_id: integer,
     board_positions: board_positions_all, 
     starting_pos_int: integer, 
-    align: alignment
+    align: alignment,
+    can_attack_obstacle: boolean
 ): move_tree {
     val ptree = pre_tree();
     val starting_square_pos = pos_from_integer(starting_pos_int);
@@ -16,7 +17,7 @@ function knight_all_valid_moves(
     
     for (new_pos in potential_moves) {
         val tmp_path = [starting_pos_int]; // Initialize list with starting position
-        rule_interpret_single_step_position(board_positions, align, new_pos, tmp_path, ptree, true);
+        rule_interpret_single_step_position(board_positions, align, new_pos, tmp_path, ptree, true, can_attack_obstacle);
     }
     
     return move_tree_build(starting_pos_int, ptree);

@@ -114,18 +114,26 @@ function board_is_black_piece_at(board_positions_all, pos: square_pos): boolean 
     return board_get_square_status(board_positions_all, pos) == square_status.BLACK_PIECE;
 }
 
-function board_is_attackable_black_or_neutral_at(board_positions_all, pos: square_pos): boolean {
+function board_is_attackable_black_or_neutral_at(board_positions_all, pos: square_pos, can_attack_obstacle: boolean): boolean {
     val stat = board_get_square_status(board_positions_all, pos);
-    return stat == square_status.BLACK_PIECE or 
-           stat == square_status.NEUTRAL_PIECE or 
-           stat == square_status.OBSTACLE;
+    if (stat == square_status.BLACK_PIECE or stat == square_status.NEUTRAL_PIECE) {
+        return true;
+    } else if (can_attack_obstacle) {
+        return stat == square_status.OBSTACLE;
+    } else {
+        return false;
+    }
 }
 
-function board_is_attackable_white_or_neutral_at(board_positions_all, pos: square_pos): boolean {
+function board_is_attackable_white_or_neutral_at(board_positions_all, pos: square_pos, can_attack_obstacle: boolean): boolean {
     val stat = board_get_square_status(board_positions_all, pos);
-    return stat == square_status.WHITE_PIECE or 
-           stat == square_status.NEUTRAL_PIECE or 
-           stat == square_status.OBSTACLE;
+    if (stat == square_status.WHITE_PIECE or stat == square_status.NEUTRAL_PIECE) {
+        return true;
+    } else if (can_attack_obstacle) {
+        return stat == square_status.OBSTACLE;
+    } else {
+        return false;
+    }
 }
 
 // ----------------

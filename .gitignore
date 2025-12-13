@@ -1,0 +1,7 @@
+#Ignore client build from build scripts
+
+Build/
+build/
+Temp/
+Logs/
+

@@ -94,6 +94,7 @@ function move_peaceful_inner(
     var rook: alive? = null;
     var m_tree: move_tree? = null;
     var selected_path: path_base? = null;
+    val is_chaos_mode = not game_is_classic(minimal_game.game_type);
 
 
     if (castle_rook_from != null and castle_rook_to != null) { 
@@ -122,7 +123,8 @@ function move_peaceful_inner(
             p.is_knighted,
             m_args.from_position,
             my_color,
-            opp_vuln_ctxt // Not actually needed. (this is a peaceful move, so we don't need to check for vulnerable paths)
+            opp_vuln_ctxt, // Not actually needed. (this is a peaceful move, so we don't need to check for vulnerable paths)
+            is_chaos_mode
         );
 
         //log ("Move A.6.b.2 - move trees done ");
@@ -156,7 +158,8 @@ function move_peaceful_inner(
             my_color,
             our_king.vuln.position,
             opp_team,
-            board_positions_all
+            board_positions_all,
+            is_chaos_mode
     );
 
     // The client should have stopped this move from happening.
@@ -181,7 +184,7 @@ function move_peaceful_inner(
     if (prev_turn_type == turn_type.WHITE_CARD or prev_turn_type == turn_type.BLACK_CARD) {
         // We played a card last turn, update it with the compressed board.
         // Note: This belongs to the card's turn, but we do this here since we don't want to do the check calc during play card.
-        move_common_update_card_with_compressed_board(game_id, board_positions_all, minimal_game, opp_king.vuln.position, our_team, prev_turn);
+        move_common_update_card_with_compressed_board(game_id, board_positions_all, minimal_game, opp_king.vuln.position, our_team, prev_turn, is_chaos_mode);
     }
 
     // B.2.a) Typically when castling we move king first, but I want the rook to be debugged at the correct place
@@ -206,7 +209,8 @@ function move_peaceful_inner(
         game_id,
         opp_king.vuln.position, // We're supposed to check the opponent's king
         our_team, // we are the checking team
-        board_positions_all // This isn't a hypothetical move, must use the new board positions
+        board_positions_all, // This isn't a hypothetical move, must use the new board positions
+        is_chaos_mode
     );
     // Just a temporary check calc (not very expensive)
     val (after_move_check, after_move_check_desc) = check_sb_is_check_with_desc(check_sb_data);
@@ -230,7 +234,7 @@ function move_peaceful_inner(
     // Apply end_args
     // ----------------
     // B.4.a Use all unblocked portals
-    move_common_use_all_unblocked_portals(game_id, old_turn_nr, minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
+    move_common_use_all_unblocked_portals(game_id, old_turn_nr, minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args, is_chaos_mode);
 
     // B.4.b Resurrection
     // (Must happen after the portal travel, so we won't end up blocking a portal exit)
@@ -244,7 +248,7 @@ function move_peaceful_inner(
     // Check/stale/mate
     // ----------------
     // B.5 Verify if we just won via checkmate?
-    val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args);
+    val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_color, opp_king, our_team, opp_team, check_args, is_chaos_mode);
 
 
 

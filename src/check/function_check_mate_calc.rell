@@ -32,10 +32,12 @@ function check_mate_calc_data_constructor(
     king: with_pos_and_alignment, 
     mating_team: character_team, 
     board_all: board_positions_all, 
-    check_sb_data: check_stat_board_calculator_data): check_mate_calc_data
+    check_sb_data: check_stat_board_calculator_data,
+    is_chaos_mode: boolean
+    ): check_mate_calc_data
 {
 
-    val king_escape_data = king_escape_builder(game_id, king, mating_team, board_all);
+    val king_escape_data = king_escape_builder(game_id, king, mating_team, board_all, is_chaos_mode);
     return check_mate_calc_data(king_escape_data, check_sb_data, board_all);
 }
 
@@ -47,7 +49,8 @@ function check_mate_calc_data_constructor(
 function check_mate_can_escape(
     game_id: integer,
     data: check_mate_calc_data,
-    kings_team: character_team
+    kings_team: character_team,
+    is_chaos_mode: boolean
 ): (can_escape: boolean, desc: text) {
     val maybe_king = team_get_king(kings_team);
     val king = maybe_king!!;
@@ -55,7 +58,7 @@ function check_mate_can_escape(
     val king_wpaa = with_pos_and_alignment(king.vuln.position, kings_align);
     
     // Begin check mate calculation (do the cheapest checks first)
-    val (escape_pos, is_attack, king_desc) = king_escape_find_first_without_help(game_id, data.king_escape_data, king_wpaa);
+    val (escape_pos, is_attack, king_desc) = king_escape_find_first_without_help(game_id, data.king_escape_data, king_wpaa, is_chaos_mode);
     if (escape_pos != null) {
         return (can_escape = true, desc = king_desc); 
     }
@@ -81,7 +84,8 @@ function check_mate_can_escape(
             p.is_knighted,
             p.vuln.position, 
             p.vuln.align,
-            pre_vuln_context(null) // We don't care about "en passant" here since it won't effect check mate.
+            pre_vuln_context(null), // We don't care about "en passant" here since it won't effect check mate.
+            is_chaos_mode
         );
         // Ignore castle, since this never a king.
         

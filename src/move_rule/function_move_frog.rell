@@ -39,7 +39,8 @@ function frog_follow_path(
     val tmp_path = [pos_int]; // Initialize list with starting position
     val new_square_pos = pos_calc_from_directional_shift(game_id, square_pos, 1, dir);
     require(new_square_pos != null, "Bug. New position is null");
-    rule_interpret_single_step_position(board_positions, align, new_square_pos, tmp_path, pre_tree, false);
+    val can_attack_obstacle = false; // Doesn't matter for frogs
+    rule_interpret_single_step_position(board_positions, align, new_square_pos, tmp_path, pre_tree, false, can_attack_obstacle);
 }
 
 function frog_all_jump_over_moves(

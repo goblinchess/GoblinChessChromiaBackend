@@ -198,7 +198,8 @@ function move_common_use_all_unblocked_portals(
     our_team: character_team?, // Only use this for position updates (likely overkill?)
     opp_team: character_team,
     my_align: alignment, // Player can only use OWNED portals
-    end_args: move_end_events_arguments?
+    end_args: move_end_events_arguments?,
+    is_chaos_mode: boolean
 ): list<portal_event> {
     val hist_portals = list<portal_event>();
     
@@ -224,7 +225,8 @@ function move_common_use_all_unblocked_portals(
                         opp_team,
                         my_align,
                         piece,
-                        portal
+                        portal,
+                        is_chaos_mode
             );
                     
             if (hist_portal != null) {
@@ -265,7 +267,8 @@ function move_common_use_portal_depending_on_piece_type(
     opp_team: character_team,
     my_align: alignment,
     piece_wpat: with_pos_and_alignment_and_type,
-    portal: portal_simple
+    portal: portal_simple,
+    is_chaos_mode: boolean
 ): portal_event? {
     // Get the piece living data
     val piece_data = piece_get_living_data_from_pos(game, piece_wpat.pos);
@@ -283,7 +286,8 @@ function move_common_use_portal_depending_on_piece_type(
             king_wpaa.pos,
             portal.exit_pos,
             opp_team,
-            board_positions_all
+            board_positions_all,
+            is_chaos_mode
         );
         
         if (check_sb_is_check(check_calc_data)) {
@@ -316,13 +320,16 @@ function move_common_update_card_with_compressed_board(
     minimal_game: minimal_game_result, 
     opp_king_pos: integer,
     our_team: character_team,
-    prev_turn: turn) 
+    prev_turn: turn,
+    is_chaos_mode: boolean
+) 
 {
     val check_sb_data = check_sb_build_calculator(
         game_id,
         opp_king_pos, // We're supposed to check the opponent's king
         our_team, // we are the checking team
-        board_positions_all // This isn't a hypothetical move, must use the new board positions
+        board_positions_all, // This isn't a hypothetical move, must use the new board positions
+        is_chaos_mode
     );
     // Just a temporary check calc (not very expensive)
     val (after_card_check, after_card_check_desc) = check_sb_is_check_with_desc(check_sb_data);

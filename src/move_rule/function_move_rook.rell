@@ -6,13 +6,14 @@ function rook_all_valid_moves(
     game_id: integer,
     board_positions: board_positions_all, 
     pos: integer, 
-    align: alignment
+    align: alignment,
+    can_attack_obstacle: boolean
 ): move_tree {
     val ptree = pre_tree();
     
     for (count in range(0, 4)) {
         val dir = count * 2; // Step by 2 to get even numbers 0,2,4,6 for direction
-        rook_follow_path(game_id, board_positions, pos, align, dir, ptree);
+        rook_follow_path(game_id, board_positions, pos, align, dir, ptree, can_attack_obstacle);
     }
 
     return move_tree_build(pos, ptree);
@@ -24,7 +25,8 @@ function rook_follow_path(
     starting_pos_int: integer, 
     align: alignment, 
     dir: integer, 
-    pre_tree: pre_tree
+    pre_tree: pre_tree,
+    can_attack_obstacle: boolean
 ) {
     val tmp_path = [starting_pos_int]; // Initialize list with starting position
 
@@ -36,7 +38,7 @@ function rook_follow_path(
         shift += 1;
         val new_pos = pos_calc_from_directional_shift(game_id, starting_square_pos, shift, dir);
         require(new_pos != null, "Bug. New position is null");
-        continue_path = rule_interpret_path_position(board_positions, align, new_pos, tmp_path, pre_tree);
+        continue_path = rule_interpret_path_position(board_positions, align, new_pos, tmp_path, pre_tree, can_attack_obstacle);
     }
 }
 
@@ -44,13 +46,14 @@ function rook_all_jump_over_moves(
     game_id: integer,
     board_positions: board_positions_all, 
     pos: integer, 
-    align: alignment
+    align: alignment,
+    can_attack_obstacle: boolean
 ): move_tree {
     val pre_tree = pre_tree();
     
     for (count in range(0, 4)) {
         val dir = count * 2; // Step by 2 to get even numbers 0,2,4,6 for direction
-        rook_follow_path_jump_over(game_id, board_positions, pos, align, dir, pre_tree);
+        rook_follow_path_jump_over(game_id, board_positions, pos, align, dir, pre_tree, can_attack_obstacle);
     }
     
     return move_tree_build(pos, pre_tree);
@@ -62,7 +65,8 @@ function rook_follow_path_jump_over(
     starting_pos_int: integer, 
     align: alignment, 
     dir: integer, 
-    pre_tree: pre_tree
+    pre_tree: pre_tree,
+    can_attack_obstacle: boolean
 ) {
     val starting_square_pos = pos_from_integer(starting_pos_int);
     var shift = 0;
@@ -80,7 +84,7 @@ function rook_follow_path_jump_over(
             has_passed_obstacle = new_has_passed_obstacle;
         } else {
             continue_path = rule_interpret_path_position_post_obstacle(
-                board_positions, align, starting_pos_int, new_square_pos, pre_tree
+                board_positions, align, starting_pos_int, new_square_pos, pre_tree, can_attack_obstacle
             );
         }
     }

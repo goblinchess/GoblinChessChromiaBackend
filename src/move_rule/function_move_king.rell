@@ -10,13 +10,14 @@ function king_all_valid_moves(
     game_id: integer,
     board_positions: board_positions_all, 
     pos: integer, 
-    align: alignment
+    align: alignment,
+    can_attack_obstacle: boolean
 ): move_tree {
     val ptree = pre_tree();
     
     for (dir in range(0, 8)) {
          // One path per direction
-        king_follow_path(game_id, board_positions, pos, align, dir, ptree);
+        king_follow_path(game_id, board_positions, pos, align, dir, ptree, can_attack_obstacle);
     }
     
     return move_tree_build(pos, ptree);
@@ -28,27 +29,29 @@ function king_follow_path(
     starting_pos_int: integer, 
     align: alignment, 
     dir: integer, 
-    pre_tree: pre_tree
+    pre_tree: pre_tree,
+    can_attack_obstacle: boolean
 ) {
     val tmp_path = [starting_pos_int]; // Initialize list with starting position
 
     val starting_square_pos = pos_from_integer(starting_pos_int);
     val new_square_pos = pos_calc_from_directional_shift(game_id, starting_square_pos, 1, dir);
     require(new_square_pos != null, "Bug. New position is null");
-    rule_interpret_single_step_position(board_positions, align, new_square_pos, tmp_path, pre_tree, false);
+    rule_interpret_single_step_position(board_positions, align, new_square_pos, tmp_path, pre_tree, false, can_attack_obstacle);
 }
 
 function king_all_jump_over_moves(
     game_id: integer,
     board_positions: board_positions_all, 
     pos: integer, 
-    align: alignment
+    align: alignment,
+    can_attack_obstacle: boolean
 ): move_tree {
     val pre_tree = pre_tree();
     
     for (dir in range(0, 8)) {
          // One path per direction
-        king_follow_path_jump_over(game_id, board_positions, pos, align, dir, pre_tree);
+        king_follow_path_jump_over(game_id, board_positions, pos, align, dir, pre_tree, can_attack_obstacle);
     }
     
     return move_tree_build(pos, pre_tree);
@@ -60,7 +63,8 @@ function king_follow_path_jump_over(
     starting_pos_int: integer, 
     align: alignment, 
     dir: integer, 
-    pre_tree: pre_tree
+    pre_tree: pre_tree,
+    can_attack_obstacle: boolean
 ) {
     val starting_square_pos = pos_from_integer(starting_pos_int);
     val obstacle_pos = pos_calc_from_directional_shift(game_id, starting_square_pos, 1, dir);
@@ -75,7 +79,7 @@ function king_follow_path_jump_over(
         require(behind_obstacle_pos != null, "Bug. Behind obstacle position is null");
         
         rule_interpret_path_position_post_obstacle(
-            board_positions, align, starting_pos_int, behind_obstacle_pos, pre_tree
+            board_positions, align, starting_pos_int, behind_obstacle_pos, pre_tree, can_attack_obstacle
         );
     }
 }

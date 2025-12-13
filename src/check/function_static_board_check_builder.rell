@@ -10,9 +10,10 @@ function check_sb_build_calculator(
     game_id: integer,
     king_pos: integer,
     checking_team: character_team,
-    board_all: board_positions_all
+    board_all: board_positions_all,
+    is_chaos_mode: boolean
 ): check_stat_board_calculator_data {
-    val checking_team_move_trees = team_get_all_move_trees(game_id, checking_team, board_all);
+    val checking_team_move_trees = team_get_all_move_trees(game_id, checking_team, board_all, is_chaos_mode);
     log("check_sb_build_calculator() - king at " + king_pos + "");
     return check_sb_constructor(game_id, king_pos, checking_team_move_trees);
 }
@@ -29,7 +30,8 @@ function check_sb_build_hypothetical_king_move(
         king_pos_start: integer,
         king_pos_dest: integer,
         checking_team: character_team,
-        board_all: board_positions_all
+        board_all: board_positions_all,
+        is_chaos_mode: boolean
 ): check_stat_board_calculator_data {
     // ------------------------
     // 1. Clone the board
@@ -65,7 +67,8 @@ function check_sb_build_hypothetical_king_move(
         checking_team,
         board_all_clone,
         king_pos_dest,
-        -1 // Not used
+        -1, // Not used
+        is_chaos_mode
     );
     print("game_id: "+game_id+ " - king at " + king_pos_dest);
     return check_sb_constructor(game_id, king_pos_dest, checking_team_move_trees);
@@ -86,7 +89,8 @@ function check_sb_build_hypothetical_subject_move(
     king_orig_pos: integer,
     checking_team: character_team,
     board_all: board_positions_all,
-    count_enemy_at_pos_as_dead: integer // Use -1 if not used 
+    count_enemy_at_pos_as_dead: integer, // Use -1 if not used 
+    is_chaos_mode: boolean
 ): check_stat_board_calculator_data {
 
     // ------------------------
@@ -122,7 +126,8 @@ function check_sb_build_hypothetical_subject_move(
         checking_team,
         board_all_clone,
         pos_dest,
-        count_enemy_at_pos_as_dead 
+        count_enemy_at_pos_as_dead,
+        is_chaos_mode
     );
 
     print("check_sb_build_hypothetical_subject_move() - king at " + king_orig_pos + ", subject at: " + pos_dest);
@@ -141,7 +146,8 @@ function check_sb_build_hypothetical_subject_gone(
     subject_pos_to_remove: integer,
     king_pos: integer,
     checking_team: character_team,
-    board_all: board_positions_all
+    board_all: board_positions_all,
+    is_chaos_mode: boolean
 ): check_stat_board_calculator_data {
 
     // ------------------------
@@ -163,7 +169,7 @@ function check_sb_build_hypothetical_subject_gone(
     // ------------------------
     // 3. Build new calculator based on the hypothetical board
     // ------------------------
-    val checking_team_move_trees = team_get_all_move_trees(game_id, checking_team, board_all_clone);
+    val checking_team_move_trees = team_get_all_move_trees(game_id, checking_team, board_all_clone, is_chaos_mode);
     
     print("check_sb_build_hypothetical_subject_gone() - king at " + king_pos + ", subject at: " + subject_pos_to_remove + " is gone.");
     return check_sb_constructor(game_id, king_pos, checking_team_move_trees);
@@ -182,7 +188,8 @@ function check_sb_build_hypothetical_wall(
     wall_positions: list<integer>,
     king_orig_pos: integer,
     checking_team: character_team,
-    board_all: board_positions_all
+    board_all: board_positions_all,
+    is_chaos_mode: boolean
 ): check_stat_board_calculator_data {
 
     // ------------------------
@@ -214,7 +221,7 @@ function check_sb_build_hypothetical_wall(
     // ------------------------
     // 3. Build new calculator based on the hypothetical board
     // ------------------------
-    val checking_team_move_trees = team_get_all_move_trees(game_id, checking_team, board_all_clone);
+    val checking_team_move_trees = team_get_all_move_trees(game_id, checking_team, board_all_clone, is_chaos_mode);
     
     print("check_sb_build_hypothetical_wall() - king at " + king_orig_pos + ", wall at: " + pos_wall1 + ", " + pos_wall2 + ", " + pos_wall3);
     return check_sb_constructor(game_id, king_orig_pos, checking_team_move_trees);

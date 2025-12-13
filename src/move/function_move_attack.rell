@@ -156,7 +156,8 @@ function move_attack_inner(
             p.is_knighted,
             m_args.from_position,
             my_color,
-            opp_vuln_ctxt
+            opp_vuln_ctxt,
+            is_chaos_mode
     );
 
     //log ("Move A.6.2 - move trees done ");
@@ -204,7 +205,8 @@ function move_attack_inner(
             my_color,
             our_king.vuln.position,
             opp_team,
-            board_positions_all
+            board_positions_all,
+            is_chaos_mode
     );
 
     if (is_classic_mode) {
@@ -244,7 +246,7 @@ function move_attack_inner(
     if (prev_turn_type == turn_type.WHITE_CARD or prev_turn_type == turn_type.BLACK_CARD) {
         // We played a card last turn, update it with the compressed board.
         // Note: This belongs to the card's turn, but we do this here since we don't want to do the check calc during play card.
-        move_common_update_card_with_compressed_board(game_id, board_positions_all, minimal_game, opp_king.vuln.position, our_team, prev_turn);
+        move_common_update_card_with_compressed_board(game_id, board_positions_all, minimal_game, opp_king.vuln.position, our_team, prev_turn, is_chaos_mode);
     }
 
 
@@ -271,7 +273,8 @@ function move_attack_inner(
         game_id,
         opp_king.vuln.position, // We're supposed to check the opponent's king
         our_team, // we are the checking team
-        board_positions_all // This isn't a hypothetical move, must use the new board positions
+        board_positions_all, // This isn't a hypothetical move, must use the new board positions
+        is_chaos_mode
     );
     // Just a temporary check calc (not very expensive)
     val (after_move_check, after_move_check_desc) = check_sb_is_check_with_desc(check_sb_data);
@@ -296,7 +299,7 @@ function move_attack_inner(
     // 4. Apply end_args
     // ----------------
     // B.4.a Use all unblocked portals
-    move_common_use_all_unblocked_portals(game_id, old_turn_nr, minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args);
+    move_common_use_all_unblocked_portals(game_id, old_turn_nr, minimal_game.game, new_turn, board_positions_all, our_team, opp_team, my_color, end_args, is_chaos_mode);
 
     // B.4.b Resurrection
     // A resurrection happens on the player's side of the board, close to the player's starting rank.
@@ -349,7 +352,7 @@ function move_attack_inner(
     // 5. Check/stale/mate
     // ----------------
     // B.5.a Verify if we just won via checkmate?
-    val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_align, opp_king, our_team, opp_team, check_args);
+    val (is_check, is_checkmate, is_stalemate) = check_stale_n_mate(game_id, minimal_game, board_positions_all, opp_align, opp_king, our_team, opp_team, check_args, is_chaos_mode);
 
     // B.5.b Verify our attack generated a draw?
     var is_insufficient_mating_material = false;

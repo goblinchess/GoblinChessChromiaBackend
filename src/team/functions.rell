@@ -90,11 +90,11 @@ function team_get_king(team: character_team): piece_living_data? {
 // Note that we're using the given [board_positions_all], which might be hypothetical,
 // but we're using the ACTUAL position of the piece.
 // THIS MEANS WE CANNOT EVER CHANGE THE HYPOTHETICAL POSITION OF THE TEAM WE ARE ABOUT TO GENERATE A MOVE TREE FROM.
-function team_get_all_move_trees(game_id: integer, team: character_team, board_all: board_positions_all): list<move_tree> {
+function team_get_all_move_trees(game_id: integer, team: character_team, board_all: board_positions_all, is_chaos_mode: boolean): list<move_tree> {
     val ret = list<move_tree>();
     
     for (pld in team_get_list(team)) {
-        _inner_add_move_tree(game_id, pld, board_all, ret);
+        _inner_add_move_tree(game_id, pld, board_all, ret, is_chaos_mode);
     }
     
     return ret;
@@ -107,7 +107,8 @@ function team_get_all_move_trees_except_for_one(
     team: character_team,
     board_all: board_positions_all, 
     except_for_pos: integer, // Position of the (enemy) piece we want to exclude.
-    count_enemy_at_pos_as_dead: integer // Position of a (enemy) piece standing on a portal entry.
+    count_enemy_at_pos_as_dead: integer, // Position of a (enemy) piece standing on a portal entry.
+    is_chaos_mode: boolean
 ): list<move_tree> {
     val ret = list<move_tree>();
     
@@ -118,14 +119,14 @@ function team_get_all_move_trees_except_for_one(
             //log("team_get_all_move_trees_except_for_one() - Excluding the enemy standing on portal entry at " + count_enemy_at_pos_as_dead );
         } else {
             //log("Adding move tree for " + pld.vuln.position);
-            _inner_add_move_tree(game_id, pld, board_all, ret);
+            _inner_add_move_tree(game_id, pld, board_all, ret, is_chaos_mode);
         }
     }
     
     return ret;
 }
 
-function _inner_add_move_tree(game_id: integer, p: piece_living_data, board_all: board_positions_all, ret: list<move_tree>) {
+function _inner_add_move_tree(game_id: integer, p: piece_living_data, board_all: board_positions_all, ret: list<move_tree>, is_chaos_mode: boolean) {
 
     // I think the enchanted jump is already consumed when we calculate check/mate.
     val is_enchanted_jump = false;  // <-- We wanna save DB lookups.
@@ -138,7 +139,8 @@ function _inner_add_move_tree(game_id: integer, p: piece_living_data, board_all:
         p.is_knighted,
         p.vuln.position, // <-- NOTE: we're using the ACTUAL position of the [piece] 
         p.vuln.align,
-        pre_vuln_context(null) // We don't care about "en passant" here since it won't effect check mate.
+        pre_vuln_context(null), // We don't care about "en passant" here since it won't effect check mate.
+        is_chaos_mode
     );
     
     val merged = move_tree_merge(ground, jumps);

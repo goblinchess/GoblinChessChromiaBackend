@@ -51,6 +51,7 @@ function card_play_inner_core(
     val card_type_str = card_played_data.card_type_str.upper_case();
     val card_order_number = card_played_data.card_order_number;
     val card_picks: list<integer> = card_played_data.card_picks;
+    val is_chaos_mode = not game_is_classic(minimal_game.game_type);
 
     // -----------    
     // A. Verification
@@ -169,7 +170,8 @@ function card_play_inner_core(
                 portal_entry_pos,
                 king_from_pos,
                 opp_team,
-                board_positions_all
+                board_positions_all,
+                is_chaos_mode
             );
 
             require(not check_sb_is_check(calc), "Cannot use PORTAL on a piece, so that when it moves to the exit it causes a check.");
@@ -189,7 +191,8 @@ function card_play_inner_core(
                     king_from_pos,
                     king_to_pos,
                     opp_team,
-                    board_positions_all
+                    board_positions_all,
+                    is_chaos_mode
                 );
 
                 require(not check_sb_is_check(calc), "Cannot SWITCH the king to a position where it is in check.");
@@ -219,7 +222,8 @@ function card_play_inner_core(
                     card_picks,
                     king_from_pos,
                     opp_team,
-                    board_positions_all
+                    board_positions_all,
+                    is_chaos_mode
                 );
 
                 require(not check_sb_is_check(calc), "Cannot SWITCH the king to a position where it is in check.");
