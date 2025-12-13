@@ -79,6 +79,7 @@ This codebase serves as a tutorial for:
 
 There are plenty of comments around the code, it is meant to be one big tutorial.
 
+
 ## 🎯 Gameplay 
 A quick overview of the rules and features.
 
@@ -167,7 +168,27 @@ You will need to install these Chromia-specific tools:
 For how to setup your environment you can visit: https://docs.chromia.com/ .
 You can also watch videos explaining how we did it for this game: https://www.youtube.com/@GoblinChess_Olle
 
+After you have cloned this repository to your local disk, you can start the node like this (Win):
+```
+> cd <cloned repository folder>
+> %CHR%\chr.bat node start
 
+Starting node with pubkey: 0324653EAC434488002CC06BBFB7F10FE18991E35F9FE4302DBEA6D2353DC0AB1C
+INFO  2025-12-13 12:41:13.603 - [main] BaseApiInfrastructure Starting REST API on port 7740 and path /
+INFO  2025-12-13 12:41:13.804 - [main] RestApi Rest API is listening on port 7740 and is attached on /
+INFO  2025-12-13 12:41:13.804 - [main] BaseApiInfrastructure Starting Debug API on port 7750
+INFO  2025-12-13 12:41:13.865 - [main] DebugApi Debug API listening on port 7750 and were given 7750, attached on /
+Starting blockchain goblinchess_dapp with brid 8C84FB6713F4FC5B6884C393622D834ABC77375C04AA1D366DBB0A39BAB86DA2 on id 0
+INFO  2025-12-13 12:41:19.410 [chain-id=0] - [main] BaseBlockchainProcessManager Starting of blockchain: 0
+INFO  2025-12-13 12:41:20.154 [chain-id=0] - [main] SqlInit Initializing database (chain_iid = 0)
+INFO  2025-12-13 12:41:21.054 [bc-rid=8C:6DA2, chain-id=0] - [main] EBFTSynchronizationInfrastructure I am alone signer
+INFO  2025-12-13 12:41:21.098 [bc-rid=8C:6DA2, chain-id=0] - [main] NettyPeerConnector Node started listening on messaging port 9870
+INFO  2025-12-13 12:41:21.149 [bc-rid=8C:6DA2, chain-id=0] - [main] BaseBlockchainProcessManager startBlockchain() - Blockchain has been started: ValidatorBlockchainProcess:RUNNING, blockchain RID: 8C84FB6713F4FC5B6884C393622D834ABC77375C04AA1D366DBB0A39BAB86DA2, signers: [0324653EAC434488002CC06BBFB7F10FE18991E35F9FE4302DBEA6D2353DC0AB1C]
+Node is initialized
+INFO  2025-12-13 12:41:21.237 [bc-rid=8C:6DA2, chain-id=0, block-rid=19:C711] - [0-BaseBlockDatabaseWorker] BaseBlockchainEngine Block is finalized: 48 ms, 0 net tps, 0 gross tps, delay: 0 ms, height: 0, accepted txs: 0, rejected txs: 0, root-hash: 46AF9064F12528CAD6A7C377204ACD0AC38CDC6912903E7DAB3703764C8DD5E5, block-rid: 1946AF63951DD0C057A22DE6F196E11A8AB8A1A9D1CFA058047E5B9FC656C711, prev-block-rid: 8C84FB6713F4FC5B6884C393622D834ABC77375C04AA1D366DBB0A39BAB86DA2
+INFO  2025-12-13 12:41:21.284 [bc-rid=8C:6DA2, chain-id=0, block-rid=19:C711] - [0-BaseBlockDatabaseWorker] BaseBlockManager Committed block 1946AF63951DD0C057A22DE6F196E11A8AB8A1A9D1CFA058047E5B9FC656C711
+```
+If it looks something like this you have succeeded.
 
 
 ## 📚 Technical Documentation
@@ -235,9 +256,13 @@ The process is similar for the Lobby:
 
 
 ### Automatic Testing
-The code has one big test that runs a complete game, from the first move to the inevitable checkmate, where we try to insert as many strange situations as possible:
+The code has one big test that runs a complete game, from the first move to the inevitable checkmate, where we try to insert as many strange situations as possible. You can run the tests via (Win):
+```
+> %CHR%\chr.bat test
+```
+The actual test is here: 
 
-[View turn validation logic →](src/test/test_all.rell)
+[View test code →](src/test/test_all.rell)
 
  We could have created more isolated tests, with unique database setup for each one. The benefit of this method is that we'll get an exact error message for every single test. But we didn't have time to do that in this project, instead we just setup a full game and tried to catch as many situations as possible inside this test-game. This is one way to do it, not necessarily the best one.
 
