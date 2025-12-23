@@ -321,7 +321,7 @@ function move_peaceful_inner(
         }
 
         // Cleanup
-        move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, opp_color);
+        move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, opp_color, new_turn_nr);
 
         // Add new vuln path (if exists and match the actual move)
         if (m_tree != null) {

@@ -447,7 +447,7 @@ function move_attack_inner(
         }
 
         // Cleanup
-        move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, opp_align);
+        move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, opp_align, new_turn_nr);
         // Won't add any vulns for attacks.
 
         // The "is_check" status of the opponent should be saved.

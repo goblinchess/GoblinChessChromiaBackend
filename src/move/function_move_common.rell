@@ -160,7 +160,7 @@ function move_end_create(new_turn: turn, board_compressed_str: text) {
 // ------------------------------------------------------------
 // Remove old spells and vuln paths
 // ------------------------------------------------------------
-function move_cleanup_after_move(is_enchanted_jump: boolean, opp_vuln_ctxt: pre_vuln_context, minimal_game: minimal_game_result, opp_align: alignment) {
+function move_cleanup_after_move(is_enchanted_jump: boolean, opp_vuln_ctxt: pre_vuln_context, minimal_game: minimal_game_result, opp_align: alignment, new_turn_number: integer) {
     // 1. Enchanted jump (if exists)
     //if (is_enchanted_jump) { // The reason we cannot have this check is that sometimes the player moves a different piece (not the jumper)
     jump_remove_enchanted(minimal_game.player_game);
@@ -173,6 +173,9 @@ function move_cleanup_after_move(is_enchanted_jump: boolean, opp_vuln_ctxt: pre_
 
     // 3. Count down all enchantments
     card_enchantment_count_down_all_durations(minimal_game.game);
+
+    // 4. Remove old active double moves
+    card_remove_old_active_double_moves(minimal_game.player_game, new_turn_number);
 }
 
 

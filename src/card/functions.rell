@@ -4,12 +4,3 @@
 // Card Inspectors
 // ------------------------------------------------------------
 
-// Takes the PLAYER_GAME as parameter and returns the TURN NUMBER
-// or null if nothing found 
-function card_look_for_active_double_move(player_game: player_game): integer? {
-
-    return (a: active_double_move, c: card) @? { // Can only be one active double at a time
-        a.owned_by == player_game,
-        a.card == c
-        } (c.turn.number);
-}

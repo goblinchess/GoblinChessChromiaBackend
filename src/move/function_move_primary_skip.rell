@@ -138,7 +138,7 @@ function move_primary_skip_inner(
         // For "skip" this will:
         // 1. Remove vuln context. 
         // 2. Count down enchantments.
-        move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, opp_color);
+        move_cleanup_after_move(is_enchanted_jump, opp_vuln_ctxt, minimal_game, opp_color, new_turn_nr);
 
         // The "is_check" status of the opponent should be saved.
         game_update_turn_and_check_status(minimal_game, is_check);

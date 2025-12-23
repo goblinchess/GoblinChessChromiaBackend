@@ -1,0 +1,20 @@
+// Takes the PLAYER_GAME as parameter and returns the TURN NUMBER
+// or null if nothing found 
+function card_look_for_active_double_move(player_game: player_game): integer? {
+
+    return (a: active_double_move, c: card) @? { // Can only be one active double at a time
+        a.owned_by == player_game,
+        a.card == c
+        } (c.turn.number);
+}
+
+// Remove old ACTIVE_DOUBLE_MOVEs 
+
+function card_remove_old_active_double_moves(player_game: player_game, curr_turn_number: integer) {
+    val old_turn_number = curr_turn_number - 9; // A rotation is 6 turns, but we must be sure we're not deleting too early
+
+    delete (a: active_double_move) @* {
+        a.owned_by == player_game,
+        a.card.turn.number < old_turn_number
+    };
+}
